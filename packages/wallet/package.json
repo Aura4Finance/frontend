@@ -1,0 +1,10 @@
+{
+  "name": "@orafi/wallet",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "dependencies": {
+    "@mysten/dapp-kit": "^0.19.6",
+    "@mysten/sui": "^1.43.1",
+    "@tanstack/react-query": "^5.90.5"
+  }
+}

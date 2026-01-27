@@ -1,0 +1,22 @@
+{
+  "name": "orafi-frontend",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "install:all": "npm install",
+    "dev:admin": "npm run dev --workspace=admin",
+    "dev:merchant": "npm run dev --workspace=merchant",
+    "dev:link": "npm run dev --workspace=link",
+    "dev:home": "npm run dev --workspace=home",
+    "dev:auth": "npm run dev --workspace=auth",
+    "dev:checkout": "npm run dev --workspace=checkout"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.23",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18"
+  }
+}
