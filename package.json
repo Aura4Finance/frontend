@@ -6,13 +6,28 @@
     "packages/*"
   ],
   "scripts": {
-    "install:all": "npm install",
-    "dev:admin": "npm run dev --workspace=admin",
-    "dev:merchant": "npm run dev --workspace=merchant",
-    "dev:link": "npm run dev --workspace=link",
-    "dev:home": "npm run dev --workspace=home",
-    "dev:auth": "npm run dev --workspace=auth",
-    "dev:checkout": "npm run dev --workspace=checkout"
+    "install:all": "pnpm install",
+
+    "build:admin": "pnpm --filter admin build",
+    "build:merchant": "pnpm --filter merchant build",
+    "build:link": "pnpm --filter link build",
+    "build:home": "pnpm --filter home build",
+    "build:auth": "pnpm --filter auth build",
+    "build:checkout": "pnpm --filter checkout build",
+
+    "start:admin": "pnpm --filter admin preview -- --host",
+    "start:merchant": "pnpm --filter merchant preview -- --host",
+    "start:link": "pnpm --filter link preview -- --host",
+    "start:home": "pnpm --filter home preview -- --host",
+    "start:auth": "pnpm --filter auth preview -- --host",
+    "start:checkout": "pnpm --filter checkout preview -- --host",
+
+    "dev:admin": "pnpm --filter admin dev",
+    "dev:merchant": "pnpm --filter merchant dev",
+    "dev:link": "pnpm --filter link dev",
+    "dev:home": "pnpm --filter home dev",
+    "dev:auth": "pnpm --filter auth dev",
+    "dev:checkout": "pnpm --filter checkout dev"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.23",
