@@ -9,6 +9,9 @@ export default defineConfig({
   server: {
     host: true,
   },
+  preview: {
+    allowedHosts: ["checkout.orafi.app"],
+  },
   resolve: {
     alias: {
       "@orafi/ui": path.resolve(__dirname, "../../packages/ui/src"),
