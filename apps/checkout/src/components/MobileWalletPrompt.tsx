@@ -108,7 +108,6 @@ export const MobileWalletPrompt = ({ redirectUrl, client, depositAddress }: Mobi
                 const QRCode = (await import('qrcode')).default;
                 await QRCode.toCanvas(canvas, text, {
                     errorCorrectionLevel: 'H',
-                    type: 'image/png',
                     width: 200,
                     margin: 1,
                     color: {
@@ -212,6 +211,7 @@ export const MobileWalletPrompt = ({ redirectUrl, client, depositAddress }: Mobi
                             )}
 
                             <Button
+                                variant="default"
                                 onClick={handleVerifyPayment}
                                 disabled={verifyingPayment || paymentStatus === 'success'}
                                 className="w-full h-10 bg-blue-900 hover:bg-blue-800 disabled:bg-gray-400 text-white font-semibold text-sm rounded-lg transition-all active:scale-[0.98]"

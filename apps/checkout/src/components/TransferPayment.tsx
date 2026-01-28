@@ -27,9 +27,6 @@ export const TransferPayment = ({
     const generateQRCode = async () => {
         try {
             const url = await QRCode.toDataURL(transferAddress, {
-                errorCorrectionLevel: "H",
-                type: "image/png",
-                quality: 0.95,
                 margin: 1,
                 width: 200,
                 color: {
@@ -161,6 +158,7 @@ export const TransferPayment = ({
                 )}
 
                 <Button
+                    variant="default"
                     onClick={handleVerifyTransfer}
                     disabled={
                         verifyTransferMutation.isPending ||

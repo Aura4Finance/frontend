@@ -2,8 +2,8 @@ import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import {
   Controller,
-  ControllerProps,
-  FieldValues,
+  type  ControllerProps,
+  type  FieldValues,
   FormProvider,
   useFormContext,
 } from "react-hook-form";

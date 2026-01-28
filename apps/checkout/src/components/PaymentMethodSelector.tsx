@@ -94,6 +94,7 @@ export const PaymentMethodSelector = ({
 
             {selectedMethod && (
                 <Button
+                    variant="default"
                     className="w-full h-11 bg-blue-900 hover:bg-blue-800 text-white font-bold shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                     disabled={!selectedMethod}
                 >

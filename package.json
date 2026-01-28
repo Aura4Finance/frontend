@@ -7,21 +7,18 @@
   ],
   "scripts": {
     "install:all": "pnpm install",
-
     "build:admin": "pnpm --filter admin build",
     "build:merchant": "pnpm --filter merchant build",
     "build:link": "pnpm --filter link build",
     "build:home": "pnpm --filter home build",
     "build:auth": "pnpm --filter auth build",
     "build:checkout": "pnpm --filter checkout build",
-
     "start:admin": "pnpm --filter admin preview -- --host",
     "start:merchant": "pnpm --filter merchant preview -- --host",
     "start:link": "pnpm --filter link preview -- --host",
     "start:home": "pnpm --filter home preview -- --host",
     "start:auth": "pnpm --filter auth preview -- --host",
     "start:checkout": "pnpm --filter checkout preview -- --host",
-
     "dev:admin": "pnpm --filter admin dev",
     "dev:merchant": "pnpm --filter merchant dev",
     "dev:link": "pnpm --filter link dev",
@@ -30,6 +27,8 @@
     "dev:checkout": "pnpm --filter checkout dev"
   },
   "devDependencies": {
+    "@types/react": "^19.2.8",
+    "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.23",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18"
