@@ -12,7 +12,7 @@ export const useLoginMutation = () => {
     mutationFn: async (data: LoginSchema) => {
       const response = await client.post("/auth/login", data);
       const code = response.data.data.code.secret;
-      window.location.href = `http://localhost:3200/auth/callback?code=${code}`;
+      window.location.href = `https://dashboard.orafi.app/auth/callback?code=${code}`;
     },
     onSuccess: () => {
       toast.success("Login Successful");

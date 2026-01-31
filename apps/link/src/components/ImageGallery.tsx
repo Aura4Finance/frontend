@@ -6,6 +6,8 @@ interface ImageGalleryProps {
   images: string[];
 }
 
+const WALRUS_GATEWAY =
+  "https://aggregator.walrus-testnet.walrus.space/v1/blobs";
 const ImageGallery = ({ images }: ImageGalleryProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -24,15 +26,16 @@ const ImageGallery = ({ images }: ImageGalleryProps) => {
       {/* Main Image Display */}
       <div className="relative group w-full h-[400px] bg-white rounded-lg border border-gray-100 flex items-center justify-center overflow-hidden">
         {images.length > 0 ? (
-          <div className="w-full h-full flex items-center justify-center bg-gray-50">
-            {/* 
-                In a real app, this would be an <img src={images[currentIndex]} /> 
-                For mock purposes using blob IDs, we use placeholders 
-            */}
-             <div className="text-center text-gray-400">
-                <FiShoppingBag className="w-32 h-32 mx-auto mb-2 opacity-50" />
-                <span className="text-xs font-mono">Image {currentIndex + 1} ({images[currentIndex].substring(0, 8)}...)</span>
-             </div>
+          <div className="w-full h-full relative bg-gray-50 overflow-hidden">
+            <img
+              src={`${WALRUS_GATEWAY}/${images[currentIndex]}`}
+              alt={`Paylink image ${currentIndex + 1}`}
+              className="w-full h-full object-cover"
+              loading="lazy"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
           </div>
         ) : (
           <FiShoppingBag className="w-32 h-32 text-gray-200" />
@@ -72,7 +75,7 @@ const ImageGallery = ({ images }: ImageGalleryProps) => {
               )}
             >
               <div className="w-full h-full bg-gray-50 flex items-center justify-center">
-                  <FiShoppingBag className="w-6 h-6 text-gray-300" />
+                <FiShoppingBag className="w-6 h-6 text-gray-300" />
               </div>
             </button>
           ))}
