@@ -9,6 +9,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+    preview: {
+    allowedHosts: ["paylink.orafi.app"],
+  },
   resolve: {
     alias: {
       "@orafi/ui": path.resolve(__dirname, "../../packages/ui/src"),
