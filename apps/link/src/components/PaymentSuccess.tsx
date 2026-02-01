@@ -1,9 +1,9 @@
 import { Button, Card, CardContent } from "@orafi/ui";
-import { FiCheckCircle, FiDownload } from "react-icons/fi";
+import { FiCheckCircle } from "react-icons/fi";
 import { Link } from "wouter";
 import logo from "@orafi/ui/assets/OraFi.png";
 
-const PaymentSuccess = ({ txId }: { txId: string }) => {
+const PaymentSuccess = ({ txId, returnUrl }: { txId: string, returnUrl: string }) => {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <Card className="max-w-md w-full border-none shadow-xl bg-white text-center p-8">
@@ -38,12 +38,7 @@ const PaymentSuccess = ({ txId }: { txId: string }) => {
         </CardContent>
 
         <div className="space-y-3">
-          <Button 
-          variant="default"
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-            <FiDownload className="mr-2" /> Download Receipt
-          </Button>
-          <Link href="/">
+          <Link href={returnUrl}>
              <Button variant="ghost" className="w-full text-gray-500 hover:text-gray-900">
                 Return to Store
              </Button>

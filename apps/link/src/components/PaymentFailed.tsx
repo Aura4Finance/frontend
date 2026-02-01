@@ -1,13 +1,14 @@
 import { Button, Card } from "@orafi/ui";
 import { FiXCircle, FiRotateCw, FiAlertTriangle } from "react-icons/fi";
 import logo from "@orafi/ui/assets/OraFi.png";
+import { Link } from "wouter";
 
-const PaymentFailed = ({ txId, onRetry }: { txId: string, onRetry: () => void }) => {
+const PaymentFailed = ({ txId, onRetry, returnUrl }: { txId: string, onRetry: () => void, returnUrl: string }) => {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <Card className="max-w-md w-full border-none shadow-xl bg-white text-center p-8">
         <div className="flex justify-center mb-6">
-           <img src={logo} alt="OraFi" className="h-10 w-10 object-contain" />
+          <img src={logo} alt="OraFi" className="h-10 w-10 object-contain" />
         </div>
 
         <div className="flex justify-center mb-6">
@@ -22,14 +23,14 @@ const PaymentFailed = ({ txId, onRetry }: { txId: string, onRetry: () => void })
         </p>
 
         {txId && (
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-gray-100 rounded text-xs text-gray-500 font-mono mb-8">
-                <FiAlertTriangle className="w-3 h-3" />
-                Ref: {txId.slice(0, 12)}
-            </div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-gray-100 rounded text-xs text-gray-500 font-mono mb-8">
+            <FiAlertTriangle className="w-3 h-3" />
+            Ref: {txId.slice(0, 12)}
+          </div>
         )}
 
         <div className="space-y-3">
-          <Button 
+          <Button
             variant="default"
             onClick={onRetry}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white"
@@ -37,8 +38,13 @@ const PaymentFailed = ({ txId, onRetry }: { txId: string, onRetry: () => void })
             <FiRotateCw className="mr-2" /> Try Again
           </Button>
           <Button variant="outline" className="w-full border-gray-200 text-gray-700 hover:bg-gray-50">
-             Contact Support
+            Contact Support
           </Button>
+          <Link href={returnUrl}>
+            <Button variant="ghost" className="w-full text-gray-500 hover:text-gray-900">
+              Return to Store
+            </Button>
+          </Link>
         </div>
       </Card>
 

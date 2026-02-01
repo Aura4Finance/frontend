@@ -6,7 +6,7 @@ export const useVerifyPaymentMutation = () => {
     return useMutation({
         mutationFn: async (paymentId: string) => {
             const response = await client.post("/transactions/payment/verify", { paymentId });
-            return response.data.data === "success" ? true : false;
+            return response.data.data;
         },
         onSuccess: () => {
             toast.success("Payment verified successfully!");

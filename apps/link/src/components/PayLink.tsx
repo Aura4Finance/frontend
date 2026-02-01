@@ -47,12 +47,12 @@ const PayLink = () => {
     );
   }
 
-  if (verifyPaymentMutation.isSuccess && verifyPaymentMutation.data && txId) {
-    return <PaymentSuccess txId={txId} />;
+  if (verifyPaymentMutation.isSuccess && verifyPaymentMutation.data.status === "completed") {
+    return <PaymentSuccess txId={txId as string} returnUrl={`/${params?.paylinkId}`}/>;
   }
 
-  if (verifyPaymentMutation.isError || (verifyPaymentMutation.isSuccess && !verifyPaymentMutation.data && txId)) {
-    return <PaymentFailed txId={txId as string} onRetry={() => verifyPaymentMutation.mutate(txId as string)} />;
+  if (verifyPaymentMutation.isError || (verifyPaymentMutation.isSuccess && verifyPaymentMutation.data.status === "failed")) {
+    return <PaymentFailed txId={txId as string} onRetry={() => verifyPaymentMutation.mutate(txId as string)}  returnUrl={`/${params?.paylinkId}`} />;
   }
 
   // Loading Product Data
@@ -142,6 +142,7 @@ const PayLink = () => {
                 <div className="flex flex-col gap-4">
                   <Button
                     variant="default"
+                    onClick={()=> setCheckoutOpen(true)}
                     className="w-full h-12 text-base font-bold bg-blue-950 hover:bg-blue-900 text-white shadow-md rounded-md transition-all active:scale-[0.98]">
                     Proceed to Checkout
                   </Button>
@@ -161,8 +162,14 @@ const PayLink = () => {
       <PopupModal
         open={checkoutOpen}
         onClose={() => setCheckoutOpen(false)}
+        isLoading={createPaymentMutation.isPending}
         onSubmit={(data) => {
-          setCheckoutOpen(false);
+          createPaymentMutation.mutate({
+            amount: paylinkData.data?.amount as number,
+            email: data.email,
+            fullname: data.fullName,
+            paymentLinkId: params?.paylinkId as string,
+          })
         }}
       />
 

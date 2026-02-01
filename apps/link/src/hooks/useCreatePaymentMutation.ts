@@ -5,7 +5,7 @@ import { toast } from "sonner";
 interface CreatePaylinkPaymentPayload {
     amount: number;
     email: string;
-    name: string;
+    fullname: string;
     paymentLinkId: string;
 }
 
@@ -15,7 +15,7 @@ export const useCreatePaymentMutation = () => {
         mutationFn: async ({
             amount,
             email,
-            name,
+            fullname,
             paymentLinkId,
         }: CreatePaylinkPaymentPayload) => {
             const response = await client.post(
@@ -24,7 +24,7 @@ export const useCreatePaymentMutation = () => {
                     amount,
                     customer: {
                         email,
-                        name,
+                        fullname,
                     },
                 },
                 {
@@ -42,5 +42,8 @@ export const useCreatePaymentMutation = () => {
                 "An error occurred while creating the payment."
             );
         },
+        onSuccess: (data) => {
+            window.location.href = data.checkoutUrl;
+        }
     });
 };

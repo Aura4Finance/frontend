@@ -4,10 +4,11 @@ import { Button, Card } from "@orafi/ui";
 interface PopupModalProps {
   open: boolean;
   onClose: () => void;
+  isLoading: boolean;
   onSubmit: (data: { fullName: string; email: string }) => void;
 }
 
-const PopupModal = ({ open, onClose, onSubmit }: PopupModalProps) => {
+const PopupModal = ({ open, onClose, isLoading, onSubmit }: PopupModalProps) => {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
 
@@ -66,7 +67,8 @@ const PopupModal = ({ open, onClose, onSubmit }: PopupModalProps) => {
             className="flex-1 bg-blue-950 text-white hover:bg-blue-900"
             onClick={handleSubmit}
           >
-            Continue
+            {isLoading ? "Processing..." : "Proceed to Checkout"}
+  
           </Button>
         </div>
       </Card>
