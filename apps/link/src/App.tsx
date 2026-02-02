@@ -15,7 +15,7 @@ function App() {
         {/* Default route (useful for dev testing without ID) */}
         <Route path="/" component={PayLink} />
       </Switch>
-      <Toaster position="top-right" />
+      <Toaster position="top-right" richColors/>
     </QueryClientProvider>
   );
 }
