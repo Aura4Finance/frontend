@@ -33,7 +33,6 @@ export const useCreatePaymentMutation = () => {
                     },
                 }
       );
-
             return response.data.data;
         },
         onError: (error: any) => {
@@ -43,7 +42,8 @@ export const useCreatePaymentMutation = () => {
             );
         },
         onSuccess: (data) => {
-            window.location.href = data.checkoutUrl;
+            toast.success("Payment initiated successfully, redirecting to checkout!");
+            setTimeout(() => window.location.href = data.checkoutUrl, 2000);
         }
     });
 };

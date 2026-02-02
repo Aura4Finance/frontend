@@ -64,12 +64,16 @@ const PopupModal = ({ open, onClose, isLoading, onSubmit }: PopupModalProps) => 
 
           <Button
             variant="default"
-            className="flex-1 bg-blue-950 text-white hover:bg-blue-900"
+            className="flex-1 bg-blue-950 text-white hover:bg-blue-900 flex items-center justify-center gap-2"
             onClick={handleSubmit}
+            disabled={isLoading}
           >
-            {isLoading ? "Processing..." : "Proceed to Checkout"}
-  
+            {isLoading && (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            )}
+            {isLoading ? "Processing..." : "Proceed"}
           </Button>
+
         </div>
       </Card>
     </div>
