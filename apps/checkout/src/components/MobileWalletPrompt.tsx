@@ -145,7 +145,7 @@ export const MobileWalletPrompt = ({ redirectUrl, client, depositAddress }: Mobi
                             <div>
                                 <h3 className="text-sm font-bold text-gray-900 mb-2">Copy & Paste Link</h3>
                                 <p className="text-xs text-gray-600 mb-3 leading-relaxed">
-                                    Copy the link below and paste it in your preferred browser to sign the transaction in your wallet app.
+                                    Copy the link below and paste it in your wallet(slush) browser to sign the transaction.
                                 </p>
 
                                 <div className="bg-white rounded-lg p-3 border border-blue-200 flex items-center gap-2 group hover:border-blue-300 transition-colors">
