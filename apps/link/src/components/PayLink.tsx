@@ -23,7 +23,6 @@ const PayLink = () => {
 
 
   useEffect(() => {
-    // 1. Check for transaction ID in URL (return from checkout)
     const params = new URLSearchParams(search);
     const oratx = params.get("oratx");
 

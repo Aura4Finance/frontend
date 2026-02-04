@@ -17,7 +17,7 @@ export const TransferPayment = ({
     transferAddress,
     amountInUSDC,
     transactionId,
-    redirectUrl,
+    redirectUrl
 }: TransferPaymentProps) => {
     const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
     const [copied, _setCopied] = useState<boolean>(false);
@@ -180,7 +180,6 @@ export const TransferPayment = ({
                         "Verify Transfer"
                     )}
                 </Button>
-
                 <p className="text-xs text-gray-500 text-center mt-4">
                     This may take a few moments to process
                 </p>
