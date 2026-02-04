@@ -8,8 +8,8 @@ export const useVerifyPaymentMutation = () => {
             const response = await client.post("/transactions/payment/verify", { paymentId });
             return response.data.data;
         },
-        onSuccess: () => {
-            toast.success("Payment verified successfully!");
+        onSuccess: (response) => {
+            if(response && response.status === "completed") toast.success("Payment verified successfully!");
         },
         onError: (error: any) => {
             toast.error(error.response.data.message || "Error verifying payment");
