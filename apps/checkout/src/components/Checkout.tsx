@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation, useRoute } from "wouter";
 import { getFullnodeUrl, SuiClient } from "@mysten/sui/client";
 import { Transaction } from "@mysten/sui/transactions";
@@ -7,6 +7,7 @@ import { Button, Card } from "@orafi/ui";
 import logo from "@orafi/ui/assets/OraFi.png";
 import { FiCheckCircle, FiShield, FiAlertCircle } from "react-icons/fi";
 import { RiSecurePaymentLine } from "react-icons/ri";
+import { FiChevronDown } from "react-icons/fi";
 import { MobileWalletPrompt } from "./MobileWalletPrompt";
 import { PaymentMethodSelector } from "./PaymentMethodSelector";
 import { TransferPayment } from "./TransferPayment";
@@ -21,7 +22,12 @@ const Checkout = () => {
     const [error, setError] = useState<string | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<"mobile" | "transfer" | null>(null);
     const [redirect, setRedirect] = useState<string | undefined>(undefined);
+    const [showModal, setShowModal] = useState(false);
     const wallet = useWallet();
+    const accounts = useMemo(
+        () => (wallet.connected ? wallet.getAccounts?.() ?? [] : []),
+        [wallet]
+    );
 
     const paymentQueryResult = useGetPaymentInformationQuery(params?.txId as string);
     // Check if redirect=false is in URL
@@ -260,7 +266,7 @@ const Checkout = () => {
                     <Card className="hidden lg:block bg-white shadow-md border border-gray-100 rounded-lg overflow-hidden p-6 w-80">
                         <div className="flex flex-col items-start">
                             <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-4">Payment Summary</p>
-                            
+
                             <div className="w-12 h-12 bg-blue-50 text-blue-900 rounded-lg flex items-center justify-center text-lg font-bold mb-4 shadow-inner">
                                 {Array.from(paymentQueryResult.data?.businessName)[0]}
                             </div>
@@ -333,17 +339,86 @@ const Checkout = () => {
                                     </div>
                                 ) : (
                                     <div className="flex flex-col gap-4">
-                                        <div className="bg-blue-50 border border-blue-100 p-3 rounded-md flex items-center justify-between">
-                                            <span className="text-xs font-bold text-blue-800 uppercase tracking-wider">Wallet Connected</span>
-                                            <span className="text-xs font-mono text-blue-600 truncate max-w-[120px]">
+                                        <button
+                                            onClick={() => setShowModal((v) => !v)}
+                                            className="w-full bg-blue-50 border border-blue-100 p-3 rounded-md flex items-center gap-3"
+                                        >
+                                            <span className="text-xs font-bold text-blue-800 uppercase tracking-wider">
+                                                Wallet Connected
+                                            </span>
+
+                                            <span className="text-xs font-mono text-blue-600 truncate max-w-[120px] ml-auto">
                                                 {wallet.address?.slice(0, 6)}...{wallet.address?.slice(-4)}
                                             </span>
-                                        </div>
+
+                                            {/* Dropdown Icon */}
+                                            <FiChevronDown
+                                                className={`w-4 h-4 text-blue-700 transition-transform ${showModal ? "rotate-180" : ""
+                                                    }`}
+                                            />
+                                        </button>
+
+                                        {/* Dropdown */}
+                                        {showModal && (
+                                            <div className="absolute right-0 mt-2 w-64 rounded-lg border border-blue-100 bg-white shadow-xl z-50 overflow-hidden">
+
+                                                {/* Header */}
+                                                <div className="bg-blue-50 border-b border-blue-100 p-3">
+                                                    <p className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">
+                                                        Wallet Connected
+                                                    </p>
+                                                    <p className="text-xs font-mono text-blue-800 truncate mt-1">
+                                                        {wallet.address}
+                                                    </p>
+                                                </div>
+
+                                                {/* Actions */}
+                                                <div className="p-2 space-y-1">
+
+                                                    {/* Disconnect */}
+                                                    <button
+                                                        onClick={() => {
+                                                            wallet.disconnect();
+                                                            setShowModal(false);
+                                                        }}
+                                                        className="w-full px-3 py-2 text-left text-sm rounded-md
+                   text-red-600 hover:bg-red-50 transition"
+                                                    >
+                                                        Disconnect wallet
+                                                    </button>
+
+                                                    {/* Divider */}
+                                                    {accounts.length > 1 && (
+                                                        <div className="h-px bg-blue-100 my-1" />
+                                                    )}
+
+                                                    {/* Other accounts only */}
+                                                    {accounts
+                                                        .filter(acc => acc.address !== wallet.address)
+                                                        .map((acc) => (
+                                                            <button
+                                                                key={acc.address}
+                                                                onClick={async () => {
+                                                                    await wallet.select(acc.address);
+                                                                    setShowModal(false);
+                                                                }}
+                                                                className="w-full px-3 py-2 text-left text-sm rounded-md
+                       hover:bg-blue-50 transition"
+                                                            >
+                                                                <span className="font-mono text-blue-700 truncate block">
+                                                                    {acc.address.slice(0, 6)}...{acc.address.slice(-4)}
+                                                                </span>
+                                                            </button>
+                                                        ))}
+                                                </div>
+                                            </div>
+                                        )}
+
                                         <Button
                                             variant="default"
                                             onClick={handlePay}
                                             disabled={processing}
-                                            className="w-full h-12 bg-blue-900 hover:bg-blue-800 text-white font-bold text-lg shadow-lg active:scale-[0.98] transition-all"
+                                            className="w-full h-12 bg-blue-900 hover:bg-blue-800 text-white font-bold text-lg shadow-lg active:scale-[0.98]"
                                         >
                                             {processing ? (
                                                 <div className="flex items-center gap-2">
@@ -354,14 +429,22 @@ const Checkout = () => {
                                                 `Pay $${paymentQueryResult.data.amountInUSDC.toFixed(2)}`
                                             )}
                                         </Button>
-                                        <button
+                                    </div>
+                                )}
+                                        {paymentMethod === "mobile" && (
+                                            <MobileWalletPrompt
+                                                redirectUrl={!hasNoRedirect ? redirect : undefined}
+                                                client={client}
+                                                depositAddress={paymentQueryResult.data.depositAddress}
+                                            />
+                                        )}
+                                        <Button
+                                            variant="default"
                                             onClick={() => setPaymentMethod(null)}
                                             className="text-xs text-gray-500 hover:text-gray-700 text-center py-2 transition-colors"
                                         >
                                             Change payment method
-                                        </button>
-                                    </div>
-                                )}
+                                        </Button>
                             </>
                         ) : paymentMethod === "transfer" ? (
                             <>
@@ -372,12 +455,13 @@ const Checkout = () => {
                                     redirectUrl={!hasNoRedirect ? redirect as string : undefined}
                                     transactionId={params?.txId as string}
                                 />
-                                <button
+                                <Button
+                                    variant="default"
                                     onClick={() => setPaymentMethod(null)}
                                     className="text-xs text-gray-500 hover:text-gray-700 text-center py-2 transition-colors"
                                 >
                                     Change payment method
-                                </button>
+                                </Button>
                             </>
                         ) : null}
                     </div>
@@ -409,13 +493,6 @@ const Checkout = () => {
                         }
                         `}
                     </style>
-                    {paymentMethod === "mobile" && (
-                        <MobileWalletPrompt
-                            redirectUrl={!hasNoRedirect ? redirect : undefined}
-                            client={client}
-                            depositAddress={paymentQueryResult.data.depositAddress}
-                        />
-                    )}
                 </Card>
             </div>
         </>
