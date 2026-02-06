@@ -9,14 +9,15 @@ interface PopupModalProps {
 }
 
 const PopupModal = ({ open, onClose, isLoading, onSubmit }: PopupModalProps) => {
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
 
   if (!open) return null;
 
   const handleSubmit = () => {
-    if (!fullName || !email) return;
-    onSubmit({ fullName, email });
+    if (!firstName || !lastName || !email) return;
+    onSubmit({ fullName: `${firstName} ${lastName}`, email });
   };
 
   return (
@@ -30,18 +31,32 @@ const PopupModal = ({ open, onClose, isLoading, onSubmit }: PopupModalProps) => 
         </p>
 
         <div className="flex flex-col gap-4">
-          <div>
-            <label className="text-sm font-medium text-gray-700">
-              Full Name
-            </label>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="mt-1 w-full h-11 rounded-md border border-gray-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900"
-              placeholder="John Doe"
-            />
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700">
+                Name
+              </label>
+
+              <div className="mt-1 flex gap-3">
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="w-1/2 h-11 rounded-md border border-gray-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900"
+                  placeholder="First name"
+                />
+
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="w-1/2 h-11 rounded-md border border-gray-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900"
+                  placeholder="Last name"
+                />
+              </div>
+            </div>
           </div>
+
 
           <div>
             <label className="text-sm font-medium text-gray-700">

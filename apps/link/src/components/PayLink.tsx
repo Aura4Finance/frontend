@@ -15,7 +15,7 @@ import PopupModal from "./PopupModal";
 const PayLink = () => {
   const [_match, params] = useRoute("/:paylinkId");
   const search = useSearch();
-  const paylinkData = useGetPayLinkInformationQuery(params?.paylinkId as string);
+  const paylinkData = useGetPayLinkInformationQuery(params?.paylinkId);
   const verifyPaymentMutation = useVerifyPaymentMutation();
   const createPaymentMutation = useCreatePaymentMutation();
   const [txId, setTxId] = useState<string | null>(null);

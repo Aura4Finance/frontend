@@ -12,7 +12,7 @@ type PaymentData = {
   mode: "test" | "live"
 };
 
-export const useGetPaymentInformationQuery = (paymentId?: string) => {
+export const useGetPaymentInformationQuery = (paymentId: string) => {
   return useQuery<PaymentData>({
     queryKey: ["payment-information", paymentId],
     queryFn: async () => {
