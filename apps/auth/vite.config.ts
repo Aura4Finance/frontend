@@ -12,8 +12,10 @@ export default defineConfig({
       '@orafi/ui': path.resolve(__dirname, '../../packages/ui/src'),
     },
   },
+    preview: {
+    allowedHosts: ["auth.orafi.app"],
+  },
   server: {
-    host: "0.0.0.0",
-    port: 3100
+    host: true,
   }
 })

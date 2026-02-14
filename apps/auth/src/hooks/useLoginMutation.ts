@@ -11,7 +11,7 @@ export const useLoginMutation = () => {
   return useMutation({
     mutationFn: async (data: LoginSchema) => {
       const response = await client.post("/auth/login", data);
-      const code = response.data.data.code.secret;
+      const code = response.data.data.code;
       window.location.href = `https://dashboard.orafi.app/auth/callback?code=${code}`;
     },
     onSuccess: () => {

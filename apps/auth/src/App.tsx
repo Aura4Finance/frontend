@@ -6,7 +6,7 @@ import VerifyEmail from "./components/Verify-email";
 import ForgotPassword from "./components/Forgot-password";
 import ResetPassword from "./components/Reset-password";
 import Header from "./layouts/Header";
-import Footer from "./layouts/Footer";
+// import Footer from "./layouts/Footer";
 import NotFound from "./components/NotFound";
 import { Toaster } from "sonner";
 
@@ -27,7 +27,6 @@ function App() {
           <NotFound/>
         </Route>
         </Switch>
-        <Footer />
       </Route>
       <Toaster position="top-right" richColors />
     </>
