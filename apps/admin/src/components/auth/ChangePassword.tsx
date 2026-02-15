@@ -59,11 +59,11 @@ const ChangePassword = () => {
 
   const onSubmit = async (values: ChangePasswordSchema) => {
     try {
-      // TODO: call your mutation here
-      console.log(values);
 
+      await changePasswordMutation.mutateAsync({email, oldPassword: password, newPassword: values.newPassword})
       toast.success("Password updated successfully");
       setLocation("/dashboard");
+      clearAuthInformationState();
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to update password");
     }
