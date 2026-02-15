@@ -10,7 +10,7 @@ export const useExchangeCodeForToken = () => {
     return useMutation({
         mutationFn: async (otp: string) => {
             let payload = {};
-            if(otp.length > 6){
+            if(!otp.startsWith("orafi")){
                 payload = { otp, type: "google" };
             }else {
                 payload = { otp, type: "orafi" };

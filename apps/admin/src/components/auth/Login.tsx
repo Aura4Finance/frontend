@@ -1,36 +1,23 @@
 import { useState, type SetStateAction } from "react";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { Button, Input, Card, CardContent, CardHeader, CardTitle, CardDescription } from "@orafi/ui";
 import logo from "@orafi/ui/assets/OraFi.png";
 import { FiAlertCircle } from "react-icons/fi";
+import { useLoginMutation } from "../hooks/useLoginMutation"; 
 
 const Login = () => {
-  const [, setLocation] = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const loginMutation = useLoginMutation();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError("");
-
-    // Simulate login API call
-    setTimeout(() => {
-      setIsLoading(false);
-      
-      // Mock validation
-      if (email === "admin@orafi.com" && password === "password") {
-        // Redirect to dashboard
-        setLocation("/");
-      } else if (email === "newadmin@orafi.com" && password === "password") {
-        // Redirect to change password for first time login
-        setLocation("/change-password");
-      } else {
-        setError("Invalid email or password");
-      }
-    }, 1500);
+    try{
+      await loginMutation.mutateAsync({ email, password });
+    }catch(error: any){
+      setError(error.response?.data?.message || "An error occurred during login");
+    }
   };
 
   return (
@@ -94,9 +81,9 @@ const Login = () => {
                 variant="default"
                 onClick={handleLogin} 
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                disabled={isLoading}
+                disabled={loginMutation.isPending}
               >
-                {isLoading ? "Signing in..." : "Sign in"}
+                {loginMutation.isPending ? "Signing in..." : "Sign in"}
               </Button>
             </form>
           </CardContent>
