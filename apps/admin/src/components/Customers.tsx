@@ -3,6 +3,10 @@ import DashboardWrapper from "./layout/DashboardWrapper";
 import FilterBar from "./shared/FilterBar";
 import Pagination from "./shared/Pagination";
 import Modal from "./shared/Modal";
+import { TableRowSkeleton } from "./shared/Skeletons";
+import ErrorState, { EmptyState } from "./shared/ErrorState";
+import { useCustomers, useCustomer, type Customer } from "./hooks/useCustomers";
+import { FiUsers } from "react-icons/fi";
 
 // Mock customer data
 const mockCustomers = [
