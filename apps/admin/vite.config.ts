@@ -10,4 +10,7 @@ export default defineConfig({
       "@orafi/ui": path.resolve(__dirname, "../../packages/ui/src"),
     },
   },
+    server: {
+    host: true,
+  }
 });

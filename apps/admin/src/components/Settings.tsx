@@ -1,14 +1,76 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardWrapper from "./layout/DashboardWrapper";
 import { Button, Input } from "@orafi/ui";
 import { FiUser, FiBell, FiShield, FiSave, FiCamera } from "react-icons/fi";
+import { useAdminProfile, useUpdateProfile } from "./hooks/useSettings";
+import { toast } from "sonner";
 
 const Settings = () => {
-  const [profile, setProfile] = useState({ name: "Admin User", email: "admin@orafi.com", role: "Super Admin" });
-  const [notifications, setNotifications] = useState({ emailAlerts: true, transactionAlerts: true, systemAlerts: true, marketingEmails: false });
+  const { data: profileData, isLoading: profileLoading } = useAdminProfile();
+  const { mutate: updateProfile, isPending: isUpdating } = useUpdateProfile();
 
-  const handleProfileChange = (field: string, value: string) => setProfile(prev => ({ ...prev, [field]: value }));
-  const handleNotificationChange = (field: string) => setNotifications(prev => ({ ...prev, [field]: !prev[field as keyof typeof prev] }));
+  const [profile, setProfile] = useState({ 
+    name: "", 
+    email: "", 
+    role: "" 
+  });
+  const [notifications, setNotifications] = useState({ 
+    emailAlerts: true, 
+    transactionAlerts: true, 
+    systemAlerts: true, 
+    marketingEmails: false 
+  });
+
+  // Update local state when profile data is loaded
+  useEffect(() => {
+    if (profileData) {
+      setProfile({
+        name: profileData.name || "",
+        email: profileData.email || "",
+        role: profileData.role || "Admin"
+      });
+    }
+  }, [profileData]);
+
+  const handleProfileChange = (field: string, value: string) => 
+    setProfile(prev => ({ ...prev, [field]: value }));
+    
+  const handleNotificationChange = (field: string) => 
+    setNotifications(prev => ({ ...prev, [field]: !prev[field as keyof typeof prev] }));
+
+  const handleSaveChanges = () => {
+    updateProfile(
+      {
+        name: profile.name,
+        email: profile.email,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Profile updated successfully");
+        },
+        onError: (error: any) => {
+          toast.error(error?.response?.data?.message || "Failed to update profile");
+        },
+      }
+    );
+  };
+
+  if (profileLoading) {
+    return (
+      <DashboardWrapper>
+        <div className="px-4 py-3 bg-white border-b border-gray-100">
+          <h1 className="text-lg font-bold text-gray-900">Settings</h1>
+          <p className="text-gray-500 text-xs mt-0.5">Manage your account and preferences</p>
+        </div>
+        <div className="p-4 max-w-3xl">
+          <div className="animate-pulse space-y-4">
+            <div className="h-40 bg-gray-200 rounded-xl"></div>
+            <div className="h-40 bg-gray-200 rounded-xl"></div>
+          </div>
+        </div>
+      </DashboardWrapper>
+    );
+  }
 
   return (
     <DashboardWrapper>
@@ -26,7 +88,9 @@ const Settings = () => {
           </div>
           <div className="flex items-center gap-4 mb-5">
             <div className="relative">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-xl font-bold">{profile.name.charAt(0)}</div>
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-xl font-bold">
+                {profile.name.charAt(0) || profile.email.charAt(0).toUpperCase()}
+              </div>
               <button className="absolute bottom-0 right-0 p-1.5 bg-white rounded-full shadow-lg border border-gray-200 hover:bg-gray-50 transition-colors">
                 <FiCamera className="w-3 h-3 text-gray-600" />
               </button>
@@ -39,15 +103,30 @@ const Settings = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1.5">Full Name</label>
-              <Input type="text" value={profile.name} onChange={(e) => handleProfileChange("name", e.target.value)} className="w-full h-9 text-sm" />
+              <Input 
+                type="text" 
+                value={profile.name} 
+                onChange={(e) => handleProfileChange("name", e.target.value)} 
+                className="w-full h-9 text-sm" 
+              />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1.5">Email Address</label>
-              <Input type="email" value={profile.email} onChange={(e) => handleProfileChange("email", e.target.value)} className="w-full h-9 text-sm" />
+              <Input 
+                type="email" 
+                value={profile.email} 
+                onChange={(e) => handleProfileChange("email", e.target.value)} 
+                className="w-full h-9 text-sm" 
+              />
             </div>
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-xs font-medium text-gray-700 mb-1.5">Role</label>
-              <Input type="text" value={profile.role} disabled className="w-full h-9 text-sm bg-gray-50" />
+              <Input 
+                type="text" 
+                value={profile.role} 
+                disabled 
+                className="w-full h-9 text-sm bg-gray-50" 
+              />
             </div>
           </div>
         </div>
@@ -104,8 +183,14 @@ const Settings = () => {
         </div>
 
         <div className="flex justify-end">
-          <Button variant="default" className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs">
-            <FiSave className="w-3.5 h-3.5" />Save Changes
+          <Button 
+            variant="default" 
+            onClick={handleSaveChanges}
+            disabled={isUpdating}
+            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FiSave className="w-3.5 h-3.5" />
+            {isUpdating ? "Saving..." : "Save Changes"}
           </Button>
         </div>
       </div>

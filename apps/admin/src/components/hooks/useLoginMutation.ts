@@ -19,7 +19,7 @@ export const useLoginMutation = () => {
 
   return useMutation({
     mutationFn: async (data: LoginSchema) => {
-      const response = await client.post("/auth/login", data);
+      const response = await client.post("/admin/auth/login", data);
       return response.data.data.accessToken;
     },
 

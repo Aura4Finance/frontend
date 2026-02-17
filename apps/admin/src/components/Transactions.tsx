@@ -1,6 +1,8 @@
 import { useState } from "react";
 import DashboardWrapper from "./layout/DashboardWrapper";
 import KPICard from "./shared/KPICard";
+import { KPICardSkeleton, ChartSkeleton } from "./shared/Skeletons";
+import ErrorState from "./shared/ErrorState";
 import FilterBar from "./shared/FilterBar";
 import Pagination from "./shared/Pagination";
 import Modal from "./shared/Modal";
@@ -17,52 +19,15 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-
-// Mock transaction count data (8 days)
-const transactionCountData = [
-  { date: "Jan 7", all: 145, successful: 130, pending: 10, failed: 5 },
-  { date: "Jan 8", all: 168, successful: 150, pending: 12, failed: 6 },
-  { date: "Jan 9", all: 132, successful: 118, pending: 8, failed: 6 },
-  { date: "Jan 10", all: 189, successful: 170, pending: 14, failed: 5 },
-  { date: "Jan 11", all: 156, successful: 140, pending: 11, failed: 5 },
-  { date: "Jan 12", all: 201, successful: 185, pending: 9, failed: 7 },
-  { date: "Jan 13", all: 178, successful: 160, pending: 12, failed: 6 },
-  { date: "Jan 14", all: 145, successful: 128, pending: 13, failed: 4 },
-];
-
-// Mock transaction volume data
-const transactionVolumeData = [
-  { date: "Jan 7", ngn: 4500000, usdc: 12500 },
-  { date: "Jan 8", ngn: 5200000, usdc: 14800 },
-  { date: "Jan 9", ngn: 3800000, usdc: 10200 },
-  { date: "Jan 10", ngn: 6100000, usdc: 17500 },
-  { date: "Jan 11", ngn: 4900000, usdc: 13800 },
-  { date: "Jan 12", ngn: 7200000, usdc: 20500 },
-  { date: "Jan 13", ngn: 5600000, usdc: 15900 },
-  { date: "Jan 14", ngn: 4200000, usdc: 11800 },
-];
-
-// Mock transactions list
-const mockTransactions = [
-  { id: "TXN-001", customer: "John Doe", email: "john@example.com", amount: 250.00, token: "USDC", type: "Payment", status: "Completed", date: "2025-01-14 10:23:45", merchant: "TechStore" },
-  { id: "TXN-002", customer: "Jane Smith", email: "jane@example.com", amount: 85.50, token: "USDC", type: "Payment", status: "Pending", date: "2025-01-14 09:15:32", merchant: "FashionHub" },
-  { id: "TXN-003", customer: "Mike Brown", email: "mike@example.com", amount: 520.00, token: "USDT", type: "Payout", status: "Completed", date: "2025-01-14 08:45:18", merchant: "GameZone" },
-  { id: "TXN-004", customer: "Sarah Wilson", email: "sarah@example.com", amount: 175.25, token: "USDC", type: "Payment", status: "Failed", date: "2025-01-14 07:30:55", merchant: "BookWorld" },
-  { id: "TXN-005", customer: "David Lee", email: "david@example.com", amount: 340.00, token: "SUI", type: "Refund", status: "Completed", date: "2025-01-13 22:10:12", merchant: "ElectroShop" },
-  { id: "TXN-006", customer: "Emily Chen", email: "emily@example.com", amount: 95.75, token: "USDC", type: "Payment", status: "Completed", date: "2025-01-13 20:45:33", merchant: "FoodMart" },
-];
-
-interface Transaction {
-  id: string;
-  customer: string;
-  email: string;
-  amount: number;
-  token: string;
-  type: string;
-  status: string;
-  date: string;
-  merchant: string;
-}
+import {
+  useTransactions,
+  useTransaction,
+  useTransactionStats,
+  useTransactionCountData,
+  useTransactionVolumeData,
+  useRefundTransaction,
+} from "./hooks/useTransactions";
+import { toast } from "sonner";
 
 const Transactions = () => {
   const [countFilter, setCountFilter] = useState<"all" | "successful" | "pending" | "failed">("all");
@@ -70,8 +35,27 @@ const Transactions = () => {
   const [searchValue, setSearchValue] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
   const itemsPerPage = 5;
+
+  // API hooks
+  const { data: statsData, isLoading: statsLoading, error: statsError } = useTransactionStats();
+  const { data: countData, isLoading: countLoading } = useTransactionCountData("test");
+  const { data: volumeData, isLoading: volumeLoading } = useTransactionVolumeData("test");
+  
+  const {
+    data: transactionsData,
+    isLoading: transactionsLoading,
+    error: transactionsError,
+  } = useTransactions({
+    page: currentPage,
+    limit: itemsPerPage,
+    search: searchValue || undefined,
+    status: selectedFilter === "all" ? undefined : selectedFilter.toUpperCase(),
+  });
+
+  const { data: transactionDetail } = useTransaction(selectedTransactionId || "");
+  const { mutate: refundTransaction, isPending: isRefunding } = useRefundTransaction();
 
   const filterOptions = [
     { label: "All Status", value: "all" },
@@ -80,23 +64,10 @@ const Transactions = () => {
     { label: "Failed", value: "failed" },
   ];
 
-  // Filter transactions
-  const filteredTransactions = mockTransactions.filter((tx) => {
-    const matchesSearch =
-      tx.customer.toLowerCase().includes(searchValue.toLowerCase()) ||
-      tx.id.toLowerCase().includes(searchValue.toLowerCase()) ||
-      tx.merchant.toLowerCase().includes(searchValue.toLowerCase());
-    const matchesFilter =
-      selectedFilter === "all" ||
-      tx.status.toLowerCase() === selectedFilter;
-    return matchesSearch && matchesFilter;
-  });
-
-  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
-  const paginatedTransactions = filteredTransactions.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const transactions = transactionsData?.data || [];
+  const pagination = transactionsData?.pagination;
+  const transactionCountData = countData || [];
+  const transactionVolumeData = volumeData || [];
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -122,10 +93,25 @@ const Transactions = () => {
       <div className="p-4">
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
-          <KPICard title="Total Transactions" value="12,847" icon={FiActivity} iconColor="text-blue-600" iconBgColor="bg-blue-100" />
-          <KPICard title="Successful" value="11,563" icon={FiCheckCircle} iconColor="text-green-600" iconBgColor="bg-green-100" />
-          <KPICard title="Pending" value="856" icon={FiClock} iconColor="text-yellow-600" iconBgColor="bg-yellow-100" />
-          <KPICard title="Failed" value="428" icon={FiXCircle} iconColor="text-red-600" iconBgColor="bg-red-100" />
+          {statsLoading ? (
+            <>
+              <KPICardSkeleton />
+              <KPICardSkeleton />
+              <KPICardSkeleton />
+              <KPICardSkeleton />
+            </>
+          ) : statsError ? (
+            <div className="col-span-full">
+              <ErrorState message="Failed to load transaction statistics" type="warning" />
+            </div>
+          ) : (
+            <>
+              <KPICard title="Total Transactions" value={statsData?.totalTransactions?.toLocaleString() || "0"} icon={FiActivity} iconColor="text-blue-600" iconBgColor="bg-blue-100" />
+              <KPICard title="Successful" value={statsData?.successfulTransactions?.toLocaleString() || "0"} icon={FiCheckCircle} iconColor="text-green-600" iconBgColor="bg-green-100" />
+              <KPICard title="Pending" value={statsData?.pendingTransactions?.toLocaleString() || "0"} icon={FiClock} iconColor="text-yellow-600" iconBgColor="bg-yellow-100" />
+              <KPICard title="Failed" value={statsData?.failedTransactions?.toLocaleString() || "0"} icon={FiXCircle} iconColor="text-red-600" iconBgColor="bg-red-100" />
+            </>
+          )}
         </div>
 
         {/* Charts Section */}
@@ -150,17 +136,25 @@ const Transactions = () => {
                 ))}
               </div>
             </div>
-            <div className="h-44">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={transactionCountData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} />
-                  <Tooltip contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: "6px", fontSize: "11px" }} />
-                  <Line type="monotone" dataKey={countFilter} stroke="#3b82f6" strokeWidth={2} dot={{ fill: "#3b82f6", r: 3 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            {countLoading ? (
+              <ChartSkeleton height="h-44" />
+            ) : transactionCountData.length === 0 ? (
+              <div className="h-44 flex items-center justify-center">
+                <p className="text-xs text-gray-500">No transaction count data available</p>
+              </div>
+            ) : (
+              <div className="h-44">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={transactionCountData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} />
+                    <Tooltip contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: "6px", fontSize: "11px" }} />
+                    <Line type="monotone" dataKey={countFilter} stroke="#3b82f6" strokeWidth={2} dot={{ fill: "#3b82f6", r: 3 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
 
           {/* Transaction Volume Chart */}
@@ -186,26 +180,34 @@ const Transactions = () => {
                 </button>
               </div>
             </div>
-            <div className="h-44">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={transactionVolumeData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "#6b7280", fontSize: 10 }}
-                    tickFormatter={(value) => volumeMode === "ngn" ? `₦${(value/1000000).toFixed(1)}M` : `$${(value/1000).toFixed(0)}K`}
-                  />
-                  <Tooltip
-                    formatter={(value: number) => [volumeMode === "ngn" ? `₦${value.toLocaleString()}` : `$${value.toLocaleString()}`, "Volume"]}
-                    contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: "6px", fontSize: "11px" }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: "10px" }} />
-                  <Bar dataKey={volumeMode} fill="#10b981" radius={[4, 4, 0, 0]} name={volumeMode.toUpperCase()} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {volumeLoading ? (
+              <ChartSkeleton height="h-44" />
+            ) : transactionVolumeData.length === 0 ? (
+              <div className="h-44 flex items-center justify-center">
+                <p className="text-xs text-gray-500">No transaction volume data available</p>
+              </div>
+            ) : (
+              <div className="h-44">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={transactionVolumeData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "#6b7280", fontSize: 10 }}
+                      tickFormatter={(value) => volumeMode === "ngn" ? `₦${(value/1000000).toFixed(1)}M` : `$${(value/1000).toFixed(0)}K`}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => [volumeMode === "ngn" ? `₦${value.toLocaleString()}` : `$${value.toLocaleString()}`, "Volume"]}
+                      contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: "6px", fontSize: "11px" }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: "10px" }} />
+                    <Bar dataKey={volumeMode} fill="#10b981" radius={[4, 4, 0, 0]} name={volumeMode.toUpperCase()} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
         </div>
 
@@ -219,77 +221,118 @@ const Transactions = () => {
           onFilterChange={setSelectedFilter}
         />
 
-        {/* Transactions Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">ID</th>
-                  <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Customer</th>
-                  <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Amount</th>
-                  <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Type</th>
-                  <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Merchant</th>
-                  <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Status</th>
-                  <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {paginatedTransactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => setSelectedTransaction(tx)}>
-                    <td className="px-4 py-2.5 text-xs font-medium text-blue-600">{tx.id}</td>
-                    <td className="px-4 py-2.5">
-                      <div className="font-medium text-xs text-gray-900">{tx.customer}</div>
-                      <div className="text-[11px] text-gray-500">{tx.email}</div>
-                    </td>
-                    <td className="px-4 py-2.5 text-xs font-medium text-gray-900">{tx.amount.toLocaleString()} {tx.token}</td>
-                    <td className="px-4 py-2.5 text-xs text-gray-600">{tx.type}</td>
-                    <td className="px-4 py-2.5 text-xs text-gray-600">{tx.merchant}</td>
-                    <td className="px-4 py-2.5">
-                      <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${getStatusColor(tx.status)}`}>{tx.status}</span>
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-gray-600">{tx.date}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {transactionsLoading ? (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+            <div className="animate-pulse space-y-4">
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+            </div>
           </div>
-        </div>
+        ) : transactionsError ? (
+          <ErrorState message="Failed to load transactions" type="error" />
+        ) : transactions.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
+            <p className="text-gray-500">No transactions found</p>
+          </div>
+        ) : (
+          <>
+            {/* Transactions Table */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">ID</th>
+                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Customer</th>
+                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Amount</th>
+                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Type</th>
+                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Merchant</th>
+                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Status</th>
+                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {transactions.map((tx) => (
+                      <tr key={tx.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => setSelectedTransactionId(tx.id)}>
+                        <td className="px-4 py-2.5 text-xs font-medium text-blue-600">{tx.id}</td>
+                        <td className="px-4 py-2.5">
+                          <div className="font-medium text-xs text-gray-900">{tx.customer || 'N/A'}</div>
+                          <div className="text-[11px] text-gray-500">{tx.email || 'N/A'}</div>
+                        </td>
+                        <td className="px-4 py-2.5 text-xs font-medium text-gray-900">{tx.amount?.toLocaleString() || 0} {tx.token}</td>
+                        <td className="px-4 py-2.5 text-xs text-gray-600">{tx.type}</td>
+                        <td className="px-4 py-2.5 text-xs text-gray-600">{tx.merchant || 'N/A'}</td>
+                        <td className="px-4 py-2.5">
+                          <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${getStatusColor(tx.status)}`}>{tx.status}</span>
+                        </td>
+                        <td className="px-4 py-2.5 text-xs text-gray-600">{tx.date ? new Date(tx.date).toLocaleString() : 'N/A'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
 
-        {totalPages > 1 && <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />}
+            {pagination && pagination.totalPages > 1 && (
+              <Pagination currentPage={pagination.page} totalPages={pagination.totalPages} onPageChange={setCurrentPage} />
+            )}
+          </>
+        )}
       </div>
 
       {/* Transaction Detail Modal */}
-      <Modal isOpen={!!selectedTransaction} onClose={() => setSelectedTransaction(null)} title="Transaction Details">
-        {selectedTransaction && (
+      <Modal isOpen={!!transactionDetail} onClose={() => setSelectedTransactionId(null)} title="Transaction Details">
+        {transactionDetail && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-base font-semibold text-gray-900">{selectedTransaction.id}</span>
-              <span className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(selectedTransaction.status)}`}>{selectedTransaction.status}</span>
+              <span className="text-base font-semibold text-gray-900">{transactionDetail.id}</span>
+              <span className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(transactionDetail.status)}`}>{transactionDetail.status}</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Amount</p>
-                <p className="font-semibold text-sm text-gray-900">{selectedTransaction.amount} {selectedTransaction.token}</p>
+                <p className="font-semibold text-sm text-gray-900">{transactionDetail.amount} {transactionDetail.token}</p>
               </div>
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Type</p>
-                <p className="font-medium text-xs text-gray-900">{selectedTransaction.type}</p>
+                <p className="font-medium text-xs text-gray-900">{transactionDetail.type}</p>
               </div>
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Customer</p>
-                <p className="font-medium text-xs text-gray-900">{selectedTransaction.customer}</p>
-                <p className="text-[11px] text-gray-500">{selectedTransaction.email}</p>
+                <p className="font-medium text-xs text-gray-900">{transactionDetail.customer || 'N/A'}</p>
+                <p className="text-[11px] text-gray-500">{transactionDetail.email || 'N/A'}</p>
               </div>
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Merchant</p>
-                <p className="font-medium text-xs text-gray-900">{selectedTransaction.merchant}</p>
+                <p className="font-medium text-xs text-gray-900">{transactionDetail.merchant || 'N/A'}</p>
               </div>
               <div className="bg-gray-50 rounded-lg p-3 col-span-2">
                 <p className="text-[11px] text-gray-500">Date & Time</p>
-                <p className="font-medium text-xs text-gray-900">{selectedTransaction.date}</p>
+                <p className="font-medium text-xs text-gray-900">{transactionDetail.date ? new Date(transactionDetail.date).toLocaleString() : 'N/A'}</p>
               </div>
             </div>
+            {transactionDetail.status === 'Completed' && transactionDetail.type === 'Payment' && (
+              <div className="pt-2">
+                <button
+                  onClick={() => {
+                    refundTransaction({ transactionId: transactionDetail.id }, {
+                      onSuccess: () => {
+                        toast.success('Transaction refunded successfully');
+                        setSelectedTransactionId(null);
+                      },
+                      onError: (error: any) => {
+                        toast.error(error?.response?.data?.message || 'Failed to refund transaction');
+                      },
+                    });
+                  }}
+                  disabled={isRefunding}
+                  className="w-full py-2 px-4 rounded-lg text-sm font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isRefunding ? 'Processing...' : 'Refund Transaction'}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </Modal>

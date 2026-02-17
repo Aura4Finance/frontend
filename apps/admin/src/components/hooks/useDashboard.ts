@@ -42,7 +42,7 @@ export const useDashboardStats = () => {
   return useQuery<DashboardStats>({
     queryKey: ["dashboard", "stats"],
     queryFn: async () => {
-      const response = await client.get("/admin/dashboard/stats");
+      const response = await client.get("/admin/metrics/dashboard");
       return response.data.data;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -54,19 +54,25 @@ export const useTokenDistribution = () => {
   return useQuery<TokenDistribution[]>({
     queryKey: ["dashboard", "token-distribution"],
     queryFn: async () => {
-      const response = await client.get("/admin/dashboard/token-distribution");
-      return response.data.data;
+      // Mock data for USDC only (our only token for now)
+      return [
+        {
+          name: "USDC",
+          value: 100,
+          color: "#2775CA"
+        }
+      ];
     },
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
 };
 
-export const useRevenueMetrics = (days: number = 7) => {
+export const useRevenueMetrics = (mode: string = "test") => {
   return useQuery<RevenueMetric[]>({
-    queryKey: ["dashboard", "revenue-metrics", days],
+    queryKey: ["dashboard", "revenue-metrics", mode],
     queryFn: async () => {
-      const response = await client.get(`/admin/dashboard/revenue-metrics`, {
-        params: { days },
+      const response = await client.get(`/admin/metrics/revenue`, {
+        params: { mode },
       });
       return response.data.data;
     },
@@ -78,8 +84,9 @@ export const useRecentActivity = (limit: number = 10) => {
   return useQuery({
     queryKey: ["dashboard", "recent-activity", limit],
     queryFn: async () => {
-      const response = await client.get(`/admin/dashboard/recent-activity`, {
-        params: { limit },
+      // Using transactions endpoint for recent activity
+      const response = await client.get(`/admin/transactions`, {
+        params: { limit, status: "COMPLETED" },
       });
       return response.data.data;
     },

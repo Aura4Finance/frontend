@@ -40,7 +40,7 @@ export const useSystemHealth = () => {
   return useQuery<ServiceHealth[]>({
     queryKey: ["system-health", "services"],
     queryFn: async () => {
-      const response = await client.get("/admin/system-health/services");
+      const response = await client.get("/admin/metrics/health");
       return response.data.data;
     },
     staleTime: 1 * 60 * 1000, // 1 minute
@@ -53,7 +53,7 @@ export const useSystemMetrics = () => {
   return useQuery<SystemMetrics>({
     queryKey: ["system-health", "metrics"],
     queryFn: async () => {
-      const response = await client.get("/admin/system-health/metrics");
+      const response = await client.get("/admin/metrics/health");
       return response.data.data;
     },
     staleTime: 30 * 1000, // 30 seconds
@@ -65,23 +65,22 @@ export const useIncidents = (limit: number = 10) => {
   return useQuery<Incident[]>({
     queryKey: ["system-health", "incidents", limit],
     queryFn: async () => {
-      const response = await client.get("/admin/system-health/incidents", {
-        params: { limit },
-      });
-      return response.data.data;
+      // Incidents endpoint doesn't exist in Postman collection
+      // Return empty array for now
+      return [];
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 };
 
-export const useIncident = (incidentId: string, enabled: boolean = true) => {
+export const useIncident = (incidentId: string) => {
   return useQuery<Incident>({
     queryKey: ["incident", incidentId],
     queryFn: async () => {
-      const response = await client.get(`/admin/system-health/incidents/${incidentId}`);
-      return response.data.data;
+      // Incident endpoint doesn't exist in Postman collection
+      return {} as Incident;
     },
-    enabled: enabled && !!incidentId,
+    enabled: false, // Disabled since endpoint doesn't exist
   });
 };
 
@@ -145,8 +144,8 @@ export const useSystemLogs = (params: {
   return useQuery({
     queryKey: ["system-health", "logs", params],
     queryFn: async () => {
-      const response = await client.get("/admin/system-health/logs", { params });
-      return response.data.data;
+      // Logs endpoint doesn't exist in Postman collection
+      return [];
     },
     staleTime: 1 * 60 * 1000,
   });

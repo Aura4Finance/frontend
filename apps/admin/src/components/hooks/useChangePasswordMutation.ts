@@ -3,10 +3,10 @@ import { client, tokenStore } from "../client/client";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 
-export interface LoginSchema {
+export interface ChangePasswordSchema {
   email: string;
   oldPassword: string;
-  newPassword: string
+  newPassword: string;
 }
 
 export const useChangePasswordMutation = () => {
@@ -15,8 +15,8 @@ export const useChangePasswordMutation = () => {
   const setToken = tokenStore((s) => s.setToken);
 
   return useMutation({
-    mutationFn: async (data: LoginSchema) => {
-      const response = await client.post("/auth/change-password", data);
+    mutationFn: async (data: ChangePasswordSchema) => {
+      const response = await client.post("/admin/auth/change-password", data);
       return response.data.data.accessToken;
     },
 

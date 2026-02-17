@@ -90,7 +90,7 @@ export const useMerchantStats = () => {
   return useQuery({
     queryKey: ["merchants", "stats"],
     queryFn: async () => {
-      const response = await client.get("/admin/merchants/stats");
+      const response = await client.get("/admin/metrics/merchants");
       return response.data.data;
     },
     staleTime: 5 * 60 * 1000,
@@ -101,7 +101,8 @@ export const useMerchantLeaderboard = (limit: number = 5) => {
   return useQuery<MerchantLeaderboard[]>({
     queryKey: ["merchants", "leaderboard", limit],
     queryFn: async () => {
-      const response = await client.get("/admin/merchants/leaderboard", {
+      // Using merchants list endpoint and processing for leaderboard
+      const response = await client.get("/admin/merchants", {
         params: { limit },
       });
       return response.data.data;
@@ -114,8 +115,9 @@ export const useMerchantModeDistribution = () => {
   return useQuery<ModeDistribution[]>({
     queryKey: ["merchants", "mode-distribution"],
     queryFn: async () => {
-      const response = await client.get("/admin/merchants/mode-distribution");
-      return response.data.data;
+      // Using merchants metrics endpoint
+      const response = await client.get("/admin/metrics/merchants");
+      return response.data.data?.modeDistribution || [];
     },
     staleTime: 10 * 60 * 1000,
   });
@@ -125,10 +127,9 @@ export const useMerchantOnboardingData = (days: number = 8) => {
   return useQuery<OnboardingData[]>({
     queryKey: ["merchants", "onboarding-data", days],
     queryFn: async () => {
-      const response = await client.get("/admin/merchants/onboarding-data", {
-        params: { days },
-      });
-      return response.data.data;
+      // Using merchants metrics endpoint
+      const response = await client.get("/admin/metrics/merchants");
+      return response.data.data?.onboardingData || [];
     },
     staleTime: 10 * 60 * 1000,
   });
@@ -138,7 +139,10 @@ export const useMerchantTransactions = (merchantId: string, params: any = {}) =>
   return useQuery({
     queryKey: ["merchant-transactions", merchantId, params],
     queryFn: async () => {
-      const response = await client.get(`/admin/merchants/${merchantId}/transactions`, { params });
+      // Using transactions endpoint with userId filter
+      const response = await client.get(`/v1/admin/transactions`, { 
+        params: { ...params, userId: merchantId } 
+      });
       return response.data;
     },
     enabled: !!merchantId,
@@ -149,8 +153,9 @@ export const useUpdateMerchantStatus = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ merchantId, status }: { merchantId: string; status: string }) => {
-      const response = await client.patch(`/admin/merchants/${merchantId}/status`, { status });
+    mutationFn: async ({ merchantId, action }: { merchantId: string; action: 'enable' | 'disable' }) => {
+      const endpoint = action === 'enable' ? 'enable' : 'disable';
+      const response = await client.patch(`/admin/merchants/${merchantId}/${endpoint}`);
       return response.data.data;
     },
     onSuccess: (_, variables) => {

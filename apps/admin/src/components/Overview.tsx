@@ -41,7 +41,7 @@ const Overview = () => {
     data: revenueData,
     isLoading: revenueLoading,
     error: revenueError,
-  } = useRevenueMetrics(8);
+  } = useRevenueMetrics("test");
 
   // Default colors for tokens
   const defaultColors = {

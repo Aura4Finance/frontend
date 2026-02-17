@@ -90,19 +90,8 @@ export const useTransactionStats = () => {
   return useQuery({
     queryKey: ["transactions", "stats"],
     queryFn: async () => {
-      const response = await client.get("/admin/transactions/stats");
-      return response.data.data;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-};
-
-export const useTransactionCountData = (days: number = 8) => {
-  return useQuery<TransactionCountData[]>({
-    queryKey: ["transactions", "count-data", days],
-    queryFn: async () => {
-      const response = await client.get("/admin/transactions/count-data", {
-        params: { days },
+      const response = await client.get("/admin/metrics/transactions", {
+        params: { mode: "test" }
       });
       return response.data.data;
     },
@@ -110,12 +99,25 @@ export const useTransactionCountData = (days: number = 8) => {
   });
 };
 
-export const useTransactionVolumeData = (days: number = 8) => {
-  return useQuery<TransactionVolumeData[]>({
-    queryKey: ["transactions", "volume-data", days],
+export const useTransactionCountData = (mode: string = "test") => {
+  return useQuery<TransactionCountData[]>({
+    queryKey: ["transactions", "count-data", mode],
     queryFn: async () => {
-      const response = await client.get("/admin/transactions/volume-data", {
-        params: { days },
+      const response = await client.get("/admin/metrics/transactions", {
+        params: { mode },
+      });
+      return response.data.data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useTransactionVolumeData = (mode: string = "test") => {
+  return useQuery<TransactionVolumeData[]>({
+    queryKey: ["transactions", "volume-data", mode],
+    queryFn: async () => {
+      const response = await client.get("/admin/metrics/revenue", {
+        params: { mode },
       });
       return response.data.data;
     },

@@ -3,23 +3,29 @@ import { Link } from "wouter";
 import { Button, Input, Card, CardContent, CardHeader, CardTitle, CardDescription } from "@orafi/ui";
 import logo from "@orafi/ui/assets/OraFi.png";
 import { FiCheckCircle, FiAlertCircle, FiArrowLeft } from "react-icons/fi";
+import { useForgotPasswordMutation } from "../hooks/useForgotPassword";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
+  const { mutate: forgotPassword, isPending: isLoading } = useForgotPasswordMutation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError("");
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      setIsSuccess(true);
-    }, 1500);
+    forgotPassword(
+      { email },
+      {
+        onSuccess: () => {
+          setIsSuccess(true);
+        },
+        onError: (error: any) => {
+          setError(error?.response?.data?.message || "Failed to send reset instructions");
+        },
+      }
+    );
   };
 
   return (
