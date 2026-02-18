@@ -24,9 +24,9 @@ import {
   useTransaction,
   useTransactionStats,
   useTransactionCountData,
-  useTransactionVolumeData,
   useRefundTransaction,
 } from "./hooks/useTransactions";
+import { useActiveMode } from "../store/mode";
 import { toast } from "sonner";
 
 const Transactions = () => {
@@ -34,23 +34,22 @@ const Transactions = () => {
   const [volumeMode, setVolumeMode] = useState<"ngn" | "usdc">("usdc");
   const [searchValue, setSearchValue] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [_currentPage, setCurrentPage] = useState(1);
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
+  const { mode } = useActiveMode();
   const itemsPerPage = 5;
 
   // API hooks
-  const { data: statsData, isLoading: statsLoading, error: statsError } = useTransactionStats();
-  const { data: countData, isLoading: countLoading } = useTransactionCountData("test");
-  const { data: volumeData, isLoading: volumeLoading } = useTransactionVolumeData("test");
+  const { data: statsData, isLoading: statsLoading, error: statsError } = useTransactionStats(mode);
+  const { data: countData, isLoading: countLoading } = useTransactionCountData(mode);
   
   const {
     data: transactionsData,
     isLoading: transactionsLoading,
     error: transactionsError,
   } = useTransactions({
-    page: currentPage,
     limit: itemsPerPage,
-    search: searchValue || undefined,
+    mode,
     status: selectedFilter === "all" ? undefined : selectedFilter.toUpperCase(),
   });
 
@@ -66,8 +65,6 @@ const Transactions = () => {
 
   const transactions = transactionsData?.data || [];
   const pagination = transactionsData?.pagination;
-  const transactionCountData = countData || [];
-  const transactionVolumeData = volumeData || [];
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -106,10 +103,10 @@ const Transactions = () => {
             </div>
           ) : (
             <>
-              <KPICard title="Total Transactions" value={statsData?.totalTransactions?.toLocaleString() || "0"} icon={FiActivity} iconColor="text-blue-600" iconBgColor="bg-blue-100" />
-              <KPICard title="Successful" value={statsData?.successfulTransactions?.toLocaleString() || "0"} icon={FiCheckCircle} iconColor="text-green-600" iconBgColor="bg-green-100" />
-              <KPICard title="Pending" value={statsData?.pendingTransactions?.toLocaleString() || "0"} icon={FiClock} iconColor="text-yellow-600" iconBgColor="bg-yellow-100" />
-              <KPICard title="Failed" value={statsData?.failedTransactions?.toLocaleString() || "0"} icon={FiXCircle} iconColor="text-red-600" iconBgColor="bg-red-100" />
+              <KPICard title="Total Transactions" value={countData?.total?.toLocaleString() || "0"} icon={FiActivity} iconColor="text-blue-600" iconBgColor="bg-blue-100" />
+              <KPICard title="Successful" value={countData?.successful?.toLocaleString() || "0"} icon={FiCheckCircle} iconColor="text-green-600" iconBgColor="bg-green-100" />
+              <KPICard title="Pending" value={countData?.pending?.toLocaleString() || "0"} icon={FiClock} iconColor="text-yellow-600" iconBgColor="bg-yellow-100" />
+              <KPICard title="Failed" value={countData?.failed?.toLocaleString() || "0"} icon={FiXCircle} iconColor="text-red-600" iconBgColor="bg-red-100" />
             </>
           )}
         </div>
@@ -138,14 +135,14 @@ const Transactions = () => {
             </div>
             {countLoading ? (
               <ChartSkeleton height="h-44" />
-            ) : transactionCountData.length === 0 ? (
+            ) : statsData?.length === 0 ? (
               <div className="h-44 flex items-center justify-center">
                 <p className="text-xs text-gray-500">No transaction count data available</p>
               </div>
             ) : (
               <div className="h-44">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={transactionCountData}>
+                  <LineChart data={statsData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} />
@@ -180,16 +177,16 @@ const Transactions = () => {
                 </button>
               </div>
             </div>
-            {volumeLoading ? (
+            {statsLoading ? (
               <ChartSkeleton height="h-44" />
-            ) : transactionVolumeData.length === 0 ? (
+            ) : statsData?.length === 0 ? (
               <div className="h-44 flex items-center justify-center">
                 <p className="text-xs text-gray-500">No transaction volume data available</p>
               </div>
             ) : (
               <div className="h-44">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={transactionVolumeData}>
+                  <BarChart data={statsData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} />
                     <YAxis

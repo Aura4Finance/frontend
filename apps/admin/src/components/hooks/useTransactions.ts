@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { client } from "../client/client";
 import { toast } from "sonner";
+import { type Mode } from "../../store/mode";
 
 // Types
 export interface Transaction {
@@ -10,7 +11,7 @@ export interface Transaction {
   email: string;
   amount: number;
   token: string;
-  type: "Payment" | "Payout" | "Refund" | "Withdrawal";
+  type: "Payment" | "Payout" | "Refund";
   status: "Completed" | "Pending" | "Failed" | "Processing";
   date: string;
   merchant: string;
@@ -23,6 +24,7 @@ export interface Transaction {
 
 interface TransactionsParams {
   page?: number;
+  mode?: Mode["mode"]
   limit?: number;
   search?: string;
   status?: string;
@@ -45,21 +47,19 @@ interface TransactionsResponse {
 }
 
 interface TransactionCountData {
-  date: string;
-  all: number;
+  total: number;
   successful: number;
   pending: number;
   failed: number;
 }
 
-interface TransactionVolumeData {
+type TransactionMetricsData = {
   date: string;
-  ngn: number;
-  usdc: number;
-  usdt?: number;
-  sui?: number;
-  eth?: number;
-}
+  label: string;
+  count: number;
+  volume: number;
+  volumeInUSDC: number
+}[]
 
 // Hooks
 export const useTransactions = (params: TransactionsParams = {}) => {
@@ -86,12 +86,12 @@ export const useTransaction = (transactionId: string, enabled: boolean = true) =
   });
 };
 
-export const useTransactionStats = () => {
-  return useQuery({
-    queryKey: ["transactions", "stats"],
+export const useTransactionStats = (mode: string = "test") => {
+  return useQuery<TransactionMetricsData>({
+    queryKey: ["transactions", "stats", mode ],
     queryFn: async () => {
       const response = await client.get("/admin/metrics/transactions", {
-        params: { mode: "test" }
+        params: { mode }
       });
       return response.data.data;
     },
@@ -100,10 +100,10 @@ export const useTransactionStats = () => {
 };
 
 export const useTransactionCountData = (mode: string = "test") => {
-  return useQuery<TransactionCountData[]>({
+  return useQuery<TransactionCountData>({
     queryKey: ["transactions", "count-data", mode],
     queryFn: async () => {
-      const response = await client.get("/admin/metrics/transactions", {
+      const response = await client.get("/admin/transactions/overview", {
         params: { mode },
       });
       return response.data.data;
@@ -112,18 +112,6 @@ export const useTransactionCountData = (mode: string = "test") => {
   });
 };
 
-export const useTransactionVolumeData = (mode: string = "test") => {
-  return useQuery<TransactionVolumeData[]>({
-    queryKey: ["transactions", "volume-data", mode],
-    queryFn: async () => {
-      const response = await client.get("/admin/metrics/revenue", {
-        params: { mode },
-      });
-      return response.data.data;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-};
 
 export const useRetryTransaction = () => {
   const queryClient = useQueryClient();
