@@ -34,7 +34,7 @@ const Transactions = () => {
   const [volumeMode, setVolumeMode] = useState<"ngn" | "usdc">("usdc");
   const [searchValue, setSearchValue] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
-  const [_currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
   const { mode } = useActiveMode();
   const itemsPerPage = 5;
@@ -63,8 +63,7 @@ const Transactions = () => {
     { label: "Failed", value: "failed" },
   ];
 
-  const transactions = transactionsData?.data || [];
-  const pagination = transactionsData?.pagination;
+  const transactions = transactionsData?.transactions || [];
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -271,8 +270,8 @@ const Transactions = () => {
               </div>
             </div>
 
-            {pagination && pagination.totalPages > 1 && (
-              <Pagination currentPage={pagination.page} totalPages={pagination.totalPages} onPageChange={setCurrentPage} />
+            {transactionsData?.hasNextPage && (
+              <Pagination currentPage={currentPage} totalPages={Math.ceil(transactionsData?.count / 10)} onPageChange={setCurrentPage} />
             )}
           </>
         )}

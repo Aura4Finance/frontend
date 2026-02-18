@@ -37,13 +37,10 @@ interface TransactionsParams {
 }
 
 interface TransactionsResponse {
-  data: Transaction[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  transactions: Transaction[];
+  nextCursor: string;
+  hasNextPage: boolean;
+  count: number;
 }
 
 interface TransactionCountData {
@@ -67,7 +64,7 @@ export const useTransactions = (params: TransactionsParams = {}) => {
     queryKey: ["transactions", params],
     queryFn: async () => {
       const response = await client.get("/admin/transactions", { params });
-      return response.data;
+      return response.data.data;
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
     retry: 2,
