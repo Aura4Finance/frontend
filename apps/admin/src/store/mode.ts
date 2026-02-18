@@ -6,6 +6,6 @@ export interface Mode {
 }
 
 export const useActiveMode = create<Mode>((set) => ({
-    mode: "live",
-    setMode: (mode) => set({mode})
-}))
+    mode: "test",
+    setMode: (mode) => set({ mode })
+}));

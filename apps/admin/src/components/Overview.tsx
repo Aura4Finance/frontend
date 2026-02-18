@@ -41,7 +41,7 @@ const Overview = () => {
     data: revenueData,
     isLoading: revenueLoading,
     error: revenueError,
-  } = useRevenueMetrics("test");
+  } = useRevenueMetrics();
 
   // Default colors for tokens
   const defaultColors = {
@@ -138,7 +138,7 @@ const Overview = () => {
                 title="Total Revenue"
                 value={
                   statsData?.revenueCount
-                    ? `$${(statsData.revenueCount.amount / 1000).toFixed(1)}K`
+                    ? `$${(statsData.revenueCount.amount / 1000).toFixed(3)}`
                     : "$0"
                 }
                 icon={FiDollarSign}
@@ -241,7 +241,7 @@ const Overview = () => {
                   <BarChart data={revenueData} barCategoryGap="20%">
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis
-                      dataKey="name"
+                      dataKey="label"
                       axisLine={false}
                       tickLine={false}
                       tick={{ fill: "#6b7280", fontSize: 10 }}
@@ -253,7 +253,7 @@ const Overview = () => {
                       tickFormatter={(value) => `$${value / 1000}K`}
                     />
                     <Tooltip
-                      formatter={(value: number) => [`$${value.toLocaleString()}`, "Revenue"]}
+                      formatter={(value: number) => [`$${(value / 1000).toLocaleString()}`, "Revenue"]}
                       contentStyle={{
                         backgroundColor: "#fff",
                         border: "1px solid #e5e7eb",

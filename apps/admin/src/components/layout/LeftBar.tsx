@@ -144,7 +144,7 @@ const LeftBar = () => {
         </div>
          <Select
                     value={mode}
-                    onChange={(e: any) => setMode(e?.valueOf)}
+                    onChange={(e: any) => setMode(e)}
                     placeholder="On-chain Network"
                     options={modes} />
 

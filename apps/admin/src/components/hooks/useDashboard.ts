@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { client } from "../client/client";
+import { useActiveMode } from "../../store/mode";
 
 type Trend = "up"|"down";
 // Types
@@ -34,17 +35,22 @@ interface TokenDistribution {
 
 interface RevenueMetric {
   label: string;
-  date?: string;
+  date: string;
   revenueInUSDC: number;
   revenue: number;
 }
 
 // Hooks
 export const useDashboardStats = () => {
+  const { mode } = useActiveMode();
   return useQuery<DashboardStats>({
-    queryKey: ["dashboard", "stats"],
+    queryKey: ["dashboard", "stats", mode],
     queryFn: async () => {
-      const response = await client.get("/admin/metrics/dashboard");
+      const response = await client.get("/admin/metrics/dashboard",
+        {
+          params: { mode }
+        }
+      );
       return response.data.data;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -69,7 +75,8 @@ export const useTokenDistribution = () => {
   });
 };
 
-export const useRevenueMetrics = (mode: string = "test") => {
+export const useRevenueMetrics = () => {
+  const { mode } = useActiveMode();
   return useQuery<RevenueMetric[]>({
     queryKey: ["dashboard", "revenue-metrics", mode],
     queryFn: async () => {
