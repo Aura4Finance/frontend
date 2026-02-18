@@ -1,39 +1,32 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { client } from "../client/client";
 import { toast } from "sonner";
+import {type  Mode } from "../../store/mode";
 
-// Types
 export interface Customer {
   id: string;
-  name: string;
+  firstname: string;
+  lastname: string;
   email: string;
-  walletAddress: string;
-  totalTransactions: number;
+  mode: Mode["mode"][];
   totalSpent: number;
-  status: "Active" | "Inactive" | "Suspended";
-  joinedDate: string;
-  phoneNumber?: string;
-  country?: string;
-  lastActive?: string;
+  createdAt?: string;
 }
 
 interface CustomersParams {
-  page?: number;
+  amountSpent?: number;
   limit?: number;
-  search?: string;
-  status?: string;
-  sortBy?: string;
+  userId?: string;
+  mode?: Mode["mode"];
+  cursor?: string;
   sortOrder?: "asc" | "desc";
 }
 
 interface CustomersResponse {
-  data: Customer[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  customers: Customer[];
+  count: number;
+  nextCursor: string;
+  hasNextPage: boolean
 }
 
 // Hooks
@@ -42,7 +35,7 @@ export const useCustomers = (params: CustomersParams = {}) => {
     queryKey: ["customers", params],
     queryFn: async () => {
       const response = await client.get("/admin/customers", { params });
-      return response.data;
+      return response.data.data;
     },
     staleTime: 3 * 60 * 1000, // 3 minutes
     retry: 2,
@@ -69,7 +62,7 @@ export const useCustomerTransactions = (customerId: string, params: any = {}) =>
       const response = await client.get(`/admin/transactions`, { 
         params: { ...params, customerId } 
       });
-      return response.data;
+      return response.data.data;
     },
     enabled: !!customerId,
   });
