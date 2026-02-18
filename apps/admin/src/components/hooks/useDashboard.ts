@@ -1,28 +1,29 @@
 import { useQuery } from "@tanstack/react-query";
 import { client } from "../client/client";
 
+type Trend = "up"|"down";
 // Types
 interface DashboardStats {
-  totalTransactions: number;
-  totalCustomers: number;
-  totalMerchants: number;
-  totalRevenue: number;
-  transactionsTrend?: {
-    value: number;
-    isPositive: boolean;
+  customerCount: {
+    percentageChange: number;
+    total: number;
+    trend: Trend
   };
-  customersTrend?: {
-    value: number;
-    isPositive: boolean;
+  merchantCount: {
+    percentageChange: number;
+    total: number;
+    trend: Trend
   };
-  merchantsTrend?: {
-    value: number;
-    isPositive: boolean;
+  revenueCount: {
+    amount: number;
+    percentageChange: number;
+    trend: Trend
   };
-  revenueTrend?: {
-    value: number;
-    isPositive: boolean;
-  };
+  transactionCount: {
+    percentageChange: number;
+    total: number;
+    trend: Trend
+  }
 }
 
 interface TokenDistribution {
@@ -32,9 +33,10 @@ interface TokenDistribution {
 }
 
 interface RevenueMetric {
-  name: string;
-  revenue: number;
+  label: string;
   date?: string;
+  revenueInUSDC: number;
+  revenue: number;
 }
 
 // Hooks

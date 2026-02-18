@@ -88,15 +88,15 @@ const Overview = () => {
             <>
               <KPICard
                 title="Total Transactions"
-                value={statsData?.totalTransactions?.toLocaleString() || "0"}
+                value={statsData?.transactionCount.total?.toLocaleString() || "0"}
                 icon={FiActivity}
                 iconColor="text-blue-600"
                 iconBgColor="bg-blue-100"
                 trend={
-                  statsData?.transactionsTrend
+                  statsData?.transactionCount.trend
                     ? {
-                        value: statsData.transactionsTrend.value,
-                        isPositive: statsData.transactionsTrend.isPositive,
+                        value: statsData.transactionCount.total,
+                        isPositive: statsData.transactionCount.trend === "up"? true: false,
                         label: "vs last month",
                       }
                     : undefined
@@ -104,15 +104,15 @@ const Overview = () => {
               />
               <KPICard
                 title="Total Customers"
-                value={statsData?.totalCustomers?.toLocaleString() || "0"}
+                value={statsData?.customerCount?.total.toLocaleString() || "0"}
                 icon={FiUsers}
                 iconColor="text-purple-600"
                 iconBgColor="bg-purple-100"
                 trend={
-                  statsData?.customersTrend
+                  statsData?.customerCount.trend 
                     ? {
-                        value: statsData.customersTrend.value,
-                        isPositive: statsData.customersTrend.isPositive,
+                        value: statsData.customerCount.total,
+                        isPositive:  statsData.customerCount.trend === "up"? true: false,
                         label: "vs last month",
                       }
                     : undefined
@@ -120,15 +120,15 @@ const Overview = () => {
               />
               <KPICard
                 title="Total Merchants"
-                value={statsData?.totalMerchants?.toLocaleString() || "0"}
+                value={statsData?.merchantCount?.total.toLocaleString() || "0"}
                 icon={FiShoppingBag}
                 iconColor="text-orange-600"
                 iconBgColor="bg-orange-100"
                 trend={
-                  statsData?.merchantsTrend
+                  statsData?.merchantCount
                     ? {
-                        value: statsData.merchantsTrend.value,
-                        isPositive: statsData.merchantsTrend.isPositive,
+                        value: statsData.merchantCount.total,
+                        isPositive:  statsData.merchantCount.trend === "up"? true: false,
                         label: "vs last month",
                       }
                     : undefined
@@ -137,18 +137,18 @@ const Overview = () => {
               <KPICard
                 title="Total Revenue"
                 value={
-                  statsData?.totalRevenue
-                    ? `$${(statsData.totalRevenue / 1000).toFixed(1)}K`
+                  statsData?.revenueCount
+                    ? `$${(statsData.revenueCount.amount / 1000).toFixed(1)}K`
                     : "$0"
                 }
                 icon={FiDollarSign}
                 iconColor="text-emerald-600"
                 iconBgColor="bg-emerald-100"
                 trend={
-                  statsData?.revenueTrend
+                  statsData?.revenueCount
                     ? {
-                        value: statsData.revenueTrend.value,
-                        isPositive: statsData.revenueTrend.isPositive,
+                        value: statsData.revenueCount.amount,
+                        isPositive:  statsData.revenueCount.trend === "up"? true: false,
                         label: "vs last month",
                       }
                     : undefined

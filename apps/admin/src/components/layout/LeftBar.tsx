@@ -1,4 +1,4 @@
-import { Button } from "@orafi/ui";
+import { Button, Select } from "@orafi/ui";
 import { Card, CardContent } from "@orafi/ui";
 import { MdOutlineMenu, MdDashboard, MdSettings, MdHealthAndSafety, MdClose } from "react-icons/md";
 import { Link } from "wouter";
@@ -10,6 +10,7 @@ import {
 import logo from "@orafi/ui/assets/OraFi.png";
 import { useActiveTabStore, type TabName } from "../../store/activeTab";
 import { useState } from "react";
+import { useActiveMode } from "../../store/mode";
 
 interface NavItem {
   name: TabName;
@@ -17,6 +18,17 @@ interface NavItem {
   color: string;
   route: string;
 }
+
+const modes = [
+  {
+    label: "live",
+    value: "live"
+  },
+  {
+    label: "test",
+    value: "test"
+  }
+]
 
 const navItems: NavItem[] = [
   { name: "Overview", icon: <MdDashboard size={20} />, color: "text-blue-400", route: "/" },
@@ -30,6 +42,10 @@ const navItems: NavItem[] = [
 const LeftBar = () => {
   const { activeTab, collapsed, setActiveTab, toggleCollapse } = useActiveTabStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const {
+    mode,
+    setMode
+  } = useActiveMode()
 
   const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
 
@@ -126,6 +142,11 @@ const LeftBar = () => {
             );
           })}
         </div>
+         <Select
+                    value={mode}
+                    onChange={(e: any) => setMode(e?.valueOf)}
+                    placeholder="On-chain Network"
+                    options={modes} />
 
         {/* Footer */}
         {!collapsed && (
