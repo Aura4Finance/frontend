@@ -3,7 +3,7 @@ import { Toaster } from "sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Overview from "./components/Overview";
 import Customers from "./components/Customers";
-import TransactionsNew from "./components/TransactionsNew";
+import Transactions from "./components/Transactions";
 import Merchants from "./components/Merchants";
 import SystemHealth from "./components/SystemHealth";
 import Settings from "./components/Settings";
@@ -33,7 +33,7 @@ function App() {
             <Route path="/" component={Overview} />
             <Route path="/dashboard" component={Overview} />
             <Route path="/customers" component={Customers} />
-            <Route path="/transactions" component={TransactionsNew} />
+            <Route path="/transactions" component={Transactions} />
             <Route path="/merchants" component={Merchants} />
             <Route path="/system-health" component={SystemHealth} />
             <Route path="/settings" component={Settings} />
