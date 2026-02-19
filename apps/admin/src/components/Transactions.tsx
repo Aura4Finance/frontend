@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import DashboardWrapper from "./layout/DashboardWrapper";
 import KPICard from "./shared/KPICard";
 import { KPICardSkeleton, ChartSkeleton } from "./shared/Skeletons";
 import ErrorState from "./shared/ErrorState";
 import FilterBar from "./shared/FilterBar";
-import Pagination from "./shared/Pagination";
 import Modal from "./shared/Modal";
 import { FiActivity, FiCheckCircle, FiClock, FiXCircle } from "react-icons/fi";
 import {
@@ -21,10 +20,10 @@ import {
 } from "recharts";
 import {
   useTransactions,
-  useTransaction,
   useTransactionStats,
   useTransactionCountData,
   useRefundTransaction,
+  type Transaction,
 } from "./hooks/useTransactions";
 import { useActiveMode } from "../store/mode";
 import { toast } from "sonner";
@@ -34,10 +33,12 @@ const Transactions = () => {
   const [volumeMode, setVolumeMode] = useState<"ngn" | "usdc">("usdc");
   const [searchValue, setSearchValue] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
+  const [cursorHistory, setCursorHistory] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const { mode } = useActiveMode();
-  const itemsPerPage = 5;
 
   // API hooks
   const { data: statsData, isLoading: statsLoading, error: statsError } = useTransactionStats(mode);
@@ -47,14 +48,51 @@ const Transactions = () => {
     data: transactionsData,
     isLoading: transactionsLoading,
     error: transactionsError,
+    isFetching,
   } = useTransactions({
     limit: itemsPerPage,
     mode,
+    cursor,
     status: selectedFilter === "all" ? undefined : selectedFilter.toUpperCase(),
   });
 
-  const { data: transactionDetail } = useTransaction(selectedTransactionId || "");
   const { mutate: refundTransaction, isPending: isRefunding } = useRefundTransaction();
+
+  // Handle next page
+  const handleNextPage = useCallback(() => {
+    if (transactionsData?.hasNextPage && transactionsData.nextCursor) {
+      setCursorHistory((prev) => [...prev, cursor || ""]);
+      setCursor(transactionsData.nextCursor);
+      setCurrentPage((prev) => prev + 1);
+    }
+  }, [transactionsData, cursor]);
+
+  // Handle previous page
+  const handlePreviousPage = useCallback(() => {
+    if (cursorHistory.length > 0) {
+      const newHistory = [...cursorHistory];
+      const previousCursor = newHistory.pop();
+      setCursorHistory(newHistory);
+      setCursor(previousCursor || undefined);
+      setCurrentPage((prev) => Math.max(1, prev - 1));
+    }
+  }, [cursorHistory]);
+
+  // Handle items per page change
+  const handleItemsPerPageChange = useCallback((newLimit: number) => {
+    setItemsPerPage(newLimit);
+    setCursor(undefined);
+    setCursorHistory([]);
+    setCurrentPage(1);
+  }, []);
+
+  // Handle filter change
+  const handleFilterChange = useCallback((filter: string) => {
+    setSelectedFilter(filter);
+    setCursor(undefined);
+    setCursorHistory([]);
+    setCurrentPage(1);
+  }, []);
 
   const filterOptions = [
     { label: "All Status", value: "all" },
@@ -64,6 +102,9 @@ const Transactions = () => {
   ];
 
   const transactions = transactionsData?.transactions || [];
+  const totalCount = transactionsData?.count || 0;
+  const hasNextPage = transactionsData?.hasNextPage || false;
+  const hasPreviousPage = cursorHistory.length > 0;
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -82,8 +123,16 @@ const Transactions = () => {
     <DashboardWrapper>
       {/* Header */}
       <div className="px-4 py-3 bg-white border-b border-gray-100">
-        <h1 className="text-lg font-bold text-gray-900">Transactions</h1>
-        <p className="text-gray-500 text-xs mt-0.5">Monitor and analyze all transactions</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-bold text-gray-900">Transactions</h1>
+            <p className="text-gray-500 text-xs mt-0.5">Monitor and analyze all transactions</p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-semibold text-gray-900">{totalCount.toLocaleString()}</p>
+            <p className="text-xs text-gray-500">Total Transactions</p>
+          </div>
+        </div>
       </div>
 
       <div className="p-4">
@@ -214,8 +263,26 @@ const Transactions = () => {
           onSearchChange={setSearchValue}
           filterOptions={filterOptions}
           selectedFilter={selectedFilter}
-          onFilterChange={setSelectedFilter}
+          onFilterChange={handleFilterChange}
         />
+
+        {/* Items per page selector */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500">Show:</span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+              className="text-xs border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+            </select>
+            <span className="text-xs text-gray-500">per page</span>
+          </div>
+        </div>
 
         {transactionsLoading ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
@@ -250,27 +317,31 @@ const Transactions = () => {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {transactions.map((tx) => (
-                      <tr key={tx.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => setSelectedTransactionId(tx.id)}>
-                        <td className="px-4 py-2.5 text-xs font-medium text-blue-600">{tx.id}</td>
+                      <tr key={tx.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => setSelectedTransaction(tx)}>
+                        <td className="px-4 py-2.5 text-xs font-medium text-blue-600">{tx.id.slice(0, 8)}...</td>
                         <td className="px-4 py-2.5">
                           <div className="font-medium text-xs text-gray-900">
-                            {typeof tx.customer === 'object' && tx.customer 
+                            {tx.customer 
                               ? `${tx.customer.firstname || ''} ${tx.customer.lastname || ''}`.trim() || 'N/A'
-                              : tx.customer || 'N/A'}
+                              : 'N/A'}
                           </div>
                           <div className="text-[11px] text-gray-500">
-                            {typeof tx.customer === 'object' && tx.customer 
-                              ? tx.customer.email || 'N/A'
-                              : tx.email || 'N/A'}
+                            {tx.customer?.email || 'N/A'}
                           </div>
                         </td>
                         <td className="px-4 py-2.5 text-xs font-medium text-gray-900">{tx.amount?.toLocaleString() || 0} {tx.token}</td>
-                        <td className="px-4 py-2.5 text-xs text-gray-600">{tx.type}</td>
-                        <td className="px-4 py-2.5 text-xs text-gray-600">{tx.merchant || 'N/A'}</td>
+                        <td className="px-4 py-2.5">
+                          <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${
+                            tx.type === 'payment' ? 'bg-blue-100 text-blue-700' : 
+                            tx.type === 'payout' ? 'bg-purple-100 text-purple-700' : 
+                            'bg-orange-100 text-orange-700'
+                          }`}>{tx.type}</span>
+                        </td>
+                        <td className="px-4 py-2.5 text-xs text-gray-600">{tx.profile?.businessName || 'N/A'}</td>
                         <td className="px-4 py-2.5">
                           <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${getStatusColor(tx.status)}`}>{tx.status}</span>
                         </td>
-                        <td className="px-4 py-2.5 text-xs text-gray-600">{tx.date ? new Date(tx.date).toLocaleString() : 'N/A'}</td>
+                        <td className="px-4 py-2.5 text-xs text-gray-600">{tx.createdAt ? new Date(tx.createdAt).toLocaleString() : 'N/A'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -278,52 +349,266 @@ const Transactions = () => {
               </div>
             </div>
 
-            {transactionsData?.hasNextPage && (
-              <Pagination currentPage={currentPage} totalPages={Math.ceil(transactionsData?.count / 10)} onPageChange={setCurrentPage} />
-            )}
+            {/* Cursor-based Pagination */}
+            <div className="mt-4 flex items-center justify-between bg-white rounded-lg border border-gray-100 px-4 py-3">
+              <div className="text-xs text-gray-500">
+                Page {currentPage} • Showing {transactions.length} of {totalCount.toLocaleString()} transactions
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handlePreviousPage}
+                  disabled={!hasPreviousPage || isFetching}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                    hasPreviousPage && !isFetching
+                      ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      : "bg-gray-50 text-gray-300 cursor-not-allowed"
+                  }`}
+                >
+                  ← Previous
+                </button>
+                
+                <span className="px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 rounded-md">
+                  {currentPage}
+                </span>
+                
+                <button
+                  onClick={handleNextPage}
+                  disabled={!hasNextPage || isFetching}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                    hasNextPage && !isFetching
+                      ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      : "bg-gray-50 text-gray-300 cursor-not-allowed"
+                  }`}
+                >
+                  Next →
+                </button>
+              </div>
+              
+              {isFetching && !transactionsLoading && (
+                <div className="text-xs text-blue-600 flex items-center gap-1">
+                  <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Loading...
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>
 
       {/* Transaction Detail Modal */}
-      <Modal isOpen={!!transactionDetail} onClose={() => setSelectedTransactionId(null)} title="Transaction Details">
-        {transactionDetail && (
-          <div className="space-y-4">
+      <Modal isOpen={!!selectedTransaction} onClose={() => setSelectedTransaction(null)} title="Transaction Details">
+        {selectedTransaction && (
+          <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+            {/* Header */}
             <div className="flex items-center justify-between">
-              <span className="text-base font-semibold text-gray-900">{transactionDetail.id}</span>
-              <span className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(transactionDetail.status)}`}>{transactionDetail.status}</span>
+              <div>
+                <p className="text-[11px] text-gray-500">Transaction ID</p>
+                <span className="text-sm font-semibold text-gray-900">{selectedTransaction.id}</span>
+              </div>
+              <span className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(selectedTransaction.status)}`}>{selectedTransaction.status}</span>
             </div>
+
+            {/* Basic Info */}
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Amount</p>
-                <p className="font-semibold text-sm text-gray-900">{transactionDetail.amount} {transactionDetail.token}</p>
+                <p className="font-semibold text-sm text-gray-900">{selectedTransaction.amount?.toLocaleString()} {selectedTransaction.token}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-[11px] text-gray-500">Amount in USDC</p>
+                <p className="font-semibold text-sm text-gray-900">${selectedTransaction.amountInUSDC?.toLocaleString()}</p>
               </div>
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Type</p>
-                <p className="font-medium text-xs text-gray-900">{transactionDetail.type}</p>
+                <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${
+                  selectedTransaction.type === 'payment' ? 'bg-blue-100 text-blue-700' : 
+                  selectedTransaction.type === 'payout' ? 'bg-purple-100 text-purple-700' : 
+                  'bg-orange-100 text-orange-700'
+                }`}>{selectedTransaction.type}</span>
               </div>
               <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-[11px] text-gray-500">Customer</p>
-                <p className="font-medium text-xs text-gray-900">{transactionDetail.customer || 'N/A'}</p>
-                <p className="text-[11px] text-gray-500">{transactionDetail.email || 'N/A'}</p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-[11px] text-gray-500">Merchant</p>
-                <p className="font-medium text-xs text-gray-900">{transactionDetail.merchant || 'N/A'}</p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-3 col-span-2">
-                <p className="text-[11px] text-gray-500">Date & Time</p>
-                <p className="font-medium text-xs text-gray-900">{transactionDetail.date ? new Date(transactionDetail.date).toLocaleString() : 'N/A'}</p>
+                <p className="text-[11px] text-gray-500">Mode</p>
+                <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${
+                  selectedTransaction.mode === 'live' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                }`}>{selectedTransaction.mode}</span>
               </div>
             </div>
-            {transactionDetail.status === 'Completed' && transactionDetail.type === 'Payment' && (
-              <div className="pt-2">
+
+            {/* Customer Info */}
+            {selectedTransaction.customer && (
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-[11px] text-gray-500 mb-2">Customer</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                    {selectedTransaction.customer.firstname?.charAt(0) || 'C'}
+                  </div>
+                  <div>
+                    <p className="font-medium text-xs text-gray-900">
+                      {selectedTransaction.customer.firstname} {selectedTransaction.customer.lastname}
+                    </p>
+                    <p className="text-[11px] text-gray-500">{selectedTransaction.customer.email}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Merchant/Profile Info */}
+            {selectedTransaction.profile && (
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-[11px] text-gray-500 mb-1">Merchant</p>
+                <p className="font-medium text-xs text-gray-900">{selectedTransaction.profile.businessName}</p>
+                <p className="text-[11px] text-gray-500">{selectedTransaction.profile.user?.email}</p>
+              </div>
+            )}
+
+            {/* Dates */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-[11px] text-gray-500">Created At</p>
+                <p className="font-medium text-xs text-gray-900">
+                  {selectedTransaction.createdAt ? new Date(selectedTransaction.createdAt).toLocaleString() : 'N/A'}
+                </p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-[11px] text-gray-500">Confirmed At</p>
+                <p className="font-medium text-xs text-gray-900">
+                  {selectedTransaction.confirmedAt ? new Date(selectedTransaction.confirmedAt).toLocaleString() : 'Pending'}
+                </p>
+              </div>
+            </div>
+
+            {/* Payment Details */}
+            {selectedTransaction.payment && (
+              <div className="border-t border-gray-200 pt-3">
+                <p className="text-xs font-semibold text-gray-700 mb-2">Payment Details</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-blue-50 rounded-lg p-3">
+                    <p className="text-[11px] text-blue-600">Payment ID</p>
+                    <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payment.id}</p>
+                  </div>
+                  <div className="bg-blue-50 rounded-lg p-3">
+                    <p className="text-[11px] text-blue-600">Payment Method</p>
+                    <p className="font-medium text-xs text-gray-900">{selectedTransaction.payment.paymentMethod || 'N/A'}</p>
+                  </div>
+                  <div className="bg-blue-50 rounded-lg p-3">
+                    <p className="text-[11px] text-blue-600">Refunded</p>
+                    <p className="font-medium text-xs text-gray-900">{selectedTransaction.payment.refunded ? 'Yes' : 'No'}</p>
+                  </div>
+                  {selectedTransaction.payment.txRef && (
+                    <div className="bg-blue-50 rounded-lg p-3">
+                      <p className="text-[11px] text-blue-600">Transaction Reference</p>
+                      <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payment.txRef}</p>
+                    </div>
+                  )}
+                  {selectedTransaction.payment.depositAddress && (
+                    <div className="bg-blue-50 rounded-lg p-3 col-span-2">
+                      <p className="text-[11px] text-blue-600">Deposit Address</p>
+                      <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payment.depositAddress}</p>
+                    </div>
+                  )}
+                  {selectedTransaction.payment.wallet?.pubKey && (
+                    <div className="bg-blue-50 rounded-lg p-3 col-span-2">
+                      <p className="text-[11px] text-blue-600">Wallet Public Key</p>
+                      <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payment.wallet.pubKey}</p>
+                    </div>
+                  )}
+                  {selectedTransaction.payment.redirectUrl && (
+                    <div className="bg-blue-50 rounded-lg p-3 col-span-2">
+                      <p className="text-[11px] text-blue-600">Redirect URL</p>
+                      <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payment.redirectUrl}</p>
+                    </div>
+                  )}
+                  {selectedTransaction.payment.paylinkId && (
+                    <div className="bg-blue-50 rounded-lg p-3">
+                      <p className="text-[11px] text-blue-600">Paylink ID</p>
+                      <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payment.paylinkId}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Payout Details */}
+            {selectedTransaction.payout && (
+              <div className="border-t border-gray-200 pt-3">
+                <p className="text-xs font-semibold text-gray-700 mb-2">Payout Details</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-purple-50 rounded-lg p-3">
+                    <p className="text-[11px] text-purple-600">Payout ID</p>
+                    <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payout.id}</p>
+                  </div>
+                  <div className="bg-purple-50 rounded-lg p-3">
+                    <p className="text-[11px] text-purple-600">Method</p>
+                    <p className="font-medium text-xs text-gray-900">{selectedTransaction.payout.method || 'N/A'}</p>
+                  </div>
+                  {selectedTransaction.payout.walletAddress && (
+                    <div className="bg-purple-50 rounded-lg p-3 col-span-2">
+                      <p className="text-[11px] text-purple-600">Wallet Address</p>
+                      <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payout.walletAddress}</p>
+                    </div>
+                  )}
+                  {selectedTransaction.payout.txDigest && (
+                    <div className="bg-purple-50 rounded-lg p-3 col-span-2">
+                      <p className="text-[11px] text-purple-600">Transaction Digest</p>
+                      <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payout.txDigest}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Refund Details */}
+            {selectedTransaction.refund && (
+              <div className="border-t border-gray-200 pt-3">
+                <p className="text-xs font-semibold text-gray-700 mb-2">Refund Details</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-orange-50 rounded-lg p-3">
+                    <p className="text-[11px] text-orange-600">Refund ID</p>
+                    <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.refund.id}</p>
+                  </div>
+                  {selectedTransaction.refund.reason && (
+                    <div className="bg-orange-50 rounded-lg p-3">
+                      <p className="text-[11px] text-orange-600">Reason</p>
+                      <p className="font-medium text-xs text-gray-900">{selectedTransaction.refund.reason}</p>
+                    </div>
+                  )}
+                  {selectedTransaction.refund.originalTxId && (
+                    <div className="bg-orange-50 rounded-lg p-3 col-span-2">
+                      <p className="text-[11px] text-orange-600">Original Transaction ID</p>
+                      <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.refund.originalTxId}</p>
+                    </div>
+                  )}
+                  {selectedTransaction.refund.walletAddress && (
+                    <div className="bg-orange-50 rounded-lg p-3 col-span-2">
+                      <p className="text-[11px] text-orange-600">Wallet Address</p>
+                      <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.refund.walletAddress}</p>
+                    </div>
+                  )}
+                  {selectedTransaction.refund.txDigest && (
+                    <div className="bg-orange-50 rounded-lg p-3 col-span-2">
+                      <p className="text-[11px] text-orange-600">Transaction Digest</p>
+                      <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.refund.txDigest}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Refund Action for Payments */}
+            {selectedTransaction.status.toLowerCase() === 'completed' && 
+             selectedTransaction.type === 'payment' && 
+             !selectedTransaction.payment?.refunded && (
+              <div className="pt-2 border-t border-gray-200">
                 <button
                   onClick={() => {
-                    refundTransaction({ transactionId: transactionDetail.id }, {
+                    refundTransaction({ transactionId: selectedTransaction.id }, {
                       onSuccess: () => {
                         toast.success('Transaction refunded successfully');
-                        setSelectedTransactionId(null);
+                        setSelectedTransaction(null);
                       },
                       onError: (error: any) => {
                         toast.error(error?.response?.data?.message || 'Failed to refund transaction');

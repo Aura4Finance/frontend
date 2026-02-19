@@ -7,7 +7,9 @@ interface Payment {
   id: string;
   refunded: boolean;
   depositAddress: string;
-  walletId: string;
+  wallet: {
+    pubKey: string
+  };
   txRef: string;
   paymentMethod: string;
   redirectUrl: string;
@@ -69,6 +71,7 @@ interface TransactionsParams {
   page?: number;
   mode?: Mode["mode"]
   limit?: number;
+  cursor?: string;
   search?: string;
   status?: string;
   type?: string;
