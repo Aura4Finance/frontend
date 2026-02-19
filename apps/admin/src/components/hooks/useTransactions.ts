@@ -129,12 +129,12 @@ export const useTransaction = (transactionId: string, enabled: boolean = true) =
   });
 };
 
-export const useTransactionStats = (mode: string = "test") => {
+export const useTransactionStats = (mode: string = "test", status: undefined | "COMPLETED" | "PENDING" | "FAILED") => {
   return useQuery<TransactionMetricsData>({
-    queryKey: ["transactions", "stats", mode ],
+    queryKey: ["transactions", "stats", mode, status ],
     queryFn: async () => {
       const response = await client.get("/admin/metrics/transactions", {
-        params: { mode }
+        params: { mode,  status }
       });
       return response.data.data;
     },

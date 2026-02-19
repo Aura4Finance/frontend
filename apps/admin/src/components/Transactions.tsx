@@ -29,7 +29,7 @@ import { useActiveMode } from "../store/mode";
 import { toast } from "sonner";
 
 const Transactions = () => {
-  const [countFilter, setCountFilter] = useState<"all" | "successful" | "pending" | "failed">("all");
+  const [countFilter, setCountFilter] = useState<"all" | "completed" | "pending" | "failed">("all");
   const [volumeMode, setVolumeMode] = useState<"ngn" | "usdc">("usdc");
   const [searchValue, setSearchValue] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
@@ -41,8 +41,8 @@ const Transactions = () => {
   const { mode } = useActiveMode();
 
   // API hooks
-  const { data: statsData, isLoading: statsLoading, error: statsError } = useTransactionStats(mode);
-  const { data: countData, isLoading: countLoading } = useTransactionCountData(mode);
+  const { data: statsData, isLoading: statsLoading, error: statsError } = useTransactionStats(mode, (countFilter === "all" ? undefined : countFilter.toUpperCase()) as any);
+  const { data: countData } = useTransactionCountData(mode);
   
   const {
     data: transactionsData,
@@ -166,7 +166,7 @@ const Transactions = () => {
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-gray-900">Transaction Count</h3>
               <div className="flex gap-1">
-                {(["all", "successful", "pending", "failed"] as const).map((filter) => (
+                {(["all", "completed", "pending", "failed"] as const).map((filter) => (
                   <button
                     key={filter}
                     onClick={() => setCountFilter(filter)}
@@ -181,9 +181,9 @@ const Transactions = () => {
                 ))}
               </div>
             </div>
-            {countLoading ? (
+            {statsLoading ? (
               <ChartSkeleton height="h-44" />
-            ) : statsData?.length === 0 ? (
+            ) : !statsData || statsData?.length === 0 ? (
               <div className="h-44 flex items-center justify-center">
                 <p className="text-xs text-gray-500">No transaction count data available</p>
               </div>
@@ -192,10 +192,14 @@ const Transactions = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={statsData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} />
+                    <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} />
-                    <Tooltip contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: "6px", fontSize: "11px" }} />
-                    <Line type="monotone" dataKey={countFilter} stroke="#3b82f6" strokeWidth={2} dot={{ fill: "#3b82f6", r: 3 }} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: "6px", fontSize: "11px" }}
+                      formatter={(value: number) => [value.toLocaleString(), "Transactions"]}
+                      labelFormatter={(label) => `Date: ${label}`}
+                    />
+                    <Line type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={2} dot={{ fill: "#3b82f6", r: 3 }} name="Count" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -227,7 +231,7 @@ const Transactions = () => {
             </div>
             {statsLoading ? (
               <ChartSkeleton height="h-44" />
-            ) : statsData?.length === 0 ? (
+            ) : !statsData || statsData?.length === 0 ? (
               <div className="h-44 flex items-center justify-center">
                 <p className="text-xs text-gray-500">No transaction volume data available</p>
               </div>
@@ -236,19 +240,25 @@ const Transactions = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={statsData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} />
+                    <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} />
                     <YAxis
                       axisLine={false}
                       tickLine={false}
                       tick={{ fill: "#6b7280", fontSize: 10 }}
-                      tickFormatter={(value) => volumeMode === "ngn" ? `₦${(value/1000000).toFixed(1)}M` : `$${(value/1000).toFixed(0)}K`}
+                      tickFormatter={(value) => volumeMode === "ngn" ? `₦${value.toLocaleString()}` : `$${value.toLocaleString()}`}
                     />
                     <Tooltip
                       formatter={(value: number) => [volumeMode === "ngn" ? `₦${value.toLocaleString()}` : `$${value.toLocaleString()}`, "Volume"]}
                       contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: "6px", fontSize: "11px" }}
+                      labelFormatter={(label) => `Date: ${label}`}
                     />
                     <Legend wrapperStyle={{ fontSize: "10px" }} />
-                    <Bar dataKey={volumeMode} fill="#10b981" radius={[4, 4, 0, 0]} name={volumeMode.toUpperCase()} />
+                    <Bar 
+                      dataKey={volumeMode === "usdc" ? "volumeInUSDC" : "volume"} 
+                      fill="#10b981" 
+                      radius={[4, 4, 0, 0]} 
+                      name={volumeMode === "usdc" ? "Volume (USDC)" : "Volume (NGN)"} 
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
