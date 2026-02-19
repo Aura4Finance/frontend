@@ -3,23 +3,66 @@ import { client } from "../client/client";
 import { toast } from "sonner";
 import { type Mode } from "../../store/mode";
 
+interface Payment {
+  id: string;
+  refunded: boolean;
+  depositAddress: string;
+  walletId: string;
+  txRef: string;
+  paymentMethod: string;
+  redirectUrl: string;
+  paylinkId: string;
+
+}
+
+interface Payout {
+  id: string;
+  method: string;
+  walletAddress: string;
+  txDigest: string;
+}
+
+interface Refund {
+  id: string;
+  reason: string;
+  walletAddress: string;
+  originalTxId: string;
+  txDigest: string;
+}
+
 // Types
 export interface Transaction {
   id: string;
-  customer: string;
-  customerId: string;
-  email: string;
+  type: string;
+  status: string;
   amount: number;
+  amountInUSDC: number;
+  mode: string;
+  createdAt: string;
+  confirmedAt: string;
   token: string;
-  type: "Payment" | "Payout" | "Refund";
-  status: "Completed" | "Pending" | "Failed" | "Processing";
-  date: string;
-  merchant: string;
-  merchantId: string;
-  fee?: number;
-  hash?: string;
-  network?: string;
-  metadata?: any;
+  customerId?: string;
+  webhookDeliveryId: string;
+  profileId:  string;
+  customer?: {
+    id: string;
+    firstname: string;
+    lastname: string;
+    email: string;
+    createdAt: string;
+    mode: Mode["mode"];
+    totalSpent: number;
+  };
+  profile: {
+    id: string;
+    businessName: string;
+    user: {
+      email: string
+    }
+  }
+  payment?: Payment;
+  refund?: Refund;
+  payout?: Payout;
 }
 
 interface TransactionsParams {

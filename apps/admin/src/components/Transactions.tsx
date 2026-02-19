@@ -253,8 +253,16 @@ const Transactions = () => {
                       <tr key={tx.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => setSelectedTransactionId(tx.id)}>
                         <td className="px-4 py-2.5 text-xs font-medium text-blue-600">{tx.id}</td>
                         <td className="px-4 py-2.5">
-                          <div className="font-medium text-xs text-gray-900">{tx.customer || 'N/A'}</div>
-                          <div className="text-[11px] text-gray-500">{tx.email || 'N/A'}</div>
+                          <div className="font-medium text-xs text-gray-900">
+                            {typeof tx.customer === 'object' && tx.customer 
+                              ? `${tx.customer.firstname || ''} ${tx.customer.lastname || ''}`.trim() || 'N/A'
+                              : tx.customer || 'N/A'}
+                          </div>
+                          <div className="text-[11px] text-gray-500">
+                            {typeof tx.customer === 'object' && tx.customer 
+                              ? tx.customer.email || 'N/A'
+                              : tx.email || 'N/A'}
+                          </div>
                         </td>
                         <td className="px-4 py-2.5 text-xs font-medium text-gray-900">{tx.amount?.toLocaleString() || 0} {tx.token}</td>
                         <td className="px-4 py-2.5 text-xs text-gray-600">{tx.type}</td>
