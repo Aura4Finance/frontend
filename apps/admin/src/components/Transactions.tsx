@@ -6,6 +6,7 @@ import ErrorState from "./shared/ErrorState";
 import TransactionFilters from "./filters/TransactionFilters";
 import Modal from "./shared/Modal";
 import { FiActivity, FiCheckCircle, FiClock, FiXCircle } from "react-icons/fi";
+import { useTransactionFilters, buildTransactionParams } from "../store/transactionFilters";
 import {
   LineChart,
   Line,
@@ -31,12 +32,22 @@ import { toast } from "sonner";
 const Transactions = () => {
   const [countFilter, setCountFilter] = useState<"all" | "completed" | "pending" | "failed">("all");
   const [volumeMode, setVolumeMode] = useState<"ngn" | "usdc">("usdc");
-  const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [cursorHistory, setCursorHistory] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
   const { mode } = useActiveMode();
+
+  // Filter store
+  const filters = useTransactionFilters();
+  const [appliedParams, setAppliedParams] = useState(() => buildTransactionParams(filters, mode as "test" | "live"));
+
+  // Apply filters handler - builds query params from current filter state
+  const handleApplyFilters = useCallback(() => {
+    const params = buildTransactionParams(filters, mode as "test" | "live");
+    setAppliedParams(params);
+    setCursorHistory([]);
+    setCurrentPage(1);
+  }, [filters, mode]);
 
   // API hooks
   const { data: statsData, isLoading: statsLoading, error: statsError } = useTransactionStats(mode, (countFilter === "all" ? undefined : countFilter.toUpperCase()) as any);
@@ -47,22 +58,18 @@ const Transactions = () => {
     isLoading: transactionsLoading,
     error: transactionsError,
     isFetching,
-  } = useTransactions({
-    limit: itemsPerPage,
-    mode,
-    cursor,
-  });
+  } = useTransactions(appliedParams);
 
   const { mutate: refundTransaction, isPending: isRefunding } = useRefundTransaction();
 
   // Handle next page
   const handleNextPage = useCallback(() => {
     if (transactionsData?.hasNextPage && transactionsData.nextCursor) {
-      setCursorHistory((prev) => [...prev, cursor || ""]);
-      setCursor(transactionsData.nextCursor);
+      setCursorHistory((prev) => [...prev, appliedParams.cursor || ""]);
+      setAppliedParams((prev) => ({ ...prev, cursor: transactionsData.nextCursor }));
       setCurrentPage((prev) => prev + 1);
     }
-  }, [transactionsData, cursor]);
+  }, [transactionsData, appliedParams.cursor]);
 
   // Handle previous page
   const handlePreviousPage = useCallback(() => {
@@ -70,18 +77,18 @@ const Transactions = () => {
       const newHistory = [...cursorHistory];
       const previousCursor = newHistory.pop();
       setCursorHistory(newHistory);
-      setCursor(previousCursor || undefined);
+      setAppliedParams((prev) => ({ ...prev, cursor: previousCursor || undefined }));
       setCurrentPage((prev) => Math.max(1, prev - 1));
     }
   }, [cursorHistory]);
 
   // Handle items per page change
   const handleItemsPerPageChange = useCallback((newLimit: number) => {
-    setItemsPerPage(newLimit);
-    setCursor(undefined);
+    filters.setLimit(newLimit);
+    setAppliedParams((prev) => ({ ...prev, limit: newLimit, cursor: undefined }));
     setCursorHistory([]);
     setCurrentPage(1);
-  }, []);
+  }, [filters]);
 
   const transactions = transactionsData?.transactions || [];
   const totalCount = transactionsData?.count || 0;
@@ -250,7 +257,7 @@ const Transactions = () => {
 
         {/* Filter Bar */}
         <div className="mb-4">
-          <TransactionFilters />
+          <TransactionFilters onApply={handleApplyFilters} />
         </div>
 
         {/* Items per page selector */}
@@ -258,7 +265,7 @@ const Transactions = () => {
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-500">Show:</span>
             <select
-              value={itemsPerPage}
+              value={filters.limit}
               onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
               className="text-xs border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >

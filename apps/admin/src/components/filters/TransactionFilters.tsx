@@ -300,7 +300,11 @@ function ActiveFilter({ label, onRemove }: ActiveFilterProps) {
 }
 
 // Main TransactionFilters component
-export default function TransactionFilters() {
+interface TransactionFiltersProps {
+  onApply?: () => void;
+}
+
+export default function TransactionFilters({ onApply }: TransactionFiltersProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [localSearch, setLocalSearch] = useState("");
 
@@ -312,6 +316,7 @@ export default function TransactionFilters() {
     paymentMethod,
     customerId,
     paymentLinkId,
+    userId,
     setType,
     setStatus,
     setToken,
@@ -319,10 +324,9 @@ export default function TransactionFilters() {
     setPaymentMethod,
     setCustomerId,
     setPaymentLinkId,
+    setUserId,
     setSearchQuery,
     resetFilters,
-    getQueryParams,
-    setFromQueryParams,
   } = useTransactionFilters();
 
   // Debounced search
@@ -334,7 +338,7 @@ export default function TransactionFilters() {
   }, [localSearch, setSearchQuery]);
 
   // Count active filters
-  const activeFilterCount = [type, status, token, date, paymentMethod, customerId, paymentLinkId].filter(Boolean).length;
+  const activeFilterCount = [type, status, token, date, paymentMethod, customerId, paymentLinkId, userId].filter(Boolean).length;
 
   // Get active filter labels for chips
   const getActiveFilters = useCallback(() => {
@@ -367,9 +371,12 @@ export default function TransactionFilters() {
     if (paymentLinkId) {
       filters.push({ label: `Paylink: ${paymentLinkId.slice(0, 8)}...`, onRemove: () => setPaymentLinkId(undefined) });
     }
+    if (userId) {
+      filters.push({ label: `User: ${userId.slice(0, 8)}...`, onRemove: () => setUserId(undefined) });
+    }
 
     return filters;
-  }, [type, status, token, date, paymentMethod, customerId, paymentLinkId, setType, setStatus, setToken, setDate, setPaymentMethod, setCustomerId, setPaymentLinkId]);
+  }, [type, status, token, date, paymentMethod, customerId, paymentLinkId, userId, setType, setStatus, setToken, setDate, setPaymentMethod, setCustomerId, setPaymentLinkId, setUserId]);
 
   const activeFilters = getActiveFilters();
 
@@ -413,10 +420,21 @@ export default function TransactionFilters() {
           )}
         </button>
 
+        {/* Apply Filters */}
+        <button
+          onClick={onApply}
+          className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+        >
+          Apply Filters
+        </button>
+
         {/* Clear All */}
         {activeFilterCount > 0 && (
           <button
-            onClick={resetFilters}
+            onClick={() => {
+              resetFilters();
+              onApply?.();
+            }}
             className="px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
           >
             Clear All
@@ -452,6 +470,17 @@ export default function TransactionFilters() {
               value={paymentLinkId || ""}
               onChange={(e) => setPaymentLinkId(e.target.value || undefined)}
               placeholder="Payment Link ID"
+              className="w-36 px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* User ID */}
+          <div className="relative">
+            <input
+              type="text"
+              value={userId || ""}
+              onChange={(e) => setUserId(e.target.value || undefined)}
+              placeholder="User ID"
               className="w-36 px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
