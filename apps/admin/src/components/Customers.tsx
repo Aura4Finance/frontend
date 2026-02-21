@@ -1,68 +1,63 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import DashboardWrapper from "./layout/DashboardWrapper";
-import FilterBar from "./shared/FilterBar";
+import CustomerFilters from "./filters/CustomerFilters";
 import Modal from "./shared/Modal";
 import ErrorState from "./shared/ErrorState";
-import { useCustomers, useCustomer } from "./hooks/useCustomers";
+import { useCustomers, useCustomer, type Customer } from "./hooks/useCustomers";
+import { useCustomerFilters, buildCustomerParams } from "../store/customerFilters";
 import { useActiveMode } from "../store/mode";
 
 const Customers = () => {
-  const [searchValue, setSearchValue] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState("all");
-  const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [cursorHistory, setCursorHistory] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [searchId, setSearchId] = useState("");
   const { mode } = useActiveMode();
 
-  // Debounce search input
-  const handleSearchChange = useCallback((value: string) => {
-    setSearchValue(value);
-    // Reset pagination when search changes
-    setCursor(undefined);
-    setCursorHistory([]);
-    setCurrentPage(1);
-    
-    // Debounce the actual search
-    const timeoutId = setTimeout(() => {
-      setDebouncedSearch(value);
-    }, 500);
-    
-    return () => clearTimeout(timeoutId);
+  // Filter store
+  const filters = useCustomerFilters();
+  const [appliedParams, setAppliedParams] = useState(() => buildCustomerParams(filters, mode as "test" | "live"));
+
+  // Search by customer ID or email
+  const { data: searchedCustomer, isFetching: searchFetching } = useCustomer(searchId, !!searchId);
+
+  // Handle search input
+  const handleSearch = useCallback((query: string) => {
+    setSearchId(query);
   }, []);
 
-  // API hooks with cursor
+  // Open modal when search finds a customer
+  useEffect(() => {
+    if (searchedCustomer && searchId) {
+      setSelectedCustomer(searchedCustomer);
+      setSearchId("");
+    }
+  }, [searchedCustomer, searchId]);
+
+  // Apply filters handler
+  const handleApplyFilters = useCallback(() => {
+    const params = buildCustomerParams(filters, mode as "test" | "live");
+    setAppliedParams(params);
+    setCursorHistory([]);
+    setCurrentPage(1);
+  }, [filters, mode]);
+
+  // API hooks
   const {
     data: customersData,
     isLoading: customersLoading,
     error: customersError,
     isFetching,
-  } = useCustomers({
-    mode,
-    limit: itemsPerPage,
-    cursor,
-  });
-
-  // Search for a specific customer by ID using useCustomer
-  const { 
-    data: searchedCustomer, 
-    isLoading: searchLoading,
-    error: searchError,
-  } = useCustomer(debouncedSearch, !!debouncedSearch);
-
-  const { data: customerDetail } = useCustomer(selectedCustomerId || "", !!selectedCustomerId && selectedCustomerId !== debouncedSearch);
+  } = useCustomers(appliedParams);
 
   // Handle next page
   const handleNextPage = useCallback(() => {
     if (customersData?.hasNextPage && customersData.nextCursor) {
-      setCursorHistory((prev) => [...prev, cursor || ""]);
-      setCursor(customersData.nextCursor);
+      setCursorHistory((prev) => [...prev, appliedParams.cursor || ""]);
+      setAppliedParams((prev) => ({ ...prev, cursor: customersData.nextCursor }));
       setCurrentPage((prev) => prev + 1);
     }
-  }, [customersData, cursor]);
+  }, [customersData, appliedParams.cursor]);
 
   // Handle previous page
   const handlePreviousPage = useCallback(() => {
@@ -70,37 +65,35 @@ const Customers = () => {
       const newHistory = [...cursorHistory];
       const previousCursor = newHistory.pop();
       setCursorHistory(newHistory);
-      setCursor(previousCursor || undefined);
+      setAppliedParams((prev) => ({ ...prev, cursor: previousCursor || undefined }));
       setCurrentPage((prev) => Math.max(1, prev - 1));
     }
   }, [cursorHistory]);
 
   // Handle items per page change
   const handleItemsPerPageChange = useCallback((newLimit: number) => {
-    setItemsPerPage(newLimit);
-    setCursor(undefined);
+    filters.setLimit(newLimit);
+    setAppliedParams((prev) => ({ ...prev, limit: newLimit, cursor: undefined }));
     setCursorHistory([]);
     setCurrentPage(1);
-  }, []);
+  }, [filters]);
 
-  const filterOptions = [
-    { label: "All Status", value: "all" },
-    { label: "Active", value: "Active" },
-    { label: "Inactive", value: "Inactive" },
-    { label: "Suspended", value: "Suspended" },
-  ];
+  const customers = customersData?.customers || [];
+  const totalCount = customersData?.count || 0;
+  const hasNextPage = customersData?.hasNextPage || false;
+  const hasPreviousPage = cursorHistory.length > 0;
 
-  // API shape correction - show searched customer or paginated list
-  const customers = debouncedSearch && searchedCustomer 
-    ? [searchedCustomer] 
-    : (customersData?.customers || []);
-  const totalCount = debouncedSearch && searchedCustomer 
-    ? 1 
-    : (customersData?.count || 0);
-  const hasNextPage = debouncedSearch ? false : (customersData?.hasNextPage || false);
-  const hasPreviousPage = debouncedSearch ? false : (cursorHistory.length > 0);
-  const isLoading = debouncedSearch ? searchLoading : customersLoading;
-  const hasError = debouncedSearch ? searchError : customersError;
+  // Mode badge color helper
+  const getModeColor = (m: string) => {
+    switch (m) {
+      case "live":
+        return "bg-green-100 text-green-700";
+      case "test":
+        return "bg-yellow-100 text-yellow-700";
+      default:
+        return "bg-gray-100 text-gray-600";
+    }
+  };
 
   return (
     <DashboardWrapper>
@@ -111,7 +104,6 @@ const Customers = () => {
             <h1 className="text-lg font-bold text-gray-900">Customers</h1>
             <p className="text-gray-500 text-xs mt-0.5">Manage and view customer information</p>
           </div>
-          {/* Show count */}
           <div className="text-right">
             <p className="text-sm font-semibold text-gray-900">{totalCount.toLocaleString()}</p>
             <p className="text-xs text-gray-500">Total Customers</p>
@@ -121,24 +113,18 @@ const Customers = () => {
 
       <div className="p-4">
         {/* Filter Bar */}
-        <FilterBar
-          searchPlaceholder="Search customer by ID..."
-          searchValue={searchValue}
-          onSearchChange={handleSearchChange}
-          filterOptions={filterOptions}
-          selectedFilter={selectedFilter}
-          onFilterChange={setSelectedFilter}
-        />
+        <div className="mb-4">
+          <CustomerFilters onApply={handleApplyFilters} onSearch={handleSearch} searchLoading={searchFetching} />
+        </div>
 
         {/* Items per page selector */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-500">Show:</span>
             <select
-              value={itemsPerPage}
+              value={filters.limit}
               onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-              disabled={!!debouncedSearch}
-              className="text-xs border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              className="text-xs border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value={5}>5</option>
               <option value={10}>10</option>
@@ -147,30 +133,9 @@ const Customers = () => {
             </select>
             <span className="text-xs text-gray-500">per page</span>
           </div>
-          
-          {/* Search indicator */}
-          {debouncedSearch && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">
-                Searching for: <span className="font-medium text-gray-700">"{debouncedSearch}"</span>
-              </span>
-              <button
-                onClick={() => {
-                  setSearchValue("");
-                  setDebouncedSearch("");
-                  setCursor(undefined);
-                  setCursorHistory([]);
-                  setCurrentPage(1);
-                }}
-                className="text-xs text-blue-600 hover:text-blue-700"
-              >
-                Clear
-              </button>
-            </div>
-          )}
         </div>
 
-        {isLoading ? (
+        {customersLoading ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
             <div className="animate-pulse space-y-4">
               <div className="h-4 bg-gray-200 rounded w-3/4"></div>
@@ -178,8 +143,8 @@ const Customers = () => {
               <div className="h-4 bg-gray-200 rounded w-5/6"></div>
             </div>
           </div>
-        ) : hasError ? (
-          <ErrorState message={debouncedSearch ? "Customer not found" : "Failed to load customers"} type="error" />
+        ) : customersError ? (
+          <ErrorState message="Failed to load customers" type="error" />
         ) : customers.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
             <p className="text-gray-500">No customers found</p>
@@ -204,16 +169,29 @@ const Customers = () => {
                       <tr
                         key={customer.id}
                         className="hover:bg-gray-50 cursor-pointer transition-colors"
-                        onClick={() => setSelectedCustomerId(customer.id)}
+                        onClick={() => setSelectedCustomer(customer)}
                       >
                         <td className="px-4 py-2.5">
-                          <div className="font-medium text-xs text-gray-900">
-                            {customer.firstname} {customer.lastname}
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-[10px] font-bold">
+                              {customer.firstname?.charAt(0) || "C"}
+                            </div>
+                            <div className="font-medium text-xs text-gray-900">
+                              {customer.firstname} {customer.lastname}
+                            </div>
                           </div>
                         </td>
                         <td className="px-4 py-2.5 text-xs text-gray-600">{customer.email}</td>
-                        <td className="px-4 py-2.5 text-xs text-gray-900 font-medium">
-                          {customer.mode?.join(", ") || "N/A"}
+                        <td className="px-4 py-2.5">
+                          <div className="flex flex-wrap gap-1">
+                            {customer.mode?.length > 0 ? customer.mode.map((m) => (
+                              <span key={m} className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${getModeColor(m)}`}>
+                                {m}
+                              </span>
+                            )) : (
+                              <span className="text-xs text-gray-400">N/A</span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-2.5 text-xs text-gray-900 font-medium">
                           ${Number(customer.totalSpent || 0).toLocaleString()}
@@ -280,48 +258,54 @@ const Customers = () => {
         )}
       </div>
 
-      {/* Customer Detail Modal */}
+      {/* Customer Detail Modal - uses already fetched data from list or search */}
       <Modal
-        isOpen={!!customerDetail}
-        onClose={() => setSelectedCustomerId(null)}
+        isOpen={!!selectedCustomer}
+        onClose={() => setSelectedCustomer(null)}
         title="Customer Details"
       >
-        {customerDetail && (
+        {selectedCustomer && (
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-lg font-bold">
-                {customerDetail.firstname?.charAt(0) || "C"}
+                {selectedCustomer.firstname?.charAt(0) || "C"}
               </div>
               <div>
                 <h3 className="text-base font-semibold text-gray-900">
-                  {customerDetail.firstname} {customerDetail.lastname}
+                  {selectedCustomer.firstname} {selectedCustomer.lastname}
                 </h3>
-                <p className="text-xs text-gray-500">{customerDetail.email}</p>
+                <p className="text-xs text-gray-500">{selectedCustomer.email}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Customer ID</p>
-                <p className="font-medium text-xs text-gray-900">{customerDetail.id}</p>
+                <p className="font-medium text-xs text-gray-900 break-all">{selectedCustomer.id}</p>
               </div>
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Mode</p>
-                <p className="font-medium text-xs text-gray-900">
-                  {customerDetail.mode?.join(", ") || "N/A"}
-                </p>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {selectedCustomer.mode?.length > 0 ? selectedCustomer.mode.map((m) => (
+                    <span key={m} className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${getModeColor(m)}`}>
+                      {m}
+                    </span>
+                  )) : (
+                    <span className="text-xs text-gray-400">N/A</span>
+                  )}
+                </div>
               </div>
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Total Spent</p>
-                <p className="font-medium text-xs text-gray-900">
-                  ${Number(customerDetail.totalSpent || 0).toLocaleString()}
+                <p className="font-semibold text-sm text-gray-900">
+                  ${Number(selectedCustomer.totalSpent || 0).toLocaleString()}
                 </p>
               </div>
-              <div className="bg-gray-50 rounded-lg p-3 col-span-2">
+              <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Joined Date</p>
                 <p className="font-medium text-xs text-gray-900">
-                  {customerDetail.createdAt
-                    ? new Date(customerDetail.createdAt).toLocaleDateString()
+                  {selectedCustomer.createdAt
+                    ? new Date(selectedCustomer.createdAt).toLocaleDateString()
                     : "N/A"}
                 </p>
               </div>

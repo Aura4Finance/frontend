@@ -14,7 +14,7 @@ export interface Customer {
 }
 
 interface CustomersParams {
-  amountSpent?: number;
+  amountSpent?: string;
   limit?: number;
   userId?: string;
   mode?: Mode["mode"];
