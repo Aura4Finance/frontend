@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
 import { FiFilter, FiX, FiChevronDown, FiCalendar, FiSearch } from "react-icons/fi";
 import {
   useTransactionFilters,
@@ -302,7 +301,6 @@ function ActiveFilter({ label, onRemove }: ActiveFilterProps) {
 
 // Main TransactionFilters component
 export default function TransactionFilters() {
-  const [searchParams, setSearchParams] = useSearchParams();
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [localSearch, setLocalSearch] = useState("");
 
@@ -326,23 +324,6 @@ export default function TransactionFilters() {
     getQueryParams,
     setFromQueryParams,
   } = useTransactionFilters();
-
-  // Sync from URL on mount
-  useEffect(() => {
-    if (searchParams.toString()) {
-      setFromQueryParams(searchParams);
-    }
-  }, []);
-
-  // Sync to URL when filters change
-  useEffect(() => {
-    const params = getQueryParams();
-    const newSearchParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      newSearchParams.set(key, value);
-    });
-    setSearchParams(newSearchParams, { replace: true });
-  }, [type, status, token, date, paymentMethod, customerId, paymentLinkId, getQueryParams, setSearchParams]);
 
   // Debounced search
   useEffect(() => {

@@ -3,7 +3,7 @@ import DashboardWrapper from "./layout/DashboardWrapper";
 import KPICard from "./shared/KPICard";
 import { KPICardSkeleton, ChartSkeleton } from "./shared/Skeletons";
 import ErrorState from "./shared/ErrorState";
-import FilterBar from "./shared/FilterBar";
+import TransactionFilters from "./filters/TransactionFilters";
 import Modal from "./shared/Modal";
 import { FiActivity, FiCheckCircle, FiClock, FiXCircle } from "react-icons/fi";
 import {
@@ -31,8 +31,6 @@ import { toast } from "sonner";
 const Transactions = () => {
   const [countFilter, setCountFilter] = useState<"all" | "completed" | "pending" | "failed">("all");
   const [volumeMode, setVolumeMode] = useState<"ngn" | "usdc">("usdc");
-  const [searchValue, setSearchValue] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState("all");
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [cursorHistory, setCursorHistory] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -53,7 +51,6 @@ const Transactions = () => {
     limit: itemsPerPage,
     mode,
     cursor,
-    status: selectedFilter === "all" ? undefined : selectedFilter.toUpperCase(),
   });
 
   const { mutate: refundTransaction, isPending: isRefunding } = useRefundTransaction();
@@ -85,21 +82,6 @@ const Transactions = () => {
     setCursorHistory([]);
     setCurrentPage(1);
   }, []);
-
-  // Handle filter change
-  const handleFilterChange = useCallback((filter: string) => {
-    setSelectedFilter(filter);
-    setCursor(undefined);
-    setCursorHistory([]);
-    setCurrentPage(1);
-  }, []);
-
-  const filterOptions = [
-    { label: "All Status", value: "all" },
-    { label: "Completed", value: "completed" },
-    { label: "Pending", value: "pending" },
-    { label: "Failed", value: "failed" },
-  ];
 
   const transactions = transactionsData?.transactions || [];
   const totalCount = transactionsData?.count || 0;
@@ -267,14 +249,9 @@ const Transactions = () => {
         </div>
 
         {/* Filter Bar */}
-        <FilterBar
-          searchPlaceholder="Search by transaction ID, customer or merchant..."
-          searchValue={searchValue}
-          onSearchChange={setSearchValue}
-          filterOptions={filterOptions}
-          selectedFilter={selectedFilter}
-          onFilterChange={handleFilterChange}
-        />
+        <div className="mb-4">
+          <TransactionFilters />
+        </div>
 
         {/* Items per page selector */}
         <div className="flex items-center justify-between mb-4">
