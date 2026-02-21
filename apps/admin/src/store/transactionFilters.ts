@@ -212,10 +212,58 @@ export const buildTransactionParams = (
   if (filters.userId) params.userId = filters.userId;
   if (filters.cursor) params.cursor = filters.cursor;
 
-  // Date filter
+  // Date filter - flatten to startDate/endDate for the API
   if (filters.date) {
-    params.date = filters.date;
+    if (filters.date.type === "preset" && filters.date.interval) {
+      const { startDate, endDate } = resolveDatePreset(filters.date.interval);
+      params.startDate = startDate;
+      params.endDate = endDate;
+    } else if (filters.date.type === "range") {
+      if (filters.date.startDate) params.startDate = filters.date.startDate;
+      if (filters.date.endDate) params.endDate = filters.date.endDate;
+    }
   }
 
   return params;
 };
+
+// Resolve date presets to actual start/end date strings
+function resolveDatePreset(interval: DatePresetInterval): { startDate: string; endDate: string } {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let startDate: Date;
+  let endDate: Date = new Date(today.getTime() + 24 * 60 * 60 * 1000 - 1); // end of today
+
+  switch (interval) {
+    case "today":
+      startDate = today;
+      break;
+    case "yesterday":
+      startDate = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+      endDate = new Date(today.getTime() - 1);
+      break;
+    case "last7days":
+      startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      break;
+    case "last30days":
+      startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+      break;
+    case "thisMonth":
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      break;
+    case "lastMonth":
+      startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+      break;
+    case "thisYear":
+      startDate = new Date(now.getFullYear(), 0, 1);
+      break;
+    default:
+      startDate = today;
+  }
+
+  return {
+    startDate: startDate.toISOString().split("T")[0],
+    endDate: endDate.toISOString().split("T")[0],
+  };
+}
