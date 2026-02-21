@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import DashboardWrapper from "./layout/DashboardWrapper";
 import KPICard from "./shared/KPICard";
 import { KPICardSkeleton, ChartSkeleton } from "./shared/Skeletons";
@@ -21,6 +21,7 @@ import {
 } from "recharts";
 import {
   useTransactions,
+  useTransaction,
   useTransactionStats,
   useTransactionCountData,
   useRefundTransaction,
@@ -35,11 +36,31 @@ const Transactions = () => {
   const [cursorHistory, setCursorHistory] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [searchId, setSearchId] = useState("");
   const { mode } = useActiveMode();
+
+  // Search by transaction ID
+  const { data: searchedTransaction, isFetching: searchFetching } = useTransaction(searchId, !!searchId);
+
+  // Open modal when search finds a transaction
+  const handleSearch = useCallback((id: string) => {
+    setSearchId(id);
+  }, []);
+
+  // When searchedTransaction changes and exists, open the modal
+  // (handled by useEffect below)
 
   // Filter store
   const filters = useTransactionFilters();
   const [appliedParams, setAppliedParams] = useState(() => buildTransactionParams(filters, mode as "test" | "live"));
+
+  // Open modal when search finds a transaction
+  useEffect(() => {
+    if (searchedTransaction && searchId) {
+      setSelectedTransaction(searchedTransaction);
+      setSearchId("");
+    }
+  }, [searchedTransaction, searchId]);
 
   // Apply filters handler - builds query params from current filter state
   const handleApplyFilters = useCallback(() => {
@@ -257,7 +278,7 @@ const Transactions = () => {
 
         {/* Filter Bar */}
         <div className="mb-4">
-          <TransactionFilters onApply={handleApplyFilters} />
+          <TransactionFilters onApply={handleApplyFilters} onSearch={handleSearch} searchLoading={searchFetching} />
         </div>
 
         {/* Items per page selector */}

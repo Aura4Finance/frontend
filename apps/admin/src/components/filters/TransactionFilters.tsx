@@ -302,9 +302,11 @@ function ActiveFilter({ label, onRemove }: ActiveFilterProps) {
 // Main TransactionFilters component
 interface TransactionFiltersProps {
   onApply?: () => void;
+  onSearch?: (id: string) => void;
+  searchLoading?: boolean;
 }
 
-export default function TransactionFilters({ onApply }: TransactionFiltersProps) {
+export default function TransactionFilters({ onApply, onSearch, searchLoading }: TransactionFiltersProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [localSearch, setLocalSearch] = useState("");
 
@@ -329,13 +331,14 @@ export default function TransactionFilters({ onApply }: TransactionFiltersProps)
     resetFilters,
   } = useTransactionFilters();
 
-  // Debounced search
+  // Debounced search - looks up transaction by ID
   useEffect(() => {
+    const trimmed = localSearch.trim();
     const timer = setTimeout(() => {
-      setSearchQuery(localSearch || undefined);
-    }, 500);
+      onSearch?.(trimmed);
+    }, 600);
     return () => clearTimeout(timer);
-  }, [localSearch, setSearchQuery]);
+  }, [localSearch, onSearch]);
 
   // Count active filters
   const activeFilterCount = [type, status, token, date, paymentMethod, customerId, paymentLinkId, userId].filter(Boolean).length;
@@ -384,16 +387,22 @@ export default function TransactionFilters({ onApply }: TransactionFiltersProps)
     <div className="space-y-3 mb-4">
       {/* Primary Filter Bar */}
       <div className="flex flex-wrap items-center gap-2">
-        {/* Search */}
+        {/* Search by Transaction ID */}
         <div className="relative flex-1 min-w-[200px] max-w-[300px]">
           <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
           <input
             type="text"
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
-            placeholder="Search transactions..."
-            className="w-full pl-9 pr-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Search by transaction ID..."
+            className="w-full pl-9 pr-8 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+          {searchLoading && (
+            <svg className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin h-3 w-3 text-blue-500" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+          )}
         </div>
 
         {/* Primary Filters */}
