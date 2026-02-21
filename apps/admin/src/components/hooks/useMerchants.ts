@@ -42,23 +42,23 @@ interface MerchantsResponse {
 }
 
 interface MerchantLeaderboard {
-  rank: number;
-  name: string;
-  merchantId: string;
-  revenue: number;
-  transactions: number;
-  growth: number;
+  profileId: string;
+  totalVolume: string;
+  transactionCount: string;
+  activeCustomers: string;
+  score: string;
+  profile: {
+    businessName: string;
+    country: string;
+    isLive: boolean
+  }
 }
 
-interface ModeDistribution {
-  name: string;
-  value: number;
-  color?: string;
-}
-
-interface OnboardingData {
-  date: string;
-  count: number;
+interface MerchantStats {
+  total: number;
+  live: number;
+  onboarded: number;
+  leaderboard: MerchantLeaderboard[];
 }
 
 // Hooks
@@ -87,7 +87,7 @@ export const useMerchant = (merchantId: string, enabled: boolean = true) => {
 };
 
 export const useMerchantStats = () => {
-  return useQuery({
+  return useQuery<MerchantStats>({
     queryKey: ["merchants", "stats"],
     queryFn: async () => {
       const response = await client.get("/admin/metrics/merchants");
@@ -111,44 +111,6 @@ export const useMerchantLeaderboard = (limit: number = 5) => {
   });
 };
 
-export const useMerchantModeDistribution = () => {
-  return useQuery<ModeDistribution[]>({
-    queryKey: ["merchants", "mode-distribution"],
-    queryFn: async () => {
-      // Using merchants metrics endpoint
-      const response = await client.get("/admin/metrics/merchants");
-      return response.data.data?.modeDistribution || [];
-    },
-    staleTime: 10 * 60 * 1000,
-  });
-};
-
-export const useMerchantOnboardingData = (days: number = 8) => {
-  return useQuery<OnboardingData[]>({
-    queryKey: ["merchants", "onboarding-data", days],
-    queryFn: async () => {
-      // Using merchants metrics endpoint
-      const response = await client.get("/admin/metrics/merchants");
-      return response.data.data?.onboardingData || [];
-    },
-    staleTime: 10 * 60 * 1000,
-  });
-};
-
-export const useMerchantTransactions = (merchantId: string, params: any = {}) => {
-  return useQuery({
-    queryKey: ["merchant-transactions", merchantId, params],
-    queryFn: async () => {
-      // Using transactions endpoint with userId filter
-      const response = await client.get(`/v1/admin/transactions`, { 
-        params: { ...params, userId: merchantId } 
-      });
-      return response.data;
-    },
-    enabled: !!merchantId,
-  });
-};
-
 export const useUpdateMerchantStatus = () => {
   const queryClient = useQueryClient();
 
@@ -169,58 +131,3 @@ export const useUpdateMerchantStatus = () => {
   });
 };
 
-export const useApproveMerchant = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (merchantId: string) => {
-      const response = await client.post(`/admin/merchants/${merchantId}/approve`);
-      return response.data.data;
-    },
-    onSuccess: (_, merchantId) => {
-      queryClient.invalidateQueries({ queryKey: ["merchants"] });
-      queryClient.invalidateQueries({ queryKey: ["merchant", merchantId] });
-      toast.success("Merchant approved successfully");
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to approve merchant");
-    },
-  });
-};
-
-export const useRejectMerchant = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ merchantId, reason }: { merchantId: string; reason: string }) => {
-      const response = await client.post(`/admin/merchants/${merchantId}/reject`, { reason });
-      return response.data.data;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["merchants"] });
-      queryClient.invalidateQueries({ queryKey: ["merchant", variables.merchantId] });
-      toast.success("Merchant rejected");
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to reject merchant");
-    },
-  });
-};
-
-export const useRegenerateApiKey = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (merchantId: string) => {
-      const response = await client.post(`/admin/merchants/${merchantId}/regenerate-api-key`);
-      return response.data.data;
-    },
-    onSuccess: (_, merchantId) => {
-      queryClient.invalidateQueries({ queryKey: ["merchant", merchantId] });
-      toast.success("API key regenerated successfully");
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to regenerate API key");
-    },
-  });
-};
