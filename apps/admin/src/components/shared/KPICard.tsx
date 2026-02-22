@@ -28,7 +28,7 @@ const KPICard = ({
       <CardDescription className="font-medium text-gray-500 text-xs">
         {title}
       </CardDescription>
-      <CardContent className="flex justify-between items-center mt-2">
+      <CardContent className="flex justify-between items-center mt-1.5 !p-0">
         <div>
           <span className="font-bold text-lg text-gray-900">{value}</span>
           {trend && (

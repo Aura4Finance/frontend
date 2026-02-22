@@ -39,7 +39,7 @@ const ForgotPassword = () => {
             />
         </div>
         
-        <Card className="border-none shadow-xl">
+        <Card className="border-none shadow-xl p-6">
           <CardHeader className="text-center pb-2">
             <CardTitle className="text-xl font-bold text-gray-900">Reset Password</CardTitle>
             <CardDescription className="text-sm text-gray-500">
@@ -59,8 +59,13 @@ const ForgotPassword = () => {
                     We've sent password reset instructions to <span className="font-medium text-gray-900">{email}</span>
                   </p>
                 </div>
+                <Link href="/reset-password">
+                  <Button variant="default" className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white">
+                    Enter OTP &amp; Reset Password
+                  </Button>
+                </Link>
                 <Link href="/login">
-                  <Button variant="outline" className="w-full mt-2">
+                  <Button variant="outline" className="w-full">
                     Back to Login
                   </Button>
                 </Link>

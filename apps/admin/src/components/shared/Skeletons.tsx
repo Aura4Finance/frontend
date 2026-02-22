@@ -7,13 +7,13 @@ interface SkeletonCardProps {
 export const KPICardSkeleton = () => {
   return (
     <Card className="bg-white w-full p-3 animate-pulse">
-      <div className="h-3 bg-gray-200 rounded w-24 mb-3"></div>
-      <CardContent className="flex justify-between items-center">
+      <div className="h-3 bg-gray-200 rounded w-24 mb-2"></div>
+      <CardContent className="flex justify-between items-center mt-1.5 !p-0">
         <div>
-          <div className="h-6 bg-gray-200 rounded w-20 mb-2"></div>
+          <div className="h-5 bg-gray-200 rounded w-20 mb-1.5"></div>
           <div className="h-2 bg-gray-200 rounded w-28"></div>
         </div>
-        <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
+        <div className="w-9 h-9 bg-gray-200 rounded-lg"></div>
       </CardContent>
     </Card>
   );

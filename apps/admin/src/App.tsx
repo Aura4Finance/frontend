@@ -10,6 +10,7 @@ import Settings from "./components/Settings";
 import Login from "./components/auth/Login";
 import ForgotPassword from "./components/auth/ForgotPassword";
 import ChangePassword from "./components/auth/ChangePassword";
+import ResetPassword from "./components/auth/ResetPassword";
 import { tokenStore } from "./components/client/client";
 
 const queryClient = new QueryClient();
@@ -22,14 +23,15 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Switch>
 
-        {/* Public route */}
+        {/* Public routes */}
         <Route path="/login" component={Login} />
+        <Route path="/forgot-password" component={ForgotPassword} />
+        <Route path="/reset-password" component={ResetPassword} />
+        <Route path="/change-password" component={ChangePassword} />
 
         {/* Protected routes */}
         {token && (
           <>
-            <Route path="/forgot-password" component={ForgotPassword} />
-            <Route path="/change-password" component={ChangePassword} />
             <Route path="/" component={Overview} />
             <Route path="/dashboard" component={Overview} />
             <Route path="/customers" component={Customers} />
@@ -44,6 +46,7 @@ function App() {
         {!token && (
           <Route>
             <Login />
+
           </Route>
         )}
 
