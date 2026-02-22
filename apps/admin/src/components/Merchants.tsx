@@ -1,12 +1,21 @@
 import { useState } from "react";
 import DashboardWrapper from "./layout/DashboardWrapper";
 import KPICard from "./shared/KPICard";
-import { KPICardSkeleton } from "./shared/Skeletons";
+import { KPICardSkeleton, ChartSkeleton } from "./shared/Skeletons";
 import ErrorState from "./shared/ErrorState";
 import FilterBar from "./shared/FilterBar";
 import Pagination from "./shared/Pagination";
 import Modal from "./shared/Modal";
-import { FiShoppingBag, FiCheckCircle, FiZap } from "react-icons/fi";
+import { FiShoppingBag, FiCheckCircle, FiZap, FiDollarSign } from "react-icons/fi";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import {
   useMerchants,
   useMerchantStats,
@@ -65,6 +74,8 @@ const Merchants = () => {
   const liveMerchants = statsData?.live || 0;
   const onboardedMerchants = statsData?.onboarded || 0;
   const leaderboard = statsData?.leaderboard || [];
+  const onboardingStats = statsData?.stats || [];
+  const revenueByMerchant = statsData?.revenueByMerchant;
 
   return (
     <DashboardWrapper>
@@ -75,9 +86,10 @@ const Merchants = () => {
 
       <div className="p-4">
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
           {statsLoading ? (
             <>
+              <KPICardSkeleton />
               <KPICardSkeleton />
               <KPICardSkeleton />
               <KPICardSkeleton />
@@ -87,7 +99,36 @@ const Merchants = () => {
               <KPICard title="Total Merchants" value={totalMerchants} icon={FiShoppingBag} iconColor="text-blue-600" iconBgColor="bg-blue-100" />
               <KPICard title="Onboarded" value={onboardedMerchants} icon={FiCheckCircle} iconColor="text-green-600" iconBgColor="bg-green-100" />
               <KPICard title="Live" value={liveMerchants} icon={FiZap} iconColor="text-purple-600" iconBgColor="bg-purple-100" />
+              <KPICard title="Avg Revenue / Merchant" value={`$${(revenueByMerchant?.averageRevenueInUSDC ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={FiDollarSign} iconColor="text-orange-600" iconBgColor="bg-orange-100" />
             </>
+          )}
+        </div>
+
+        {/* Merchant Onboarding Chart */}
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-5">
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Merchant Onboarding (Past 10 Days)</h3>
+          {statsLoading ? (
+            <ChartSkeleton height="h-44" />
+          ) : !onboardingStats || onboardingStats.length === 0 ? (
+            <div className="h-44 flex items-center justify-center">
+              <p className="text-xs text-gray-500">No onboarding data available</p>
+            </div>
+          ) : (
+            <div className="h-44">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={onboardingStats}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: "6px", fontSize: "11px" }}
+                    formatter={(value: number) => [value, "Merchants"]}
+                    labelFormatter={(label) => `Date: ${label}`}
+                  />
+                  <Bar dataKey="count" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="Onboarded" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           )}
         </div>
 
