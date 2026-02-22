@@ -70,6 +70,14 @@ const Transactions = () => {
     setCurrentPage(1);
   }, [filters, mode]);
 
+  // Re-apply filters when mode changes
+  useEffect(() => {
+    const params = buildTransactionParams(filters, mode as "test" | "live");
+    setAppliedParams(params);
+    setCursorHistory([]);
+    setCurrentPage(1);
+  }, [mode]);
+
   // API hooks
   const { data: statsData, isLoading: statsLoading, error: statsError } = useTransactionStats(mode, (countFilter === "all" ? undefined : countFilter.toUpperCase()) as any);
   const { data: countData } = useTransactionCountData(mode);
