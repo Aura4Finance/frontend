@@ -58,7 +58,18 @@ interface MerchantStats {
   total: number;
   live: number;
   onboarded: number;
+  stats: {
+    date: string;
+    label: string;
+    count: number;
+  }[];
   leaderboard: MerchantLeaderboard[];
+  revenueByMerchant: {
+    averageRevenue: number;
+    averageRevenueInUSDC: number;
+    averageTransactionCount: number;
+    totalMerchants: number;
+  };
 }
 
 // Hooks
