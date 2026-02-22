@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import DashboardWrapper from "./layout/DashboardWrapper";
 import KPICard from "./shared/KPICard";
 import { KPICardSkeleton, ChartSkeleton } from "./shared/Skeletons";
 import ErrorState from "./shared/ErrorState";
-import FilterBar from "./shared/FilterBar";
-import Pagination from "./shared/Pagination";
+import MerchantFilters from "./filters/MerchantFilters";
 import Modal from "./shared/Modal";
 import { FiShoppingBag, FiCheckCircle, FiZap, FiDollarSign } from "react-icons/fi";
 import {
@@ -18,70 +17,116 @@ import {
 } from "recharts";
 import {
   useMerchants,
+  useMerchant,
   useMerchantStats,
   useUpdateMerchantStatus,
+  type Merchant,
 } from "./hooks/useMerchants";
+import { useMerchantFilters, buildMerchantParams } from "../store/merchantFilters";
 
 const Merchants = () => {
-  const [searchValue, setSearchValue] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState("");
+  const [cursorHistory, setCursorHistory] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedMerchantId, setSelectedMerchantId] = useState<string | null>(null);
-  const itemsPerPage = 10;
+  const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null);
+  const [searchId, setSearchId] = useState("");
+
+  // Filter store
+  const filters = useMerchantFilters();
+  const [appliedParams, setAppliedParams] = useState(() => buildMerchantParams(filters));
+
+  // Search by merchant ID or email
+  const { data: searchedMerchant, isFetching: searchFetching } = useMerchant(searchId, !!searchId);
+
+  // Handle search input
+  const handleSearch = useCallback((query: string) => {
+    setSearchId(query);
+  }, []);
+
+  // Open modal when search finds a merchant
+  useEffect(() => {
+    if (searchedMerchant && searchId) {
+      setSelectedMerchant(searchedMerchant);
+      setSearchId("");
+    }
+  }, [searchedMerchant, searchId]);
+
+  // Apply filters handler
+  const handleApplyFilters = useCallback(() => {
+    const params = buildMerchantParams(filters);
+    setAppliedParams(params);
+    setCursorHistory([]);
+    setCurrentPage(1);
+  }, [filters]);
 
   // Fetch data using hooks
-  const { data: merchantsData, isLoading: merchantsLoading, error: merchantsError } = useMerchants({
-    page: currentPage,
-    limit: itemsPerPage,
-    search: searchValue,
-    status: selectedFilter || undefined,
-  });
+  const {
+    data: merchantsData,
+    isLoading: merchantsLoading,
+    error: merchantsError,
+    isFetching,
+  } = useMerchants(appliedParams);
 
   const { data: statsData, isLoading: statsLoading } = useMerchantStats();
   const updateStatus = useUpdateMerchantStatus();
 
-  const merchants = merchantsData?.data || [];
-  const pagination = merchantsData?.pagination;
-  const selectedMerchant = merchants.find(m => m.id === selectedMerchantId);
-
-  const filterOptions = [
-    { label: "All Status", value: "" },
-    { label: "Active", value: "ACTIVE" },
-    { label: "Disabled", value: "DISABLED" },
-    { label: "Pending", value: "PENDING" },
-    { label: "Suspended", value: "SUSPENDED" },
-  ];
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "ACTIVE":
-      case "Live": return "bg-green-100 text-green-700";
-      case "DISABLED":
-      case "Test": return "bg-yellow-100 text-yellow-700";
-      case "PENDING":
-      case "Pending": return "bg-gray-100 text-gray-600";
-      case "SUSPENDED": return "bg-red-100 text-red-700";
-      default: return "bg-gray-100 text-gray-600";
+  // Handle next page
+  const handleNextPage = useCallback(() => {
+    if (merchantsData?.hasNextPage && merchantsData.nextCursor) {
+      setCursorHistory((prev) => [...prev, appliedParams.cursor || ""]);
+      setAppliedParams((prev) => ({ ...prev, cursor: merchantsData.nextCursor }));
+      setCurrentPage((prev) => prev + 1);
     }
-  };
+  }, [merchantsData, appliedParams.cursor]);
 
-  const handleStatusToggle = (merchantId: string, currentStatus: string) => {
-    const action = currentStatus === "ACTIVE" ? "disable" : "enable";
-    updateStatus.mutate({ merchantId, action });
-  };
+  // Handle previous page
+  const handlePreviousPage = useCallback(() => {
+    if (cursorHistory.length > 0) {
+      const newHistory = [...cursorHistory];
+      const previousCursor = newHistory.pop();
+      setCursorHistory(newHistory);
+      setAppliedParams((prev) => ({ ...prev, cursor: previousCursor || undefined }));
+      setCurrentPage((prev) => Math.max(1, prev - 1));
+    }
+  }, [cursorHistory]);
 
-  const totalMerchants = statsData?.total || pagination?.total || 0;
+  // Handle items per page change
+  const handleItemsPerPageChange = useCallback((newLimit: number) => {
+    filters.setLimit(newLimit);
+    setAppliedParams((prev) => ({ ...prev, limit: newLimit, cursor: undefined }));
+    setCursorHistory([]);
+    setCurrentPage(1);
+  }, [filters]);
+
+  const merchants = merchantsData?.merchants || [];
+  const hasNextPage = merchantsData?.hasNextPage || false;
+  const hasPreviousPage = cursorHistory.length > 0;
+
+  const totalMerchants = statsData?.total || 0;
   const liveMerchants = statsData?.live || 0;
   const onboardedMerchants = statsData?.onboarded || 0;
   const leaderboard = statsData?.leaderboard || [];
   const onboardingStats = statsData?.stats || [];
   const revenueByMerchant = statsData?.revenueByMerchant;
 
+  const handleStatusToggle = (merchantId: string, isDisabled: boolean) => {
+    const action = isDisabled ? "enable" : "disable";
+    updateStatus.mutate({ merchantId, action });
+  };
+
   return (
     <DashboardWrapper>
+      {/* Header */}
       <div className="px-4 py-3 bg-white border-b border-gray-100">
-        <h1 className="text-lg font-bold text-gray-900">Merchants</h1>
-        <p className="text-gray-500 text-xs mt-0.5">Manage merchant accounts and view performance</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-bold text-gray-900">Merchants</h1>
+            <p className="text-gray-500 text-xs mt-0.5">Manage merchant accounts and view performance</p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-semibold text-gray-900">{totalMerchants.toLocaleString()}</p>
+            <p className="text-xs text-gray-500">Total Merchants</p>
+          </div>
+        </div>
       </div>
 
       <div className="p-4">
@@ -181,7 +226,28 @@ const Merchants = () => {
           )}
         </div>
 
-        <FilterBar searchPlaceholder="Search by merchant name, ID or category..." searchValue={searchValue} onSearchChange={setSearchValue} filterOptions={filterOptions} selectedFilter={selectedFilter} onFilterChange={setSelectedFilter} />
+        {/* Filter Bar */}
+        <div className="mb-4">
+          <MerchantFilters onApply={handleApplyFilters} onSearch={handleSearch} searchLoading={searchFetching} />
+        </div>
+
+        {/* Items per page selector */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500">Show:</span>
+            <select
+              value={filters.limit}
+              onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+              className="text-xs border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+            </select>
+            <span className="text-xs text-gray-500">per page</span>
+          </div>
+        </div>
 
         {merchantsLoading ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
@@ -199,31 +265,54 @@ const Merchants = () => {
           </div>
         ) : (
           <>
+            {/* Merchants Table */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Merchant</th>
-                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Category</th>
-                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Status</th>
-                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Revenue</th>
-                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Txns</th>
-                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Onboarded</th>
+                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider">Merchant</th>
+                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider">Email</th>
+                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider">Sector</th>
+                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider">Country</th>
+                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider">Verified</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {merchants.map((merchant) => (
-                      <tr key={merchant.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => setSelectedMerchantId(merchant.id)}>
+                      <tr
+                        key={merchant.id}
+                        className="hover:bg-gray-50 cursor-pointer transition-colors"
+                        onClick={() => setSelectedMerchant(merchant)}
+                      >
                         <td className="px-4 py-2.5">
-                          <div className="font-medium text-xs text-gray-900">{merchant.name}</div>
-                          <div className="text-[11px] text-gray-500">{merchant.email}</div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 bg-gradient-to-br from-orange-500 to-pink-600 rounded-full flex items-center justify-center text-white text-[10px] font-bold">
+                              {merchant.businessProfile?.businessName?.charAt(0) || "M"}
+                            </div>
+                            <div className="font-medium text-xs text-gray-900">
+                              {merchant.businessProfile?.businessName || "N/A"}
+                            </div>
+                          </div>
                         </td>
-                        <td className="px-4 py-2.5 text-xs text-gray-600">{merchant.category || 'N/A'}</td>
-                        <td className="px-4 py-2.5"><span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${getStatusColor(merchant.status)}`}>{merchant.status}</span></td>
-                        <td className="px-4 py-2.5 text-xs font-medium text-gray-900">${merchant.totalRevenue?.toLocaleString() || 0}</td>
-                        <td className="px-4 py-2.5 text-xs text-gray-600">{merchant.totalTransactions || 0}</td>
-                        <td className="px-4 py-2.5 text-xs text-gray-600">{merchant.onboarded ? new Date(merchant.onboarded).toLocaleDateString() : 'N/A'}</td>
+                        <td className="px-4 py-2.5 text-xs text-gray-600">{merchant.email}</td>
+                        <td className="px-4 py-2.5 text-xs text-gray-600">{merchant.businessProfile?.businessSector || "N/A"}</td>
+                        <td className="px-4 py-2.5 text-xs text-gray-600">{merchant.businessProfile?.country || "N/A"}</td>
+                        <td className="px-4 py-2.5">
+                          <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${
+                            merchant.disabled ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
+                          }`}>
+                            {merchant.disabled ? "Disabled" : "Active"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${
+                            merchant.emailVerified ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                          }`}>
+                            {merchant.emailVerified ? "Verified" : "Unverified"}
+                          </span>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -231,42 +320,118 @@ const Merchants = () => {
               </div>
             </div>
 
-            {pagination && pagination.totalPages > 1 && (
-              <Pagination currentPage={pagination.page} totalPages={pagination.totalPages} onPageChange={setCurrentPage} />
-            )}
+            {/* Cursor-based Pagination */}
+            <div className="mt-4 flex items-center justify-between bg-white rounded-lg border border-gray-100 px-4 py-3">
+              <div className="text-xs text-gray-500">
+                Page {currentPage} • Showing {merchants.length} merchants
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handlePreviousPage}
+                  disabled={!hasPreviousPage || isFetching}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                    hasPreviousPage && !isFetching
+                      ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      : "bg-gray-50 text-gray-300 cursor-not-allowed"
+                  }`}
+                >
+                  ← Previous
+                </button>
+
+                <span className="px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 rounded-md">
+                  {currentPage}
+                </span>
+
+                <button
+                  onClick={handleNextPage}
+                  disabled={!hasNextPage || isFetching}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                    hasNextPage && !isFetching
+                      ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      : "bg-gray-50 text-gray-300 cursor-not-allowed"
+                  }`}
+                >
+                  Next →
+                </button>
+              </div>
+
+              {isFetching && !merchantsLoading && (
+                <div className="text-xs text-blue-600 flex items-center gap-1">
+                  <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Loading...
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>
 
-      <Modal isOpen={!!selectedMerchant} onClose={() => setSelectedMerchantId(null)} title="Merchant Details">
+      {/* Merchant Detail Modal - uses data from list or search */}
+      <Modal
+        isOpen={!!selectedMerchant}
+        onClose={() => setSelectedMerchant(null)}
+        title="Merchant Details"
+      >
         {selectedMerchant && (
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-pink-600 rounded-xl flex items-center justify-center text-white text-lg font-bold">{selectedMerchant.name.charAt(0)}</div>
+              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-pink-600 rounded-xl flex items-center justify-center text-white text-lg font-bold">
+                {selectedMerchant.businessProfile?.businessName?.charAt(0) || "M"}
+              </div>
               <div>
-                <h3 className="text-base font-semibold text-gray-900">{selectedMerchant.name}</h3>
+                <h3 className="text-base font-semibold text-gray-900">
+                  {selectedMerchant.businessProfile?.businessName || "N/A"}
+                </h3>
                 <p className="text-xs text-gray-500">{selectedMerchant.email}</p>
               </div>
             </div>
+
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gray-50 rounded-lg p-3"><p className="text-[11px] text-gray-500">Merchant ID</p><p className="font-medium text-xs text-gray-900">{selectedMerchant.id}</p></div>
-              <div className="bg-gray-50 rounded-lg p-3"><p className="text-[11px] text-gray-500">Status</p><span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${getStatusColor(selectedMerchant.status)}`}>{selectedMerchant.status}</span></div>
-              <div className="bg-gray-50 rounded-lg p-3"><p className="text-[11px] text-gray-500">Category</p><p className="font-medium text-xs text-gray-900">{selectedMerchant.category || 'N/A'}</p></div>
-              <div className="bg-gray-50 rounded-lg p-3"><p className="text-[11px] text-gray-500">Onboarded</p><p className="font-medium text-xs text-gray-900">{selectedMerchant.onboarded ? new Date(selectedMerchant.onboarded).toLocaleDateString() : 'N/A'}</p></div>
-              <div className="bg-gray-50 rounded-lg p-3"><p className="text-[11px] text-gray-500">Total Revenue</p><p className="font-semibold text-sm text-gray-900">${selectedMerchant.totalRevenue?.toLocaleString() || 0}</p></div>
-              <div className="bg-gray-50 rounded-lg p-3"><p className="text-[11px] text-gray-500">Total Transactions</p><p className="font-semibold text-sm text-gray-900">{selectedMerchant.totalTransactions || 0}</p></div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-[11px] text-gray-500">Merchant ID</p>
+                <p className="font-medium text-xs text-gray-900 break-all">{selectedMerchant.id}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-[11px] text-gray-500">Status</p>
+                <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${
+                  selectedMerchant.disabled ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
+                }`}>
+                  {selectedMerchant.disabled ? "Disabled" : "Active"}
+                </span>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-[11px] text-gray-500">Business Sector</p>
+                <p className="font-medium text-xs text-gray-900">{selectedMerchant.businessProfile?.businessSector || "N/A"}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-[11px] text-gray-500">Country</p>
+                <p className="font-medium text-xs text-gray-900">{selectedMerchant.businessProfile?.country || "N/A"}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-[11px] text-gray-500">Email Verified</p>
+                <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${
+                  selectedMerchant.emailVerified ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                }`}>
+                  {selectedMerchant.emailVerified ? "Verified" : "Unverified"}
+                </span>
+              </div>
             </div>
+
             <div className="pt-2">
               <button
-                onClick={() => handleStatusToggle(selectedMerchant.id, selectedMerchant.status)}
+                onClick={() => handleStatusToggle(selectedMerchant.id, selectedMerchant.disabled)}
                 disabled={updateStatus.isPending}
                 className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-                  selectedMerchant.status === 'Live' 
-                    ? 'bg-red-50 text-red-700 hover:bg-red-100' 
-                    : 'bg-green-50 text-green-700 hover:bg-green-100'
+                  !selectedMerchant.disabled
+                    ? "bg-red-50 text-red-700 hover:bg-red-100"
+                    : "bg-green-50 text-green-700 hover:bg-green-100"
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
-                {updateStatus.isPending ? 'Processing...' : selectedMerchant.status === 'Live' ? 'Disable Merchant' : 'Enable Merchant'}
+                {updateStatus.isPending ? "Processing..." : !selectedMerchant.disabled ? "Disable Merchant" : "Enable Merchant"}
               </button>
             </div>
           </div>

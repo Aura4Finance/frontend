@@ -5,40 +5,34 @@ import { toast } from "sonner";
 // Types
 export interface Merchant {
   id: string;
-  name: string;
   email: string;
-  category: string;
-  status: "Live" | "Test" | "Pending" | "Suspended";
-  onboarded: string;
-  totalRevenue: number;
-  totalTransactions: number;
-  apiKey?: string;
-  webhookUrl?: string;
-  logo?: string;
-  description?: string;
-  website?: string;
-  contactPerson?: string;
-  phoneNumber?: string;
+  disabled: boolean;
+  emailVerified: boolean;
+  businessProfile: {
+    businessName: string;
+    businessSector: string;
+    country: string;
+  }
 }
 
 interface MerchantsParams {
-  page?: number;
-  limit?: number;
+  country?: string;
+  businessSector?: string;
+  businessName?: string;
+  onboarded?: boolean;
+  disabled?: boolean;
   search?: string;
-  status?: string;
-  category?: string;
-  sortBy?: string;
-  sortOrder?: "asc" | "desc";
+  countryList?: string;
+  sortBy?: 'businessName' | 'createdAt';
+  sortOrder?: 'asc' | 'desc';
+  cursor?: string;
+  limit?: number;
 }
 
 interface MerchantsResponse {
-  data: Merchant[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  merchants: Merchant[];
+  hasNextPage: boolean;
+  nextCursor: string;
 }
 
 interface MerchantLeaderboard {
@@ -78,7 +72,7 @@ export const useMerchants = (params: MerchantsParams = {}) => {
     queryKey: ["merchants", params],
     queryFn: async () => {
       const response = await client.get("/admin/merchants", { params });
-      return response.data;
+      return response.data.data;
     },
     staleTime: 3 * 60 * 1000, // 3 minutes
     retry: 2,

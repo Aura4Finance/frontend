@@ -327,7 +327,6 @@ export default function TransactionFilters({ onApply, onSearch, searchLoading }:
     setCustomerId,
     setPaymentLinkId,
     setUserId,
-    setSearchQuery,
     resetFilters,
   } = useTransactionFilters();
 
