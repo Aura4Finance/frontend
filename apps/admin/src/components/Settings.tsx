@@ -1,61 +1,63 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import DashboardWrapper from "./layout/DashboardWrapper";
 import { Button, Input } from "@orafi/ui";
-import { FiUser, FiBell, FiShield, FiSave, FiCamera } from "react-icons/fi";
-import { useAdminProfile, useUpdateProfile } from "./hooks/useSettings";
-import { toast } from "sonner";
+import { FiUser, FiBell, FiLock, FiLogOut, FiMail, FiShield, FiEye, FiEyeOff } from "react-icons/fi";
+import { useAdminProfile } from "./hooks/useProfile";
+import { useLogoutMutation } from "./hooks/useLogout";
+import { useResetPassword } from "./hooks/useSettings";
+import ErrorState from "./shared/ErrorState";
 
 const Settings = () => {
-  const { data: profileData, isLoading: profileLoading } = useAdminProfile();
-  const { mutate: updateProfile, isPending: isUpdating } = useUpdateProfile();
+  const { data: profile, isLoading, error, refetch } = useAdminProfile();
+  const { mutate: logout, isPending: isLoggingOut } = useLogoutMutation();
+  const { mutate: resetPassword, isPending: isResetting } = useResetPassword();
 
-  const [profile, setProfile] = useState({ 
-    name: "", 
-    email: "", 
-    role: "" 
+  const [passwordForm, setPasswordForm] = useState({
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
-  const [notifications, setNotifications] = useState({ 
-    emailAlerts: true, 
-    transactionAlerts: true, 
-    systemAlerts: true, 
-    marketingEmails: false 
+  const [showPasswords, setShowPasswords] = useState({
+    old: false,
+    new: false,
+    confirm: false,
   });
+  const [passwordError, setPasswordError] = useState("");
 
-  // Update local state when profile data is loaded
-  useEffect(() => {
-    if (profileData) {
-      setProfile({
-        name: profileData.name || "",
-        email: profileData.email || "",
-        role: profileData.role || "Admin"
-      });
+  const handlePasswordChange = (field: string, value: string) => {
+    setPasswordForm((prev) => ({ ...prev, [field]: value }));
+    setPasswordError("");
+  };
+
+  const handleResetPassword = () => {
+    if (!passwordForm.oldPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      setPasswordError("All fields are required");
+      return;
     }
-  }, [profileData]);
+    if (passwordForm.newPassword.length < 8) {
+      setPasswordError("New password must be at least 8 characters");
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError("New passwords do not match");
+      return;
+    }
 
-  const handleProfileChange = (field: string, value: string) => 
-    setProfile(prev => ({ ...prev, [field]: value }));
-    
-  const handleNotificationChange = (field: string) => 
-    setNotifications(prev => ({ ...prev, [field]: !prev[field as keyof typeof prev] }));
-
-  const handleSaveChanges = () => {
-    updateProfile(
+    resetPassword(
       {
-        name: profile.name,
-        email: profile.email,
+        email: profile?.email || "",
+        oldPassword: passwordForm.oldPassword,
+        newPassword: passwordForm.newPassword,
       },
       {
         onSuccess: () => {
-          toast.success("Profile updated successfully");
-        },
-        onError: (error: any) => {
-          toast.error(error?.response?.data?.message || "Failed to update profile");
+          setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
         },
       }
     );
   };
 
-  if (profileLoading) {
+  if (isLoading) {
     return (
       <DashboardWrapper>
         <div className="px-4 py-3 bg-white border-b border-gray-100">
@@ -72,6 +74,26 @@ const Settings = () => {
     );
   }
 
+  if (error) {
+    return (
+      <DashboardWrapper>
+        <div className="px-4 py-3 bg-white border-b border-gray-100">
+          <h1 className="text-lg font-bold text-gray-900">Settings</h1>
+          <p className="text-gray-500 text-xs mt-0.5">Manage your account and preferences</p>
+        </div>
+        <div className="p-4 max-w-3xl">
+          <ErrorState
+            message="Failed to load profile data"
+            onRetry={refetch}
+            type="error"
+          />
+        </div>
+      </DashboardWrapper>
+    );
+  }
+
+  const initials = `${(profile?.firstname?.[0] || "").toUpperCase()}${(profile?.lastname?.[0] || "").toUpperCase()}`;
+
   return (
     <DashboardWrapper>
       <div className="px-4 py-3 bg-white border-b border-gray-100">
@@ -86,112 +108,187 @@ const Settings = () => {
             <FiUser className="w-4 h-4 text-blue-600" />
             <h2 className="text-sm font-semibold text-gray-900">Profile Information</h2>
           </div>
+
           <div className="flex items-center gap-4 mb-5">
-            <div className="relative">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-xl font-bold">
-                {profile.name.charAt(0) || profile.email.charAt(0).toUpperCase()}
-              </div>
-              <button className="absolute bottom-0 right-0 p-1.5 bg-white rounded-full shadow-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                <FiCamera className="w-3 h-3 text-gray-600" />
-              </button>
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-lg font-bold">
+              {initials}
             </div>
             <div>
-              <h3 className="text-base font-semibold text-gray-900">{profile.name}</h3>
-              <p className="text-xs text-gray-500">{profile.role}</p>
+              <h3 className="text-base font-semibold text-gray-900">
+                {profile?.firstname} {profile?.lastname}
+              </h3>
+              <p className="text-xs text-gray-500 capitalize">{profile?.role?.toLowerCase()}</p>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              <FiMail className="w-4 h-4 text-gray-400" />
+              <div>
+                <p className="text-[10px] text-gray-500">Email</p>
+                <p className="text-sm font-medium text-gray-900">{profile?.email}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              <FiShield className="w-4 h-4 text-gray-400" />
+              <div>
+                <p className="text-[10px] text-gray-500">Role</p>
+                <p className="text-sm font-medium text-gray-900 capitalize">{profile?.role?.toLowerCase()}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              <FiUser className="w-4 h-4 text-gray-400" />
+              <div>
+                <p className="text-[10px] text-gray-500">Provider</p>
+                <p className="text-sm font-medium text-gray-900 capitalize">{profile?.provider?.toLowerCase()}</p>
+              </div>
+            </div>
+            {profile?.createdAt && (
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <FiUser className="w-4 h-4 text-gray-400" />
+                <div>
+                  <p className="text-[10px] text-gray-500">Member Since</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {new Date(profile.createdAt).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Reset Password Section */}
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-4">
+          <div className="flex items-center gap-2 mb-4">
+            <FiLock className="w-4 h-4 text-blue-600" />
+            <h2 className="text-sm font-semibold text-gray-900">Reset Password</h2>
+          </div>
+
+          <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1.5">Full Name</label>
-              <Input 
-                type="text" 
-                value={profile.name} 
-                onChange={(e) => handleProfileChange("name", e.target.value)} 
-                className="w-full h-9 text-sm" 
-              />
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">Current Password</label>
+              <div className="relative">
+                <Input
+                  type={showPasswords.old ? "text" : "password"}
+                  value={passwordForm.oldPassword}
+                  onChange={(e) => handlePasswordChange("oldPassword", e.target.value)}
+                  placeholder="Enter current password"
+                  className="w-full h-9 text-sm pr-9"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswords((p) => ({ ...p, old: !p.old }))}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPasswords.old ? <FiEyeOff className="w-4 h-4" /> : <FiEye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1.5">Email Address</label>
-              <Input 
-                type="email" 
-                value={profile.email} 
-                onChange={(e) => handleProfileChange("email", e.target.value)} 
-                className="w-full h-9 text-sm" 
-              />
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">New Password</label>
+              <div className="relative">
+                <Input
+                  type={showPasswords.new ? "text" : "password"}
+                  value={passwordForm.newPassword}
+                  onChange={(e) => handlePasswordChange("newPassword", e.target.value)}
+                  placeholder="Enter new password"
+                  className="w-full h-9 text-sm pr-9"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswords((p) => ({ ...p, new: !p.new }))}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPasswords.new ? <FiEyeOff className="w-4 h-4" /> : <FiEye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
-            <div className="md:col-span-2">
-              <label className="block text-xs font-medium text-gray-700 mb-1.5">Role</label>
-              <Input 
-                type="text" 
-                value={profile.role} 
-                disabled 
-                className="w-full h-9 text-sm bg-gray-50" 
-              />
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">Confirm New Password</label>
+              <div className="relative">
+                <Input
+                  type={showPasswords.confirm ? "text" : "password"}
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) => handlePasswordChange("confirmPassword", e.target.value)}
+                  placeholder="Confirm new password"
+                  className="w-full h-9 text-sm pr-9"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswords((p) => ({ ...p, confirm: !p.confirm }))}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPasswords.confirm ? <FiEyeOff className="w-4 h-4" /> : <FiEye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {passwordError && (
+              <p className="text-xs text-red-500">{passwordError}</p>
+            )}
+
+            <div className="flex justify-end pt-1">
+              <Button
+                variant="default"
+                onClick={handleResetPassword}
+                disabled={isResetting}
+                className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <FiLock className="w-3.5 h-3.5" />
+                {isResetting ? "Updating..." : "Update Password"}
+              </Button>
             </div>
           </div>
         </div>
 
-        {/* Notifications Section */}
+        {/* Preferences Section (Non-functional) */}
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-4">
           <div className="flex items-center gap-2 mb-4">
             <FiBell className="w-4 h-4 text-blue-600" />
-            <h2 className="text-sm font-semibold text-gray-900">Notification Preferences</h2>
+            <h2 className="text-sm font-semibold text-gray-900">Preferences</h2>
+            <span className="text-[9px] bg-gray-100 text-gray-500 rounded-full px-2 py-0.5 ml-auto">Coming Soon</span>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-3 opacity-50 pointer-events-none">
             {[
-              { key: "emailAlerts", label: "Email Alerts", description: "Receive important updates via email" },
-              { key: "transactionAlerts", label: "Transaction Alerts", description: "Get notified for high-value transactions" },
-              { key: "systemAlerts", label: "System Alerts", description: "Receive system health notifications" },
-              { key: "marketingEmails", label: "Marketing Emails", description: "Receive product updates and newsletters" },
+              { label: "Email Notifications", description: "Receive important updates via email" },
+              { label: "Transaction Alerts", description: "Get notified for high-value transactions" },
+              { label: "System Alerts", description: "Receive system health notifications" },
             ].map((item) => (
-              <div key={item.key} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div key={item.label} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div>
                   <p className="font-medium text-xs text-gray-900">{item.label}</p>
                   <p className="text-[11px] text-gray-500">{item.description}</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" checked={notifications[item.key as keyof typeof notifications]} onChange={() => handleNotificationChange(item.key)} className="sr-only peer" />
-                  <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                  <input type="checkbox" className="sr-only peer" disabled />
+                  <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
                 </label>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Security Section */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-4">
-          <div className="flex items-center gap-2 mb-4">
-            <FiShield className="w-4 h-4 text-blue-600" />
-            <h2 className="text-sm font-semibold text-gray-900">Security</h2>
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div>
-                <p className="font-medium text-xs text-gray-900">Two-Factor Authentication</p>
-                <p className="text-[11px] text-gray-500">Add an extra layer of security</p>
-              </div>
-              <Button variant="outline" className="text-xs h-8 px-3">Enable</Button>
+        {/* Logout Section */}
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-red-100 mb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-gray-900">Logout</h2>
+              <p className="text-[11px] text-gray-500 mt-0.5">Sign out of your admin account</p>
             </div>
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div>
-                <p className="font-medium text-xs text-gray-900">Change Password</p>
-                <p className="text-[11px] text-gray-500">Update your password regularly</p>
-              </div>
-              <Button variant="outline" className="text-xs h-8 px-3">Update</Button>
-            </div>
+            <Button
+              variant="outline"
+              onClick={() => logout()}
+              disabled={isLoggingOut}
+              className="flex items-center gap-1.5 border-red-200 text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FiLogOut className="w-3.5 h-3.5" />
+              {isLoggingOut ? "Logging out..." : "Logout"}
+            </Button>
           </div>
-        </div>
-
-        <div className="flex justify-end">
-          <Button 
-            variant="default" 
-            onClick={handleSaveChanges}
-            disabled={isUpdating}
-            className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <FiSave className="w-3.5 h-3.5" />
-            {isUpdating ? "Saving..." : "Save Changes"}
-          </Button>
         </div>
       </div>
     </DashboardWrapper>

@@ -73,12 +73,16 @@ export interface ResetPasswordRequest {
 
 export interface AdminProfile {
   id: string;
-  email: string;
   firstname: string;
   lastname: string;
-  role?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  email: string;
+  provider: string;
+  googleId: string | null;
+  role: string;
+  emailVerified: boolean;
+  disabled: boolean;
+  createdAt: string;
+  businessProfile: any | null;
 }
 
 export interface CreateAdminRequest {
