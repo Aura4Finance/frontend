@@ -9,8 +9,9 @@ import {
 } from "react-icons/ri";
 import logo from "@orafi/ui/assets/OraFi.png";
 import { useActiveTabStore, type TabName } from "../../store/activeTab";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useActiveMode } from "../../store/mode";
+import { useLocation } from "wouter";
 
 interface NavItem {
   name: TabName;
@@ -42,10 +43,21 @@ const navItems: NavItem[] = [
 const LeftBar = () => {
   const { activeTab, collapsed, setActiveTab, toggleCollapse } = useActiveTabStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [location] = useLocation();
   const {
     mode,
     setMode
   } = useActiveMode()
+
+  // Sync active tab with current URL on mount and navigation
+  useEffect(() => {
+    const match = navItems.find(
+      (item) => item.route === location || (item.route === "/" && (location === "/" || location === "/dashboard"))
+    );
+    if (match && match.name !== activeTab) {
+      setActiveTab(match.name);
+    }
+  }, [location]);
 
   const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
 
