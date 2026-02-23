@@ -19,7 +19,7 @@ export const useLogoutMutation = () => {
       setLocation("/login");
     },
 
-    onError: (error: any) => {
+    onError: () => {
       // Even if the API call fails, clear the token locally
       clearToken();
       toast.info("Logged out");
