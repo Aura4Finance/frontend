@@ -23,6 +23,7 @@ import {
   type Merchant,
 } from "./hooks/useMerchants";
 import { useMerchantFilters, buildMerchantParams } from "../store/merchantFilters";
+import CopyButton from "./shared/CopyButton";
 
 const Merchants = () => {
   const [cursorHistory, setCursorHistory] = useState<string[]>([]);
@@ -375,6 +376,7 @@ const Merchants = () => {
         isOpen={!!selectedMerchant}
         onClose={() => setSelectedMerchant(null)}
         title="Merchant Details"
+        size="wide"
       >
         {selectedMerchant && (
           <div className="space-y-4">
@@ -386,14 +388,20 @@ const Merchants = () => {
                 <h3 className="text-base font-semibold text-gray-900">
                   {selectedMerchant.businessProfile?.businessName || "N/A"}
                 </h3>
-                <p className="text-xs text-gray-500">{selectedMerchant.email}</p>
+                <div className="flex items-center gap-1">
+                  <p className="text-xs text-gray-500">{selectedMerchant.email}</p>
+                  <CopyButton text={selectedMerchant.email} />
+                </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Merchant ID</p>
-                <p className="font-medium text-xs text-gray-900 break-all">{selectedMerchant.id}</p>
+                <div className="flex items-center gap-1">
+                  <p className="font-medium text-xs text-gray-900 break-all">{selectedMerchant.id}</p>
+                  <CopyButton text={selectedMerchant.id} />
+                </div>
               </div>
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Status</p>
@@ -407,14 +415,19 @@ const Merchants = () => {
                 <p className="text-[11px] text-gray-500">Business Sector</p>
                 <p className="font-medium text-xs text-gray-900">{selectedMerchant.businessProfile?.businessSector || "N/A"}</p>
               </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-[11px] text-gray-500">Wallet Address</p>
-                <p className="font-medium text-xs text-gray-900">{selectedMerchant.businessProfile?.wallet[0]?.pubKey || "N/A"}</p>
-              </div>
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Country</p>
                 <p className="font-medium text-xs text-gray-900">{selectedMerchant.businessProfile?.country || "N/A"}</p>
               </div>
+              {selectedMerchant.businessProfile?.wallet[0]?.pubKey && (
+                <div className="bg-gray-50 rounded-lg p-3 col-span-2">
+                  <p className="text-[11px] text-gray-500">Wallet Address</p>
+                  <div className="flex items-center gap-1">
+                    <p className="font-medium text-xs text-gray-900 break-all">{selectedMerchant.businessProfile.wallet[0].pubKey}</p>
+                    <CopyButton text={selectedMerchant.businessProfile.wallet[0].pubKey} />
+                  </div>
+                </div>
+              )}
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Email Verified</p>
                 <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${

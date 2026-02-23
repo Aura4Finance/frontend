@@ -6,9 +6,16 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: ReactNode;
+  size?: "default" | "wide" | "xl";
 }
 
-const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
+const sizeClasses = {
+  default: "max-w-lg",
+  wide: "max-w-2xl",
+  xl: "max-w-3xl",
+};
+
+const Modal = ({ isOpen, onClose, title, children, size = "default" }: ModalProps) => {
   if (!isOpen) return null;
 
   return (
@@ -20,7 +27,7 @@ const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
       />
       
       {/* Modal Content */}
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 max-h-[85vh] overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div className={`relative bg-white rounded-xl shadow-2xl w-full ${sizeClasses[size]} mx-4 max-h-[85vh] overflow-hidden animate-in fade-in zoom-in duration-200`}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
           <h2 className="text-base font-semibold text-gray-900">{title}</h2>

@@ -6,6 +6,7 @@ import ErrorState from "./shared/ErrorState";
 import { useCustomers, useCustomer, type Customer } from "./hooks/useCustomers";
 import { useCustomerFilters, buildCustomerParams } from "../store/customerFilters";
 import { useActiveMode } from "../store/mode";
+import CopyButton from "./shared/CopyButton";
 
 const Customers = () => {
   const [cursorHistory, setCursorHistory] = useState<string[]>([]);
@@ -274,14 +275,20 @@ const Customers = () => {
                 <h3 className="text-base font-semibold text-gray-900">
                   {selectedCustomer.firstname} {selectedCustomer.lastname}
                 </h3>
-                <p className="text-xs text-gray-500">{selectedCustomer.email}</p>
+                <div className="flex items-center gap-1">
+                  <p className="text-xs text-gray-500">{selectedCustomer.email}</p>
+                  <CopyButton text={selectedCustomer.email} />
+                </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Customer ID</p>
-                <p className="font-medium text-xs text-gray-900 break-all">{selectedCustomer.id}</p>
+                <div className="flex items-center gap-1">
+                  <p className="font-medium text-xs text-gray-900 break-all">{selectedCustomer.id}</p>
+                  <CopyButton text={selectedCustomer.id} />
+                </div>
               </div>
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Mode</p>

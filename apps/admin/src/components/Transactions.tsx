@@ -29,6 +29,7 @@ import {
 } from "./hooks/useTransactions";
 import { useActiveMode } from "../store/mode";
 import { toast } from "sonner";
+import CopyButton from "./shared/CopyButton";
 
 const Transactions = () => {
   const [countFilter, setCountFilter] = useState<"all" | "completed" | "pending" | "failed">("all");
@@ -423,14 +424,17 @@ const Transactions = () => {
       </div>
 
       {/* Transaction Detail Modal */}
-      <Modal isOpen={!!selectedTransaction} onClose={() => setSelectedTransaction(null)} title="Transaction Details">
+      <Modal isOpen={!!selectedTransaction} onClose={() => setSelectedTransaction(null)} title="Transaction Details" size="wide">
         {selectedTransaction && (
           <div className="space-y-4 max-h-[70vh] overflow-y-auto">
             {/* Header */}
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[11px] text-gray-500">Transaction ID</p>
-                <span className="text-sm font-semibold text-gray-900">{selectedTransaction.id}</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-sm font-semibold text-gray-900">{selectedTransaction.id}</span>
+                  <CopyButton text={selectedTransaction.id} />
+                </div>
               </div>
               <span className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(selectedTransaction.status)}`}>{selectedTransaction.status}</span>
             </div>
@@ -473,7 +477,16 @@ const Transactions = () => {
                     <p className="font-medium text-xs text-gray-900">
                       {selectedTransaction.customer.firstname} {selectedTransaction.customer.lastname}
                     </p>
-                    <p className="text-[11px] text-gray-500">{selectedTransaction.customer.email}</p>
+                    <div className="flex items-center gap-1">
+                      <p className="text-[11px] text-gray-500">{selectedTransaction.customer.email}</p>
+                      <CopyButton text={selectedTransaction.customer.email} />
+                    </div>
+                    {selectedTransaction.customer.id && (
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <p className="text-[10px] text-gray-400">ID: {selectedTransaction.customer.id}</p>
+                        <CopyButton text={selectedTransaction.customer.id} />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -484,7 +497,16 @@ const Transactions = () => {
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500 mb-1">Merchant</p>
                 <p className="font-medium text-xs text-gray-900">{selectedTransaction.profile.businessName}</p>
-                <p className="text-[11px] text-gray-500">{selectedTransaction.profile.user?.email}</p>
+                <div className="flex items-center gap-1">
+                  <p className="text-[11px] text-gray-500">{selectedTransaction.profile.user?.email}</p>
+                  {selectedTransaction.profile.user?.email && <CopyButton text={selectedTransaction.profile.user.email} />}
+                </div>
+                {selectedTransaction.profile.id && (
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <p className="text-[10px] text-gray-400">ID: {selectedTransaction.profile.id}</p>
+                    <CopyButton text={selectedTransaction.profile.id} />
+                  </div>
+                )}
               </div>
             )}
 
@@ -511,7 +533,10 @@ const Transactions = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-blue-50 rounded-lg p-3">
                     <p className="text-[11px] text-blue-600">Payment ID</p>
-                    <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payment.id}</p>
+                    <div className="flex items-center gap-1">
+                      <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payment.id}</p>
+                      <CopyButton text={selectedTransaction.payment.id} />
+                    </div>
                   </div>
                   <div className="bg-blue-50 rounded-lg p-3">
                     <p className="text-[11px] text-blue-600">Payment Method</p>
@@ -524,31 +549,46 @@ const Transactions = () => {
                   {selectedTransaction.payment.txRef && (
                     <div className="bg-blue-50 rounded-lg p-3">
                       <p className="text-[11px] text-blue-600">Transaction Reference</p>
-                      <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payment.txRef}</p>
+                      <div className="flex items-center gap-1">
+                        <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payment.txRef}</p>
+                        <CopyButton text={selectedTransaction.payment.txRef} />
+                      </div>
                     </div>
                   )}
                   {selectedTransaction.payment.depositAddress && (
                     <div className="bg-blue-50 rounded-lg p-3 col-span-2">
                       <p className="text-[11px] text-blue-600">Deposit Address</p>
-                      <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payment.depositAddress}</p>
+                      <div className="flex items-center gap-1">
+                        <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payment.depositAddress}</p>
+                        <CopyButton text={selectedTransaction.payment.depositAddress} />
+                      </div>
                     </div>
                   )}
                   {selectedTransaction.payment.wallet?.pubKey && (
                     <div className="bg-blue-50 rounded-lg p-3 col-span-2">
                       <p className="text-[11px] text-blue-600">Wallet Public Key</p>
-                      <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payment.wallet.pubKey}</p>
+                      <div className="flex items-center gap-1">
+                        <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payment.wallet.pubKey}</p>
+                        <CopyButton text={selectedTransaction.payment.wallet.pubKey} />
+                      </div>
                     </div>
                   )}
                   {selectedTransaction.payment.redirectUrl && (
                     <div className="bg-blue-50 rounded-lg p-3 col-span-2">
                       <p className="text-[11px] text-blue-600">Redirect URL</p>
-                      <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payment.redirectUrl}</p>
+                      <div className="flex items-center gap-1">
+                        <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payment.redirectUrl}</p>
+                        <CopyButton text={selectedTransaction.payment.redirectUrl} />
+                      </div>
                     </div>
                   )}
                   {selectedTransaction.payment.paylinkId && (
                     <div className="bg-blue-50 rounded-lg p-3">
                       <p className="text-[11px] text-blue-600">Paylink ID</p>
-                      <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payment.paylinkId}</p>
+                      <div className="flex items-center gap-1">
+                        <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payment.paylinkId}</p>
+                        <CopyButton text={selectedTransaction.payment.paylinkId} />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -562,7 +602,10 @@ const Transactions = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-purple-50 rounded-lg p-3">
                     <p className="text-[11px] text-purple-600">Payout ID</p>
-                    <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payout.id}</p>
+                    <div className="flex items-center gap-1">
+                      <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payout.id}</p>
+                      <CopyButton text={selectedTransaction.payout.id} />
+                    </div>
                   </div>
                   <div className="bg-purple-50 rounded-lg p-3">
                     <p className="text-[11px] text-purple-600">Method</p>
@@ -571,13 +614,19 @@ const Transactions = () => {
                   {selectedTransaction.payout.walletAddress && (
                     <div className="bg-purple-50 rounded-lg p-3 col-span-2">
                       <p className="text-[11px] text-purple-600">Wallet Address</p>
-                      <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payout.walletAddress}</p>
+                      <div className="flex items-center gap-1">
+                        <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payout.walletAddress}</p>
+                        <CopyButton text={selectedTransaction.payout.walletAddress} />
+                      </div>
                     </div>
                   )}
                   {selectedTransaction.payout.txDigest && (
                     <div className="bg-purple-50 rounded-lg p-3 col-span-2">
                       <p className="text-[11px] text-purple-600">Transaction Digest</p>
-                      <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payout.txDigest}</p>
+                      <div className="flex items-center gap-1">
+                        <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payout.txDigest}</p>
+                        <CopyButton text={selectedTransaction.payout.txDigest} />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -591,7 +640,10 @@ const Transactions = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-orange-50 rounded-lg p-3">
                     <p className="text-[11px] text-orange-600">Refund ID</p>
-                    <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.refund.id}</p>
+                    <div className="flex items-center gap-1">
+                      <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.refund.id}</p>
+                      <CopyButton text={selectedTransaction.refund.id} />
+                    </div>
                   </div>
                   {selectedTransaction.refund.reason && (
                     <div className="bg-orange-50 rounded-lg p-3">
@@ -602,19 +654,28 @@ const Transactions = () => {
                   {selectedTransaction.refund.originalTxId && (
                     <div className="bg-orange-50 rounded-lg p-3 col-span-2">
                       <p className="text-[11px] text-orange-600">Original Transaction ID</p>
-                      <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.refund.originalTxId}</p>
+                      <div className="flex items-center gap-1">
+                        <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.refund.originalTxId}</p>
+                        <CopyButton text={selectedTransaction.refund.originalTxId} />
+                      </div>
                     </div>
                   )}
                   {selectedTransaction.refund.walletAddress && (
                     <div className="bg-orange-50 rounded-lg p-3 col-span-2">
                       <p className="text-[11px] text-orange-600">Wallet Address</p>
-                      <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.refund.walletAddress}</p>
+                      <div className="flex items-center gap-1">
+                        <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.refund.walletAddress}</p>
+                        <CopyButton text={selectedTransaction.refund.walletAddress} />
+                      </div>
                     </div>
                   )}
                   {selectedTransaction.refund.txDigest && (
                     <div className="bg-orange-50 rounded-lg p-3 col-span-2">
                       <p className="text-[11px] text-orange-600">Transaction Digest</p>
-                      <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.refund.txDigest}</p>
+                      <div className="flex items-center gap-1">
+                        <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.refund.txDigest}</p>
+                        <CopyButton text={selectedTransaction.refund.txDigest} />
+                      </div>
                     </div>
                   )}
                 </div>
