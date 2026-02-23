@@ -407,6 +407,10 @@ const Merchants = () => {
                 <p className="text-[11px] text-gray-500">Business Sector</p>
                 <p className="font-medium text-xs text-gray-900">{selectedMerchant.businessProfile?.businessSector || "N/A"}</p>
               </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-[11px] text-gray-500">Wallet Address</p>
+                <p className="font-medium text-xs text-gray-900">{selectedMerchant.businessProfile?.wallet[0]?.pubKey || "N/A"}</p>
+              </div>
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Country</p>
                 <p className="font-medium text-xs text-gray-900">{selectedMerchant.businessProfile?.country || "N/A"}</p>

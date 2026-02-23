@@ -29,7 +29,7 @@ const Customers = () => {
   // Open modal when search finds a customer
   useEffect(() => {
     if (searchedCustomer && searchId) {
-      setSelectedCustomer(searchedCustomer);
+      setSelectedCustomer(searchedCustomer || null);
       setSearchId("");
     }
   }, [searchedCustomer, searchId]);

@@ -12,6 +12,9 @@ export interface Merchant {
     businessName: string;
     businessSector: string;
     country: string;
+    wallet: {
+      pubKey: string;
+    }[]
   }
 }
 

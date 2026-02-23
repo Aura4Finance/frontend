@@ -47,7 +47,7 @@ export const useCustomer = (customerId: string, enabled: boolean = true) => {
     queryKey: ["customer", customerId],
     queryFn: async () => {
       const response = await client.get(`/admin/customers/${customerId}`);
-      return response.data.data;
+      return response.data.data.customer;
     },
     enabled: enabled && !!customerId,
     staleTime: 5 * 60 * 1000,
