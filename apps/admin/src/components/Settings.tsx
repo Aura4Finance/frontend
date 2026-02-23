@@ -1,11 +1,13 @@
 import { useState } from "react";
 import DashboardWrapper from "./layout/DashboardWrapper";
 import { Button, Input } from "@orafi/ui";
-import { FiUser, FiBell, FiLock, FiLogOut, FiMail, FiShield, FiEye, FiEyeOff } from "react-icons/fi";
-import { useAdminProfile } from "./hooks/useProfile";
+import { FiUser, FiBell, FiLock, FiLogOut, FiMail, FiShield, FiEye, FiEyeOff, FiUserPlus, FiAlertTriangle } from "react-icons/fi";
+import { useAdminProfile, useCreateAdmin, type CreateAdminResponse } from "./hooks/useProfile";
 import { useLogoutMutation } from "./hooks/useLogout";
 import { useResetPassword } from "./hooks/useSettings";
 import ErrorState from "./shared/ErrorState";
+import Modal from "./shared/Modal";
+import CopyButton from "./shared/CopyButton";
 
 const Settings = () => {
   const { data: profile, isLoading, error, refetch } = useAdminProfile();
@@ -23,6 +25,42 @@ const Settings = () => {
     confirm: false,
   });
   const [passwordError, setPasswordError] = useState("");
+
+  // Create Admin state
+  const { mutate: createAdmin, isPending: isCreating } = useCreateAdmin();
+  const [createAdminForm, setCreateAdminForm] = useState({ email: "", firstname: "", lastname: "" });
+  const [createAdminError, setCreateAdminError] = useState("");
+  const [createdCredentials, setCreatedCredentials] = useState<CreateAdminResponse | null>(null);
+  const [showCredentialsModal, setShowCredentialsModal] = useState(false);
+
+  const handleCreateAdminChange = (field: string, value: string) => {
+    setCreateAdminForm((prev) => ({ ...prev, [field]: value }));
+    setCreateAdminError("");
+  };
+
+  const handleCreateAdmin = () => {
+    if (!createAdminForm.email || !createAdminForm.firstname || !createAdminForm.lastname) {
+      setCreateAdminError("All fields are required");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(createAdminForm.email)) {
+      setCreateAdminError("Please enter a valid email address");
+      return;
+    }
+
+    createAdmin(createAdminForm, {
+      onSuccess: (data) => {
+        setCreatedCredentials(data);
+        setShowCredentialsModal(true);
+        setCreateAdminForm({ email: "", firstname: "", lastname: "" });
+      },
+    });
+  };
+
+  const handleCloseCredentialsModal = () => {
+    setShowCredentialsModal(false);
+    setCreatedCredentials(null);
+  };
 
   const handlePasswordChange = (field: string, value: string) => {
     setPasswordForm((prev) => ({ ...prev, [field]: value }));
@@ -245,6 +283,69 @@ const Settings = () => {
           </div>
         </div>
 
+        {/* Create Admin Section */}
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-4">
+          <div className="flex items-center gap-2 mb-4">
+            <FiUserPlus className="w-4 h-4 text-blue-600" />
+            <h2 className="text-sm font-semibold text-gray-900">Create New Admin</h2>
+          </div>
+
+          <p className="text-[11px] text-gray-500 mb-3">
+            Create a new admin account. A temporary password will be generated and shown <strong>only once</strong>.
+          </p>
+
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">First Name</label>
+                <Input
+                  type="text"
+                  value={createAdminForm.firstname}
+                  onChange={(e) => handleCreateAdminChange("firstname", e.target.value)}
+                  placeholder="First name"
+                  className="w-full h-9 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">Last Name</label>
+                <Input
+                  type="text"
+                  value={createAdminForm.lastname}
+                  onChange={(e) => handleCreateAdminChange("lastname", e.target.value)}
+                  placeholder="Last name"
+                  className="w-full h-9 text-sm"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">Email Address</label>
+              <Input
+                type="email"
+                value={createAdminForm.email}
+                onChange={(e) => handleCreateAdminChange("email", e.target.value)}
+                placeholder="admin@example.com"
+                className="w-full h-9 text-sm"
+              />
+            </div>
+
+            {createAdminError && (
+              <p className="text-xs text-red-500">{createAdminError}</p>
+            )}
+
+            <div className="flex justify-end pt-1">
+              <Button
+                variant="default"
+                onClick={handleCreateAdmin}
+                disabled={isCreating}
+                className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <FiUserPlus className="w-3.5 h-3.5" />
+                {isCreating ? "Creating..." : "Create Admin"}
+              </Button>
+            </div>
+          </div>
+        </div>
+
         {/* Preferences Section (Non-functional) */}
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-4">
           <div className="flex items-center gap-2 mb-4">
@@ -291,6 +392,66 @@ const Settings = () => {
           </div>
         </div>
       </div>
+      {/* Created Admin Credentials Modal */}
+      <Modal
+        isOpen={showCredentialsModal}
+        onClose={handleCloseCredentialsModal}
+        title="Admin Created Successfully"
+      >
+        {createdCredentials && (
+          <div className="space-y-4">
+            {/* Warning Banner */}
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex gap-2">
+              <FiAlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-semibold text-amber-800">Important — Save these credentials now!</p>
+                <p className="text-[11px] text-amber-700 mt-1">
+                  This temporary password <strong>will not be shown again</strong> once you close this dialog.
+                  The new admin must log in with these credentials and will be prompted to change their password on first login.
+                </p>
+              </div>
+            </div>
+
+            {/* Credentials */}
+            <div className="space-y-3">
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-[11px] text-gray-500 mb-1">Email</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-sm text-gray-900 break-all flex-1">{createdCredentials.email}</p>
+                  <CopyButton text={createdCredentials.email} />
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-[11px] text-gray-500 mb-1">Temporary Password</p>
+                <div className="flex items-center gap-2">
+                  <code className="font-mono font-semibold text-sm text-gray-900 bg-white border border-gray-200 rounded px-2 py-1 flex-1 select-all">
+                    {createdCredentials.password}
+                  </code>
+                  <CopyButton text={createdCredentials.password} />
+                </div>
+              </div>
+            </div>
+
+            {/* Reminder */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-[11px] text-blue-800">
+                <strong>Next steps:</strong> Share these credentials securely with the new admin.
+                They will be required to change their password upon first login.
+              </p>
+            </div>
+
+            <div className="flex justify-end pt-1">
+              <Button
+                variant="default"
+                onClick={handleCloseCredentialsModal}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs"
+              >
+                I've saved the credentials
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </DashboardWrapper>
   );
 };

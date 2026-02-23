@@ -23,6 +23,11 @@ export const useAdminProfile = () => {
   });
 };
 
+export interface CreateAdminResponse {
+  email: string;
+  password: string;
+}
+
 /**
  * Create new admin
  * POST /v1/admin/create
@@ -30,15 +35,14 @@ export const useAdminProfile = () => {
 export const useCreateAdmin = () => {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return useMutation<CreateAdminResponse, any, CreateAdminRequest>({
     mutationFn: async (data: CreateAdminRequest) => {
-      const response = await client.post<ApiResponse<AdminProfile>>("/admin/create", data);
+      const response = await client.post<ApiResponse<CreateAdminResponse>>("/admin/create", data);
       return response.data.data;
     },
 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin"] });
-      toast.success("Admin created successfully");
     },
 
     onError: (error: any) => {
