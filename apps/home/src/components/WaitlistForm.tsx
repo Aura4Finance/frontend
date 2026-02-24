@@ -28,7 +28,7 @@ export default function WaitlistForm() {
 
   return (
     <div className="max-w-md mx-auto">
-      <p className="text-sm text-gray-500 mb-3">
+      <p className="text-sm text-slate-400 mb-3">
         Join the waitlist for early access
       </p>
 
@@ -36,15 +36,15 @@ export default function WaitlistForm() {
         {status === "success" ? (
           <motion.div
             key="success"
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-green-500/10 border border-green-500/20"
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="flex items-center gap-3 px-5 py-3.5 rounded-lg bg-emerald-50 border border-emerald-200"
           >
-            <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-              <RiCheckLine className="text-green-400" />
+            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+              <RiCheckLine className="text-emerald-600" />
             </div>
-            <p className="text-sm text-green-300">{message}</p>
+            <p className="text-sm text-emerald-700">{message}</p>
           </motion.div>
         ) : (
           <motion.form
@@ -56,7 +56,7 @@ export default function WaitlistForm() {
             className="relative flex items-center"
           >
             <div className="relative flex-1">
-              <RiMailLine className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+              <RiMailLine className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="email"
                 value={email}
@@ -65,23 +65,21 @@ export default function WaitlistForm() {
                   if (status === "error") setStatus("idle");
                 }}
                 placeholder="Enter your email"
-                className="w-full pl-11 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-l-2xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50 focus:bg-white/[0.07] transition-all duration-300"
+                className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-l-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#635bff]/20 focus:border-[#635bff] transition-all duration-200"
                 disabled={status === "loading"}
               />
             </div>
-            <motion.button
+            <button
               type="submit"
               disabled={status === "loading" || !email}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="px-6 py-3.5 bg-gradient-to-r from-blue-600 to-violet-600 text-sm font-semibold text-white rounded-r-2xl hover:from-blue-500 hover:to-violet-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap"
+              className="px-5 py-3 bg-[#635bff] text-sm font-semibold text-white rounded-r-lg hover:bg-[#5851db] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap"
             >
               {status === "loading" ? (
                 <RiLoader4Line className="animate-spin" size={18} />
               ) : (
                 "Join Waitlist"
               )}
-            </motion.button>
+            </button>
           </motion.form>
         )}
       </AnimatePresence>
@@ -90,7 +88,7 @@ export default function WaitlistForm() {
         <motion.p
           initial={{ opacity: 0, y: -5 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-sm text-red-400 mt-2"
+          className="text-sm text-red-500 mt-2"
         >
           {message}
         </motion.p>

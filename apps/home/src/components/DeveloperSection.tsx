@@ -13,7 +13,6 @@ const orafi = new Orafi('sk_live_...');
 const payment = await orafi.payments.create({
   amount: 5000,
   currency: 'USDC',
-  network: 'sui',
   description: 'Premium subscription',
   metadata: {
     orderId: 'order_123',
@@ -68,7 +67,6 @@ app.post('/webhooks/orafi', async (req, res) => {
 ];
 
 function CodeHighlight({ code }: { code: string }) {
-  // Simple syntax highlighting
   const highlighted = code
     .replace(
       /(import|from|const|await|if|switch|case|break|async|new|return)(?=\s|$)/g,
@@ -76,11 +74,11 @@ function CodeHighlight({ code }: { code: string }) {
     )
     .replace(
       /('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`)/g,
-      '<span class="text-green-400">$1</span>'
+      '<span class="text-emerald-400">$1</span>'
     )
     .replace(
       /(\/\/[^\n]*)/g,
-      '<span class="text-gray-600">$1</span>'
+      '<span class="text-slate-500">$1</span>'
     )
     .replace(
       /\b(\d+)\b/g,
@@ -88,7 +86,7 @@ function CodeHighlight({ code }: { code: string }) {
     );
 
   return (
-    <pre className="p-6 overflow-x-auto text-sm leading-relaxed font-mono">
+    <pre className="p-5 sm:p-6 overflow-x-auto text-[13px] sm:text-sm leading-relaxed font-mono text-slate-300">
       <code dangerouslySetInnerHTML={{ __html: highlighted }} />
     </pre>
   );
@@ -107,67 +105,61 @@ export default function DeveloperSection() {
   };
 
   return (
-    <section
-      id="developers"
-      className="relative py-24 sm:py-32 overflow-hidden"
-    >
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-violet-950/5 to-transparent" />
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="developers" className="py-20 sm:py-28">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
           ref={ref}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center"
         >
           {/* Left - Content */}
           <div>
-            <motion.div
+            <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium mb-4"
+              transition={{ duration: 0.4 }}
+              className="text-sm font-semibold text-[#635bff] mb-3"
             >
               For Developers
-            </motion.div>
+            </motion.p>
 
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6"
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="text-3xl sm:text-4xl font-bold text-slate-900 mb-5"
             >
-              Built for{" "}
-              <span className="gradient-text">developers</span>
+              Designed for developers
             </motion.h2>
 
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="text-gray-400 text-lg mb-8 leading-relaxed"
+              transition={{ duration: 0.4, delay: 0.15 }}
+              className="text-slate-500 text-lg mb-8 leading-relaxed"
             >
-              OraFi sits between your application and the blockchain networks.
-              You never handle private keys or direct blockchain interactions
-              — we handle the complexity so you can focus on building.
+              OraFi sits between your application and the blockchain.
+              You never handle private keys — we manage the complexity
+              so you can focus on building your product.
             </motion.p>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="space-y-4"
+              transition={{ duration: 0.4, delay: 0.2 }}
+              className="space-y-3.5"
             >
               {[
-                "Three lines to create a payment",
+                "A few lines of code to create a payment",
                 "Automatic address generation",
                 "Real-time webhook events",
                 "Comprehensive TypeScript SDK",
                 "Test mode for safe development",
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                    <div className="w-2 h-2 rounded-full bg-blue-400" />
+                  <div className="w-5 h-5 rounded-full bg-[#635bff]/10 flex items-center justify-center flex-shrink-0">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#635bff]" />
                   </div>
-                  <span className="text-sm text-gray-300">{item}</span>
+                  <span className="text-sm text-slate-600">{item}</span>
                 </div>
               ))}
             </motion.div>
@@ -175,25 +167,25 @@ export default function DeveloperSection() {
             <motion.a
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.5, delay: 0.4 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
               href="https://docs.orafi.app"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 mt-8 px-6 py-3 text-sm font-semibold text-white bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all duration-300"
+              className="inline-flex items-center gap-2 mt-8 px-5 py-2.5 text-sm font-semibold text-[#635bff] bg-[#635bff]/[0.06] rounded-lg hover:bg-[#635bff]/[0.1] transition-colors duration-200"
             >
-              Read the Docs →
+              Read the docs →
             </motion.a>
           </div>
 
           {/* Right - Code Block */}
           <motion.div
-            initial={{ opacity: 0, x: 30 }}
+            initial={{ opacity: 0, x: 20 }}
             animate={isInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.3 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <div className="code-block rounded-2xl overflow-hidden glow-sm">
+            <div className="code-block rounded-xl shadow-2xl shadow-slate-900/10 overflow-hidden">
               {/* Tab bar */}
-              <div className="flex items-center justify-between border-b border-white/5 px-4">
+              <div className="flex items-center justify-between bg-slate-800/50 px-4">
                 <div className="flex">
                   {tabs.map((tab, i) => (
                     <button
@@ -201,15 +193,15 @@ export default function DeveloperSection() {
                       onClick={() => setActiveTab(i)}
                       className={`px-4 py-3 text-xs font-medium transition-colors relative ${
                         activeTab === i
-                          ? "text-blue-400"
-                          : "text-gray-500 hover:text-gray-300"
+                          ? "text-white"
+                          : "text-slate-500 hover:text-slate-300"
                       }`}
                     >
                       {tab.label}
                       {activeTab === i && (
                         <motion.div
                           layoutId="activeTab"
-                          className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500"
+                          className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#635bff]"
                         />
                       )}
                     </button>
@@ -217,25 +209,15 @@ export default function DeveloperSection() {
                 </div>
                 <button
                   onClick={handleCopy}
-                  className="p-2 text-gray-500 hover:text-gray-300 transition-colors"
+                  className="p-2 text-slate-500 hover:text-slate-300 transition-colors"
                   title="Copy code"
                 >
                   {copied ? (
-                    <RiCheckLine size={16} className="text-green-400" />
+                    <RiCheckLine size={16} className="text-emerald-400" />
                   ) : (
                     <RiFileCopyLine size={16} />
                   )}
                 </button>
-              </div>
-
-              {/* Language badge */}
-              <div className="flex items-center gap-2 px-6 pt-4">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-blue-500/60" />
-                  <span className="text-[10px] text-gray-500 uppercase tracking-wider">
-                    {tabs[activeTab].language}
-                  </span>
-                </div>
               </div>
 
               {/* Code */}

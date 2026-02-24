@@ -38,23 +38,23 @@ const socialLinks = [
 
 export default function Footer() {
   return (
-    <footer className="relative border-t border-white/5">
+    <footer className="border-t border-slate-200 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 lg:gap-12">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <a href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-[#635bff] flex items-center justify-center">
                 <span className="text-white font-bold text-xs">O</span>
               </div>
-              <span className="text-lg font-bold text-white">
-                Ora<span className="text-blue-400">Fi</span>
+              <span className="text-lg font-bold text-slate-900">
+                Ora<span className="text-[#635bff]">Fi</span>
               </span>
             </a>
-            <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-              The Stripe for Web3.
+            <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+              Seamless crypto payments
               <br />
-              Seamless crypto payments API.
+              infrastructure for the internet.
             </p>
             <div className="flex items-center gap-3">
               {socialLinks.map((social) => (
@@ -63,7 +63,7 @@ export default function Footer() {
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 hover:border-white/10 transition-all duration-300"
+                  className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:border-slate-300 transition-all duration-200"
                   aria-label={social.label}
                 >
                   <social.icon size={14} />
@@ -75,7 +75,7 @@ export default function Footer() {
           {/* Links */}
           {Object.entries(footerLinks).map(([category, links]) => (
             <div key={category}>
-              <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
+              <h4 className="text-xs font-semibold text-slate-900 uppercase tracking-wider mb-4">
                 {category}
               </h4>
               <ul className="space-y-2.5">
@@ -91,7 +91,7 @@ export default function Footer() {
                           ? "noopener noreferrer"
                           : undefined
                       }
-                      className="text-sm text-gray-500 hover:text-gray-300 transition-colors duration-300"
+                      className="text-sm text-slate-500 hover:text-slate-900 transition-colors duration-200"
                     >
                       {link.label}
                     </a>
@@ -103,12 +103,12 @@ export default function Footer() {
         </div>
 
         {/* Bottom */}
-        <div className="mt-16 pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-gray-600">
+        <div className="mt-16 pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-xs text-slate-400">
             © {new Date().getFullYear()} OraFi. All rights reserved.
           </p>
-          <p className="text-xs text-gray-600">
-            Built with ❤️ for the Web3 community
+          <p className="text-xs text-slate-400">
+            Crypto payments, simplified.
           </p>
         </div>
       </div>

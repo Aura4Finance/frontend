@@ -1,179 +1,138 @@
 import { motion } from "framer-motion";
-import { RiArrowRightLine, RiFlashlightLine } from "react-icons/ri";
+import { RiArrowRightLine } from "react-icons/ri";
 import WaitlistForm from "./WaitlistForm";
 
 export default function Hero() {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden radial-hero grid-bg">
-      {/* Animated orbs */}
-      <motion.div
-        className="orb w-[500px] h-[500px] bg-blue-600/20 top-[-10%] left-[-10%]"
-        animate={{
-          x: [0, 30, 0],
-          y: [0, -20, 0],
-        }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        className="orb w-[400px] h-[400px] bg-violet-600/15 bottom-[10%] right-[-5%]"
-        animate={{
-          x: [0, -25, 0],
-          y: [0, 25, 0],
-        }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        className="orb w-[300px] h-[300px] bg-cyan-500/10 top-[40%] left-[50%]"
-        animate={{
-          x: [0, 20, 0],
-          y: [0, -30, 0],
-        }}
-        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-      />
+    <section className="relative pt-32 pb-20 sm:pt-40 sm:pb-28 overflow-hidden">
+      {/* Subtle top gradient like Stripe */}
+      <div className="absolute top-0 left-0 right-0 h-[500px] bg-gradient-to-b from-slate-50 to-white -z-10" />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20">
-        <div className="text-center max-w-4xl mx-auto">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center max-w-3xl mx-auto">
           {/* Badge */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-medium mb-8"
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#635bff]/[0.08] text-[#635bff] text-sm font-medium mb-8"
           >
-            <RiFlashlightLine className="text-blue-400" />
-            <span>Now accepting payments on Sui Network</span>
-            <RiArrowRightLine className="text-blue-400/60" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#635bff]" />
+            Free to start · 1% per transaction
           </motion.div>
 
           {/* Main Heading */}
           <motion.h1
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.3 }}
-            className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-extrabold tracking-tight leading-[1.05] mb-6"
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.1] mb-6"
           >
-            <span className="text-white">The </span>
-            <span className="gradient-text">Stripe</span>
+            Payments infrastructure
             <br />
-            <span className="text-white">for Web3</span>
+            <span className="text-[#635bff]">for crypto</span>
           </motion.h1>
 
           {/* Sub heading */}
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            className="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed"
+            transition={{ duration: 0.5, delay: 0.35 }}
+            className="text-lg sm:text-xl text-slate-500 max-w-2xl mx-auto mb-10 leading-relaxed"
           >
-            Accept crypto payments in minutes, not months. OraFi gives you a
-            simple, powerful API to integrate blockchain payments into any
-            application — no Web3 expertise required.
+            OraFi is the easiest way to accept crypto payments. A simple API,
+            beautiful checkout, and real-time webhooks — so you can focus on
+            your product, not the blockchain.
           </motion.p>
 
           {/* CTA Buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.7 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
+            transition={{ duration: 0.5, delay: 0.5 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12"
           >
-            <motion.a
+            <a
               href="https://dashboard.orafi.app"
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
-              className="group relative px-8 py-4 text-base font-semibold text-white bg-gradient-to-r from-blue-600 to-violet-600 rounded-2xl transition-all duration-300 shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 flex items-center gap-2 w-full sm:w-auto justify-center"
+              className="group px-7 py-3.5 text-[15px] font-semibold text-white bg-[#635bff] rounded-lg hover:bg-[#5851db] transition-colors duration-200 flex items-center gap-2 w-full sm:w-auto justify-center"
             >
-              Go to Dashboard
-              <RiArrowRightLine className="group-hover:translate-x-1 transition-transform" />
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-600 to-violet-600 blur-xl opacity-40 group-hover:opacity-60 transition-opacity -z-10" />
-            </motion.a>
+              Start now
+              <RiArrowRightLine className="group-hover:translate-x-0.5 transition-transform duration-200" size={16} />
+            </a>
 
-            <motion.a
+            <a
               href="https://auth.orafi.app"
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
-              className="px-8 py-4 text-base font-semibold text-gray-300 border border-white/10 rounded-2xl hover:bg-white/5 hover:text-white hover:border-white/20 transition-all duration-300 w-full sm:w-auto text-center"
+              className="px-7 py-3.5 text-[15px] font-semibold text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors duration-200 w-full sm:w-auto text-center"
             >
-              Create Account
-            </motion.a>
+              Create account
+            </a>
           </motion.div>
 
-          {/* Waitlist Section */}
+          {/* Waitlist */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.9 }}
+            transition={{ duration: 0.5, delay: 0.65 }}
           >
             <WaitlistForm />
           </motion.div>
 
-          {/* Hero Visual - Code Preview */}
+          {/* Code Preview */}
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 1.1 }}
-            className="mt-20 relative"
+            transition={{ duration: 0.7, delay: 0.8 }}
+            className="mt-16 sm:mt-20"
           >
-            <div className="code-block rounded-2xl p-1 glow max-w-3xl mx-auto">
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
-                <div className="w-3 h-3 rounded-full bg-red-500/60" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
-                <div className="w-3 h-3 rounded-full bg-green-500/60" />
-                <span className="ml-3 text-xs text-gray-500 font-mono">
+            <div className="code-block rounded-xl shadow-2xl shadow-slate-900/10 max-w-2xl mx-auto overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-3 bg-slate-800/50">
+                <div className="w-3 h-3 rounded-full bg-slate-600" />
+                <div className="w-3 h-3 rounded-full bg-slate-600" />
+                <div className="w-3 h-3 rounded-full bg-slate-600" />
+                <span className="ml-3 text-xs text-slate-500 font-mono">
                   create-payment.ts
                 </span>
               </div>
-              <pre className="p-6 text-left overflow-x-auto">
-                <code className="text-sm sm:text-base font-mono leading-relaxed">
+              <pre className="p-5 sm:p-6 text-left overflow-x-auto">
+                <code className="text-[13px] sm:text-sm font-mono leading-relaxed">
                   <span className="text-violet-400">const</span>{" "}
-                  <span className="text-blue-300">payment</span>{" "}
-                  <span className="text-gray-500">=</span>{" "}
+                  <span className="text-sky-300">payment</span>{" "}
+                  <span className="text-slate-500">=</span>{" "}
                   <span className="text-violet-400">await</span>{" "}
-                  <span className="text-cyan-300">orafi</span>
-                  <span className="text-gray-400">.</span>
-                  <span className="text-yellow-300">payments</span>
-                  <span className="text-gray-400">.</span>
-                  <span className="text-green-300">create</span>
-                  <span className="text-gray-400">{"({"}</span>
+                  <span className="text-sky-300">orafi</span>
+                  <span className="text-slate-500">.</span>
+                  <span className="text-slate-300">payments</span>
+                  <span className="text-slate-500">.</span>
+                  <span className="text-emerald-400">create</span>
+                  <span className="text-slate-500">{"({"}</span>
                   {"\n"}
                   {"  "}
-                  <span className="text-blue-300">amount</span>
-                  <span className="text-gray-400">:</span>{" "}
+                  <span className="text-sky-300">amount</span>
+                  <span className="text-slate-500">:</span>{" "}
                   <span className="text-amber-300">5000</span>
-                  <span className="text-gray-400">,</span>
+                  <span className="text-slate-500">,</span>
                   {"\n"}
                   {"  "}
-                  <span className="text-blue-300">currency</span>
-                  <span className="text-gray-400">:</span>{" "}
-                  <span className="text-green-400">"USDC"</span>
-                  <span className="text-gray-400">,</span>
+                  <span className="text-sky-300">currency</span>
+                  <span className="text-slate-500">:</span>{" "}
+                  <span className="text-emerald-400">"USDC"</span>
+                  <span className="text-slate-500">,</span>
                   {"\n"}
                   {"  "}
-                  <span className="text-blue-300">network</span>
-                  <span className="text-gray-400">:</span>{" "}
-                  <span className="text-green-400">"sui"</span>
-                  <span className="text-gray-400">,</span>
+                  <span className="text-sky-300">description</span>
+                  <span className="text-slate-500">:</span>{" "}
+                  <span className="text-emerald-400">"Order #1234"</span>
+                  <span className="text-slate-500">,</span>
                   {"\n"}
-                  {"  "}
-                  <span className="text-blue-300">description</span>
-                  <span className="text-gray-400">:</span>{" "}
-                  <span className="text-green-400">
-                    "Premium subscription"
-                  </span>
-                  <span className="text-gray-400">,</span>
-                  {"\n"}
-                  <span className="text-gray-400">{"})"}</span>
-                  <span className="text-gray-500">;</span>
+                  <span className="text-slate-500">{"})"}</span>
+                  <span className="text-slate-600">;</span>
                   {"\n\n"}
-                  <span className="text-gray-500">
+                  <span className="text-slate-600">
                     {"// => { id: 'pay_1a2b3c', checkout_url: '...' }"}
                   </span>
                 </code>
               </pre>
             </div>
-
-            {/* Gradient blur below code block */}
-            <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-3/4 h-20 bg-blue-500/10 blur-3xl rounded-full" />
           </motion.div>
         </div>
       </div>
