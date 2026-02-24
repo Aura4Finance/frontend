@@ -165,7 +165,7 @@ export default function Cookies() {
               at{" "}
               <a
                 href="mailto:privacy@orafi.app"
-                className="text-[#635bff] hover:underline"
+                className="text-[#2563eb] hover:underline"
               >
                 privacy@orafi.app
               </a>

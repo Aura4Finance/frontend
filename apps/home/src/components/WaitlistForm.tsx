@@ -65,14 +65,14 @@ export default function WaitlistForm() {
                   if (status === "error") setStatus("idle");
                 }}
                 placeholder="Enter your email"
-                className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-l-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#635bff]/20 focus:border-[#635bff] transition-all duration-200"
+                className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-l-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] transition-all duration-200"
                 disabled={status === "loading"}
               />
             </div>
             <button
               type="submit"
               disabled={status === "loading" || !email}
-              className="px-5 py-3 bg-[#635bff] text-sm font-semibold text-white rounded-r-lg hover:bg-[#5851db] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap"
+              className="px-5 py-3 bg-[#2563eb] text-sm font-semibold text-white rounded-r-lg hover:bg-[#1d4ed8] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap"
             >
               {status === "loading" ? (
                 <RiLoader4Line className="animate-spin" size={18} />

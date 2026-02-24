@@ -146,7 +146,7 @@ export default function Privacy() {
               rights, please contact us at{" "}
               <a
                 href="mailto:privacy@orafi.app"
-                className="text-[#635bff] hover:underline"
+                className="text-[#2563eb] hover:underline"
               >
                 privacy@orafi.app
               </a>
@@ -174,7 +174,7 @@ export default function Privacy() {
               contact us at{" "}
               <a
                 href="mailto:privacy@orafi.app"
-                className="text-[#635bff] hover:underline"
+                className="text-[#2563eb] hover:underline"
               >
                 privacy@orafi.app
               </a>

@@ -116,7 +116,7 @@ export default function Terms() {
                 href="https://docs.orafi.app"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#635bff] hover:underline"
+                className="text-[#2563eb] hover:underline"
               >
                 docs.orafi.app
               </a>
@@ -201,7 +201,7 @@ export default function Terms() {
               For questions about these Terms, please contact us at{" "}
               <a
                 href="mailto:legal@orafi.app"
-                className="text-[#635bff] hover:underline"
+                className="text-[#2563eb] hover:underline"
               >
                 legal@orafi.app
               </a>

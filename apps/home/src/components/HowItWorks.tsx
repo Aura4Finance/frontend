@@ -79,7 +79,7 @@ export default function HowItWorks() {
             initial={{ opacity: 0, y: 20 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.4 }}
-            className="text-sm font-semibold text-[#635bff] mb-3"
+            className="text-sm font-semibold text-[#2563eb] mb-3"
           >
             How It Works
           </motion.p>

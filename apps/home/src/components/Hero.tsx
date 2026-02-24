@@ -15,9 +15,9 @@ export default function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#635bff]/[0.08] text-[#635bff] text-sm font-medium mb-8"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#2563eb]/[0.08] text-[#2563eb] text-sm font-medium mb-8"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-[#635bff]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#2563eb]" />
             Free to start · 1% per transaction
           </motion.div>
 
@@ -30,7 +30,7 @@ export default function Hero() {
           >
             Payments infrastructure
             <br />
-            <span className="text-[#635bff]">for crypto</span>
+            <span className="text-[#2563eb]">for crypto</span>
           </motion.h1>
 
           {/* Sub heading */}
@@ -54,7 +54,7 @@ export default function Hero() {
           >
             <a
               href="https://dashboard.orafi.app"
-              className="group px-7 py-3.5 text-[15px] font-semibold text-white bg-[#635bff] rounded-lg hover:bg-[#5851db] transition-colors duration-200 flex items-center gap-2 w-full sm:w-auto justify-center"
+              className="group px-7 py-3.5 text-[15px] font-semibold text-white bg-[#2563eb] rounded-lg hover:bg-[#1d4ed8] transition-colors duration-200 flex items-center gap-2 w-full sm:w-auto justify-center"
             >
               Start now
               <RiArrowRightLine className="group-hover:translate-x-0.5 transition-transform duration-200" size={16} />

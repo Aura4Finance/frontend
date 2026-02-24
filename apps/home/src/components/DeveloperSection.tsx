@@ -132,7 +132,7 @@ export default function DeveloperSection() {
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.4 }}
-              className="text-sm font-semibold text-[#635bff] mb-3"
+              className="text-sm font-semibold text-[#2563eb] mb-3"
             >
               For Developers
             </motion.p>
@@ -171,8 +171,8 @@ export default function DeveloperSection() {
                 "Test mode for safe development",
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-[#635bff]/10 flex items-center justify-center flex-shrink-0">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#635bff]" />
+                  <div className="w-5 h-5 rounded-full bg-[#2563eb]/10 flex items-center justify-center flex-shrink-0">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#2563eb]" />
                   </div>
                   <span className="text-sm text-slate-600">{item}</span>
                 </div>
@@ -186,7 +186,7 @@ export default function DeveloperSection() {
               href="https://docs.orafi.app"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 mt-8 px-5 py-2.5 text-sm font-semibold text-[#635bff] bg-[#635bff]/[0.06] rounded-lg hover:bg-[#635bff]/[0.1] transition-colors duration-200"
+              className="inline-flex items-center gap-2 mt-8 px-5 py-2.5 text-sm font-semibold text-[#2563eb] bg-[#2563eb]/[0.06] rounded-lg hover:bg-[#2563eb]/[0.1] transition-colors duration-200"
             >
               Read the docs →
             </motion.a>
@@ -216,7 +216,7 @@ export default function DeveloperSection() {
                       {activeTab === i && (
                         <motion.div
                           layoutId="activeTab"
-                          className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#635bff]"
+                          className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#2563eb]"
                         />
                       )}
                     </button>

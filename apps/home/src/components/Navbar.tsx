@@ -38,7 +38,7 @@ export default function Navbar() {
             <a href="/" className="flex items-center gap-2.5">
               <img src={logo} alt="OraFi" className="h-10 w-10 rounded-lg object-contain" />
               <span className="text-xl font-bold text-slate-900">
-                Ora<span className="text-[#635bff]">Fi</span>
+                Ora<span className="text-[#2563eb]">Fi</span>
               </span>
             </a>
 
@@ -73,7 +73,7 @@ export default function Navbar() {
               </a>
               <a
                 href="https://dashboard.orafi.app"
-                className="px-5 py-2.5 text-sm font-semibold text-white bg-[#635bff] rounded-lg hover:bg-[#5851db] transition-colors duration-200"
+                className="px-5 py-2.5 text-sm font-semibold text-white bg-[#2563eb] rounded-lg hover:bg-[#1d4ed8] transition-colors duration-200"
               >
                 Dashboard →
               </a>
@@ -135,7 +135,7 @@ export default function Navbar() {
                 </a>
                 <a
                   href="https://dashboard.orafi.app"
-                  className="px-4 py-3 text-center text-white font-semibold bg-[#635bff] rounded-lg hover:bg-[#5851db] transition-colors"
+                  className="px-4 py-3 text-center text-white font-semibold bg-[#2563eb] rounded-lg hover:bg-[#1d4ed8] transition-colors"
                 >
                   Dashboard →
                 </a>

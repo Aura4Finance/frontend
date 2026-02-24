@@ -48,7 +48,7 @@ export default function Footer() {
             <a href="/" className="flex items-center gap-2 mb-4">
               <img src={logo} alt="OraFi" className="h-10 w-10 rounded-lg object-contain" />
               <span className="text-lg font-bold text-slate-900">
-                Ora<span className="text-[#635bff]">Fi</span>
+                Ora<span className="text-[#2563eb]">Fi</span>
               </span>
             </a>
             <p className="text-sm text-slate-500 mb-6 leading-relaxed">

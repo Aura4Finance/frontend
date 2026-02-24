@@ -50,9 +50,9 @@ function WaterFlow() {
         />
         <defs>
           <linearGradient id="wave1" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#635bff" stopOpacity="0.03" />
-            <stop offset="50%" stopColor="#818cf8" stopOpacity="0.05" />
-            <stop offset="100%" stopColor="#635bff" stopOpacity="0.03" />
+            <stop offset="0%" stopColor="#2563eb" stopOpacity="0.03" />
+            <stop offset="50%" stopColor="#60a5fa" stopOpacity="0.05" />
+            <stop offset="100%" stopColor="#2563eb" stopOpacity="0.03" />
           </linearGradient>
         </defs>
       </svg>
@@ -74,9 +74,9 @@ function WaterFlow() {
         />
         <defs>
           <linearGradient id="wave2" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#635bff" stopOpacity="0.04" />
-            <stop offset="50%" stopColor="#a5b4fc" stopOpacity="0.06" />
-            <stop offset="100%" stopColor="#635bff" stopOpacity="0.04" />
+            <stop offset="0%" stopColor="#2563eb" stopOpacity="0.04" />
+            <stop offset="50%" stopColor="#93c5fd" stopOpacity="0.06" />
+            <stop offset="100%" stopColor="#2563eb" stopOpacity="0.04" />
           </linearGradient>
         </defs>
       </svg>
@@ -98,9 +98,9 @@ function WaterFlow() {
         />
         <defs>
           <linearGradient id="wave3" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#635bff" stopOpacity="0.03" />
-            <stop offset="50%" stopColor="#c7d2fe" stopOpacity="0.07" />
-            <stop offset="100%" stopColor="#635bff" stopOpacity="0.03" />
+            <stop offset="0%" stopColor="#2563eb" stopOpacity="0.03" />
+            <stop offset="50%" stopColor="#bfdbfe" stopOpacity="0.07" />
+            <stop offset="100%" stopColor="#2563eb" stopOpacity="0.03" />
           </linearGradient>
         </defs>
       </svg>
