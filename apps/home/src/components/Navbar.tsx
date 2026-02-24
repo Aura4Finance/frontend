@@ -25,31 +25,23 @@ export default function Navbar() {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrolled
-            ? "bg-gray-950/80 backdrop-blur-xl border-b border-white/5 shadow-lg shadow-blue-500/5"
+            ? "bg-white/80 backdrop-blur-lg border-b border-slate-200 shadow-sm"
             : "bg-transparent"
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 lg:h-20">
+          <div className="flex items-center justify-between h-16 lg:h-[72px]">
             {/* Logo */}
-            <motion.a
-              href="/"
-              className="flex items-center gap-2 group"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <div className="relative">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">O</span>
-                </div>
-                <div className="absolute inset-0 w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-violet-600 blur-lg opacity-40 group-hover:opacity-60 transition-opacity" />
+            <a href="/" className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-[#635bff] flex items-center justify-center">
+                <span className="text-white font-bold text-sm">O</span>
               </div>
-              <span className="text-xl font-bold text-white">
-                Ora<span className="text-blue-400">Fi</span>
+              <span className="text-xl font-bold text-slate-900">
+                Ora<span className="text-[#635bff]">Fi</span>
               </span>
-            </motion.a>
+            </a>
 
             {/* Desktop Nav Links */}
             <div className="hidden lg:flex items-center gap-1">
@@ -57,7 +49,7 @@ export default function Navbar() {
                 <a
                   key={link.label}
                   href={link.href}
-                  className="px-4 py-2 text-sm text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-all duration-300"
+                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-lg transition-colors duration-200"
                 >
                   {link.label}
                 </a>
@@ -66,7 +58,7 @@ export default function Navbar() {
                 href="https://docs.orafi.app"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-4 py-2 text-sm text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-all duration-300"
+                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-lg transition-colors duration-200"
               >
                 Docs
               </a>
@@ -76,24 +68,22 @@ export default function Navbar() {
             <div className="hidden lg:flex items-center gap-3">
               <a
                 href="https://auth.orafi.app"
-                className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors duration-300"
+                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors duration-200"
               >
-                Sign In
+                Sign in
               </a>
-              <motion.a
+              <a
                 href="https://dashboard.orafi.app"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-violet-600 rounded-xl hover:from-blue-500 hover:to-violet-500 transition-all duration-300 shadow-lg shadow-blue-500/25"
+                className="px-5 py-2.5 text-sm font-semibold text-white bg-[#635bff] rounded-lg hover:bg-[#5851db] transition-colors duration-200"
               >
-                Dashboard
-              </motion.a>
+                Dashboard →
+              </a>
             </div>
 
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="lg:hidden p-2 text-gray-400 hover:text-white transition-colors"
+              className="lg:hidden p-2 text-slate-600 hover:text-slate-900 transition-colors"
             >
               {mobileOpen ? (
                 <RiCloseLine size={24} />
@@ -109,22 +99,22 @@ export default function Navbar() {
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-40 bg-gray-950/98 backdrop-blur-xl pt-20 px-6 lg:hidden"
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-40 bg-white pt-20 px-6 lg:hidden"
           >
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1">
               {navLinks.map((link, i) => (
                 <motion.a
                   key={link.label}
                   href={link.href}
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.1 }}
+                  transition={{ delay: i * 0.05 }}
                   onClick={() => setMobileOpen(false)}
-                  className="px-4 py-3 text-lg text-gray-300 hover:text-white rounded-xl hover:bg-white/5 transition-all"
+                  className="px-4 py-3 text-base font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors"
                 >
                   {link.label}
                 </motion.a>
@@ -133,22 +123,22 @@ export default function Navbar() {
                 href="https://docs.orafi.app"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-4 py-3 text-lg text-gray-300 hover:text-white rounded-xl hover:bg-white/5 transition-all"
+                className="px-4 py-3 text-base font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors"
               >
                 Docs
               </a>
-              <div className="border-t border-white/10 mt-4 pt-4 flex flex-col gap-3">
+              <div className="border-t border-slate-100 mt-4 pt-4 flex flex-col gap-3">
                 <a
                   href="https://auth.orafi.app"
-                  className="px-4 py-3 text-center text-gray-300 border border-white/10 rounded-xl hover:bg-white/5 transition-all"
+                  className="px-4 py-3 text-center text-slate-700 font-medium border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
                 >
-                  Sign In
+                  Sign in
                 </a>
                 <a
                   href="https://dashboard.orafi.app"
-                  className="px-4 py-3 text-center text-white font-semibold bg-gradient-to-r from-blue-600 to-violet-600 rounded-xl"
+                  className="px-4 py-3 text-center text-white font-semibold bg-[#635bff] rounded-lg hover:bg-[#5851db] transition-colors"
                 >
-                  Dashboard
+                  Dashboard →
                 </a>
               </div>
             </div>
