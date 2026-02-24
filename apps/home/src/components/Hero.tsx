@@ -96,43 +96,73 @@ export default function Hero() {
               <pre className="p-5 sm:p-6 text-left overflow-x-auto">
                 <code className="text-[13px] sm:text-sm font-mono leading-relaxed">
                   <span className="text-violet-400">const</span>{" "}
-                  <span className="text-sky-300">payment</span>{" "}
+                  <span className="text-sky-300">response</span>{" "}
                   <span className="text-slate-500">=</span>{" "}
                   <span className="text-violet-400">await</span>{" "}
-                  <span className="text-sky-300">orafi</span>
-                  <span className="text-slate-500">.</span>
-                  <span className="text-slate-300">payments</span>
-                  <span className="text-slate-500">.</span>
-                  <span className="text-emerald-400">create</span>
-                  <span className="text-slate-500">{"({"}</span>
+                  <span className="text-emerald-400">fetch</span>
+                  <span className="text-slate-500">(</span>
                   {"\n"}
                   {"  "}
+                  <span className="text-emerald-400">'https://api.orafi.app/transactions/payment/create'</span>
+                  <span className="text-slate-500">,</span>{" "}
+                  <span className="text-slate-500">{"{ "}</span>
+                  {"\n"}
+                  {"    "}
+                  <span className="text-sky-300">method</span>
+                  <span className="text-slate-500">:</span>{" "}
+                  <span className="text-emerald-400">'POST'</span>
+                  <span className="text-slate-500">,</span>
+                  {"\n"}
+                  {"    "}
+                  <span className="text-sky-300">headers</span>
+                  <span className="text-slate-500">:</span>{" "}
+                  <span className="text-slate-500">{"{ "}</span>
+                  <span className="text-emerald-400">'x-api-key'</span>
+                  <span className="text-slate-500">:</span>{" "}
+                  <span className="text-emerald-400">API_KEY</span>
+                  <span className="text-slate-500">{" },"}</span>
+                  {"\n"}
+                  {"    "}
+                  <span className="text-sky-300">body</span>
+                  <span className="text-slate-500">:</span>{" "}
+                  <span className="text-sky-300">JSON</span>
+                  <span className="text-slate-500">.</span>
+                  <span className="text-emerald-400">stringify</span>
+                  <span className="text-slate-500">(</span>
+                  <span className="text-slate-500">{"{ "}</span>
+                  {"\n"}
+                  {"      "}
                   <span className="text-sky-300">amount</span>
                   <span className="text-slate-500">:</span>{" "}
-                  <span className="text-amber-300">5000</span>
+                  <span className="text-amber-300">10000</span>
                   <span className="text-slate-500">,</span>
                   {"\n"}
-                  {"  "}
-                  <span className="text-sky-300">currency</span>
+                  {"      "}
+                  <span className="text-sky-300">type</span>
                   <span className="text-slate-500">:</span>{" "}
-                  <span className="text-emerald-400">"USDC"</span>
+                  <span className="text-emerald-400">'HOSTED_CHECKOUT'</span>
                   <span className="text-slate-500">,</span>
                   {"\n"}
-                  {"  "}
-                  <span className="text-sky-300">description</span>
+                  {"      "}
+                  <span className="text-sky-300">txRef</span>
                   <span className="text-slate-500">:</span>{" "}
-                  <span className="text-emerald-400">"Order #1234"</span>
-                  <span className="text-slate-500">,</span>
+                  <span className="text-emerald-400">'order_12345'</span>
+                  {"\n"}
+                  {"    "}
+                  <span className="text-slate-500">{"})"}</span>
                   {"\n"}
                   <span className="text-slate-500">{"})"}</span>
                   <span className="text-slate-600">;</span>
                   {"\n\n"}
                   <span className="text-slate-600">
-                    {"// => { id: 'pay_1a2b3c', checkout_url: '...' }"}
+                    {"// => { checkout_url: 'https://checkout.orafi.app/...' }"}
                   </span>
                 </code>
               </pre>
             </div>
+            <p className="mt-4 text-xs text-slate-400">
+              REST API available now · SDK coming soon
+            </p>
           </motion.div>
         </div>
       </div>

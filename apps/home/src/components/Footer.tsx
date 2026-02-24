@@ -3,6 +3,8 @@ import {
   RiGithubLine,
   RiDiscordLine,
 } from "react-icons/ri";
+import { Link } from "react-router-dom";
+import logo from "@orafi/ui/assets/OraFi.png";
 
 const footerLinks = {
   Product: [
@@ -14,7 +16,7 @@ const footerLinks = {
   Developers: [
     { label: "Documentation", href: "https://docs.orafi.app" },
     { label: "API Reference", href: "https://docs.orafi.app/api-reference/introduction" },
-    { label: "Quickstart", href: "https://docs.orafi.app/quickstart" },
+    { label: "Quickstart", href: "https://docs.orafi.app/essentials/quickstart" },
     { label: "GitHub", href: "https://github.com/orafi" },
   ],
   Company: [
@@ -24,15 +26,15 @@ const footerLinks = {
     { label: "Contact", href: "#" },
   ],
   Legal: [
-    { label: "Privacy", href: "#" },
-    { label: "Terms", href: "#" },
-    { label: "Cookies", href: "#" },
+    { label: "Privacy", href: "/privacy" },
+    { label: "Terms", href: "/terms" },
+    { label: "Cookies", href: "/cookies" },
   ],
 };
 
 const socialLinks = [
-  { icon: RiTwitterXLine, href: "https://x.com/orafi", label: "X (Twitter)" },
-  { icon: RiGithubLine, href: "https://github.com/orafi", label: "GitHub" },
+  { icon: RiTwitterXLine, href: "https://x.com/ora4finance", label: "X (Twitter)" },
+  { icon: RiGithubLine, href: "https://github.com/Aura4Finance", label: "GitHub" },
   { icon: RiDiscordLine, href: "#", label: "Discord" },
 ];
 
@@ -44,9 +46,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <a href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-7 h-7 rounded-lg bg-[#635bff] flex items-center justify-center">
-                <span className="text-white font-bold text-xs">O</span>
-              </div>
+              <img src={logo} alt="OraFi" className="h-10 w-10 rounded-lg object-contain" />
               <span className="text-lg font-bold text-slate-900">
                 Ora<span className="text-[#635bff]">Fi</span>
               </span>
@@ -81,20 +81,23 @@ export default function Footer() {
               <ul className="space-y-2.5">
                 {links.map((link) => (
                   <li key={link.label}>
-                    <a
-                      href={link.href}
-                      target={
-                        link.href.startsWith("http") ? "_blank" : undefined
-                      }
-                      rel={
-                        link.href.startsWith("http")
-                          ? "noopener noreferrer"
-                          : undefined
-                      }
-                      className="text-sm text-slate-500 hover:text-slate-900 transition-colors duration-200"
-                    >
-                      {link.label}
-                    </a>
+                    {link.href.startsWith("http") ? (
+                      <a
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-slate-500 hover:text-slate-900 transition-colors duration-200"
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link
+                        to={link.href}
+                        className="text-sm text-slate-500 hover:text-slate-900 transition-colors duration-200"
+                      >
+                        {link.label}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>

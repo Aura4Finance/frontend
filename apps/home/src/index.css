@@ -29,3 +29,135 @@ body {
   background: #0f172a;
   border-radius: 12px;
 }
+
+/* ─── Water Flow Background ─── */
+.water-flow-container {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.water-wave {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 200%;
+  height: 45%;
+  min-height: 280px;
+}
+
+/* Layer 1 – slow, deep */
+.water-wave-1 {
+  animation: wave-drift 25s linear infinite;
+  opacity: 0.8;
+}
+
+/* Layer 2 – medium */
+.water-wave-2 {
+  animation: wave-drift 18s linear infinite;
+  animation-delay: -5s;
+  opacity: 0.7;
+}
+
+/* Layer 3 – fast, foreground */
+.water-wave-3 {
+  animation: wave-drift 12s linear infinite;
+  animation-delay: -8s;
+  opacity: 0.9;
+}
+
+@keyframes wave-drift {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Shimmering light reflection on water */
+.water-shimmer {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse 600px 200px at 20% 80%,
+      rgba(99, 91, 255, 0.04) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 500px 150px at 70% 75%,
+      rgba(165, 180, 252, 0.05) 0%,
+      transparent 70%
+    );
+  animation: shimmer-move 20s ease-in-out infinite alternate;
+}
+
+@keyframes shimmer-move {
+  0% {
+    opacity: 0.5;
+    transform: translateX(-30px) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(30px) scale(1.05);
+  }
+  100% {
+    opacity: 0.6;
+    transform: translateX(-20px) scale(0.98);
+  }
+}
+
+/* ─── Floating Crypto Coins ─── */
+.crypto-coin {
+  position: absolute;
+  left: 0;
+  z-index: 1;
+  pointer-events: none;
+  animation:
+    coin-drift var(--drift-duration) linear var(--drift-delay) infinite,
+    coin-bob var(--bob-duration) ease-in-out infinite;
+}
+
+.crypto-coin-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  font-weight: 700;
+  line-height: 1;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    0 0 20px rgba(99, 91, 255, 0.06);
+  opacity: 0.45;
+  transition: opacity 0.3s;
+}
+
+/* Drift from right to left across the viewport */
+@keyframes coin-drift {
+  0% {
+    transform: translateX(100vw);
+  }
+  100% {
+    transform: translateX(-120px);
+  }
+}
+
+/* Gentle vertical bobbing like floating on water */
+@keyframes coin-bob {
+  0%, 100% {
+    margin-top: 0;
+  }
+  25% {
+    margin-top: -12px;
+  }
+  75% {
+    margin-top: 8px;
+  }
+}

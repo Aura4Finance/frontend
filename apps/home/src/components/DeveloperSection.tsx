@@ -6,39 +6,51 @@ const tabs = [
   {
     label: "Create Payment",
     language: "TypeScript",
-    code: `import Orafi from '@orafi/sdk';
-
-const orafi = new Orafi('sk_live_...');
-
-const payment = await orafi.payments.create({
-  amount: 5000,
-  currency: 'USDC',
-  description: 'Premium subscription',
-  metadata: {
-    orderId: 'order_123',
-    customerId: 'cust_456'
+    code: `const response = await fetch(
+  'https://api.orafi.app/transactions/payment/create',
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': 'your_api_key'
+    },
+    body: JSON.stringify({
+      amount: 10000,
+      customer: {
+        fullname: 'John Doe',
+        email: 'john@example.com'
+      },
+      txRef: 'order_12345',
+      type: 'HOSTED_CHECKOUT',
+      redirectUrl: 'https://yourapp.com/success'
+    })
   }
-});
+);
 
+const { data } = await response.json();
 // Redirect customer to checkout
-window.location.href = payment.checkout_url;`,
+window.location.href = data.checkout_url;`,
   },
   {
     label: "Verify Payment",
     language: "TypeScript",
-    code: `// Verify payment status after redirect
-const payment = await orafi.payments.retrieve(
-  'pay_1a2b3c4d5e'
+    code: `// Verify payment status
+const response = await fetch(
+  'https://api.orafi.app/transactions/payment/verify/order_12345',
+  {
+    headers: { 'x-api-key': 'your_api_key' }
+  }
 );
+
+const { data: payment } = await response.json();
 
 if (payment.status === 'completed') {
   // Payment successful!
   console.log('Amount:', payment.amount);
-  console.log('Currency:', payment.currency);
-  console.log('Tx Hash:', payment.transaction_hash);
-  
+  console.log('Tx Hash:', payment.transactionHash);
+
   // Fulfill the order
-  await fulfillOrder(payment.metadata.orderId);
+  await fulfillOrder(payment.txRef);
 }`,
   },
   {
@@ -46,11 +58,14 @@ if (payment.status === 'completed') {
     language: "TypeScript",
     code: `// Handle webhook notifications
 app.post('/webhooks/orafi', async (req, res) => {
-  const event = orafi.webhooks.verify(
-    req.body,
-    req.headers['orafi-signature'],
-    webhookSecret
-  );
+  const signature = req.headers['x-orafi-signature'];
+
+  // Verify the webhook signature
+  if (!verifySignature(req.body, signature, webhookSecret)) {
+    return res.status(401).json({ error: 'Invalid signature' });
+  }
+
+  const event = req.body;
 
   switch (event.type) {
     case 'payment.completed':
@@ -149,10 +164,10 @@ export default function DeveloperSection() {
               className="space-y-3.5"
             >
               {[
-                "A few lines of code to create a payment",
+                "Simple REST API — start in minutes",
                 "Automatic address generation",
                 "Real-time webhook events",
-                "Comprehensive TypeScript SDK",
+                "TypeScript SDK coming soon",
                 "Test mode for safe development",
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3">

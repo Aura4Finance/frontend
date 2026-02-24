@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RiMenu3Line, RiCloseLine } from "react-icons/ri";
+import logo from "@orafi/ui/assets/OraFi.png";
 
 const navLinks = [
   { label: "Features", href: "#features" },
@@ -35,9 +36,7 @@ export default function Navbar() {
           <div className="flex items-center justify-between h-16 lg:h-[72px]">
             {/* Logo */}
             <a href="/" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#635bff] flex items-center justify-center">
-                <span className="text-white font-bold text-sm">O</span>
-              </div>
+              <img src={logo} alt="OraFi" className="h-10 w-10 rounded-lg object-contain" />
               <span className="text-xl font-bold text-slate-900">
                 Ora<span className="text-[#635bff]">Fi</span>
               </span>
