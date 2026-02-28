@@ -17,7 +17,7 @@ export const useGetPaymentInformationQuery = (paymentId: string) => {
     queryKey: ["payment-information", paymentId],
     queryFn: async () => {
       const { data } = await client.get(
-        `/transactions/payment/retrieve?paymentId=${paymentId}`,
+        `/transactions/payment?paymentId=${paymentId}`,
       );
       return data.data;
     },

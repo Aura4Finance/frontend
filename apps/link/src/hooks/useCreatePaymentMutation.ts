@@ -2,10 +2,14 @@ import { useMutation } from "@tanstack/react-query";
 import client from "../client/client";
 import { toast } from "sonner";
 
+type Network = "SUI"
+
 interface CreatePaylinkPaymentPayload {
     amount: number;
     email: string;
     fullname: string;
+    network: Network;
+    currency: string;
     paymentLinkId: string;
 }
 
@@ -15,17 +19,21 @@ export const useCreatePaymentMutation = () => {
         mutationFn: async ({
             amount,
             email,
+            network,
+            currency,
             fullname,
             paymentLinkId,
         }: CreatePaylinkPaymentPayload) => {
             const response = await client.post(
-                "/transactions/payment/paylink/create",
+                "/transactions/payment/paylink",
                 {
                     amount,
                     customer: {
                         email,
                         fullname,
                     },
+                    network,
+                    currency,
                 },
                 {
                     headers: {

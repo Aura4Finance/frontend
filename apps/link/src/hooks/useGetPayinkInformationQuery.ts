@@ -2,18 +2,19 @@ import { useQuery } from "@tanstack/react-query";
 import client from "../client/client";
 
 type PayLinkData = {
-        id: string;
-        title: string;
-        description: string;
-        mode: string;
-        amount: number;
-        imageBlobIds: string[];
-        profile: {
-            businessName: string;
-            businessSector: string;
-            country: string;
-            websiteLink: string;
-        }
+  id: string;
+  title: string;
+  description: string;
+  mode: string;
+  currency: string;
+  amount: number;
+  imageBlobIds: string[];
+  profile: {
+    businessName: string;
+    businessSector: string;
+    country: string;
+    websiteLink: string;
+  }
 }
 
 

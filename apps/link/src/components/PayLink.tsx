@@ -152,11 +152,10 @@ const PayLink = () => {
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
         </Card>
-      </div>
+      </div>  
 
       <PopupModal
         open={checkoutOpen}
@@ -167,6 +166,8 @@ const PayLink = () => {
             amount: paylinkData.data?.amount as number,
             email: data.email,
             fullname: data.fullName,
+            network: data.network as "SUI",
+            currency: paylinkData.data?.currency as string,
             paymentLinkId: params?.paylinkId as string,
           })
         }}

@@ -5,19 +5,22 @@ interface PopupModalProps {
   open: boolean;
   onClose: () => void;
   isLoading: boolean;
-  onSubmit: (data: { fullName: string; email: string }) => void;
+  onSubmit: (data: { fullName: string; email: string; network: string }) => void;
 }
 
 const PopupModal = ({ open, onClose, isLoading, onSubmit }: PopupModalProps) => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [network, setNetwork] = useState("SUI");
+
+  const supportedNetworks = ["SUI"] as const;
 
   if (!open) return null;
 
   const handleSubmit = () => {
-    if (!firstName || !lastName || !email) return;
-    onSubmit({ fullName: `${firstName} ${lastName}`, email });
+    if (!firstName || !lastName || !email || !network) return;
+    onSubmit({ fullName: `${firstName} ${lastName}`, email, network });
   };
 
   return (
@@ -69,6 +72,23 @@ const PopupModal = ({ open, onClose, isLoading, onSubmit }: PopupModalProps) => 
               className="mt-1 w-full h-11 rounded-md border border-gray-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900"
               placeholder="john@example.com"
             />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-gray-700">
+              Network
+            </label>
+            <select
+              value={network}
+              onChange={(e) => setNetwork(e.target.value)}
+              className="mt-1 w-full h-11 rounded-md border border-gray-200 px-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-900"
+            >
+              {supportedNetworks.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
