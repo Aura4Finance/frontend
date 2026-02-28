@@ -279,7 +279,7 @@ const Checkout = () => {
                                     <span className="font-bold text-gray-900">${paymentQueryResult?.data.amountInUSDC.toFixed(2)}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-sm text-gray-600">Equivalent (NGN)</span>
+                                    <span className="text-sm text-gray-600">Equivalent ({paymentQueryResult.data.currency})</span>
                                     <span className="font-semibold text-gray-700">₦{paymentQueryResult.data.amount.toLocaleString()}</span>
                                 </div>
                             </div>
@@ -303,7 +303,7 @@ const Checkout = () => {
                                     ${paymentQueryResult?.data.amountInUSDC.toFixed(2)}
                                 </span>
                                 <span className="text-sm text-gray-500 font-medium mt-1">
-                                    ≈ ₦{paymentQueryResult.data.amount.toLocaleString()}
+                                    ≈ {paymentQueryResult.data.currency}{paymentQueryResult.data.amount.toLocaleString()}
                                 </span>
                             </div>
                         </div>

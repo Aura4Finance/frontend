@@ -5,9 +5,10 @@ type PaymentData = {
   id: string;
   depositAddress: string;
   transferAddress: string;
-  amount: number;
   businessName: string;
+  amount: number;
   amountInUSDC: number;
+  currency: string;
   redirectUrl: string;
   mode: "test" | "live"
 };
