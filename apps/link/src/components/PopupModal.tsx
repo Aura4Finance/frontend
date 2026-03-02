@@ -92,7 +92,7 @@ const PopupModal = ({ open, onClose, isLoading, onSubmit }: PopupModalProps) => 
               {selectedNetwork ? (
                 <div className="flex items-center gap-2">
                   <img
-                    src={selectedNetwork.logo}
+                    src={selectedNetwork.logoUrl}
                     alt={selectedNetwork.symbol}
                     className="w-5 h-5 rounded-full object-cover"
                   />
@@ -118,7 +118,7 @@ const PopupModal = ({ open, onClose, isLoading, onSubmit }: PopupModalProps) => 
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100"
                   >
                     <img
-                      src={n.logo}
+                      src={n.logoUrl}
                       alt={n.symbol}
                       className="w-5 h-5 rounded-full object-cover"
                     />
