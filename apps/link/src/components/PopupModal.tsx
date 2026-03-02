@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button, Card } from "@orafi/ui";
-import { useGetSupportedNetworkQuery } from "../queries/useQueries";
+import { useGetSupportedNetworkQuery } from "../hooks/useGetPayinkInformationQuery";
 
 interface PopupModalProps {
   open: boolean;
