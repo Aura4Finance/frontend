@@ -115,7 +115,7 @@ const PopupModal = ({ open, onClose, isLoading, onSubmit }: PopupModalProps) => 
                       setNetwork(n.symbol);
                       setIsDropdownOpen(false);
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100"
+                    className="w-full flex items-center gap-2 px-2 py-2 text-sm hover:bg-gray-100"
                   >
                     <img
                       src={n.logoUrl}
