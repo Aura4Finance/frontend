@@ -19,7 +19,7 @@ type PayLinkData = {
 
 type GetSupportedNetworks = {
   symbol: string,
-  logo: string
+  logoUrl: string
 }
 
 export const useGetSupportedNetworkQuery = () => {
