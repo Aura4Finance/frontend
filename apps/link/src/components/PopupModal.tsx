@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button, Card } from "@orafi/ui";
+import { useGetSupportedNetworkQuery } from "../queries/useQueries";
 
 interface PopupModalProps {
   open: boolean;
@@ -12,11 +13,21 @@ const PopupModal = ({ open, onClose, isLoading, onSubmit }: PopupModalProps) => 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [network, setNetwork] = useState("SUI");
+  const [network, setNetwork] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const supportedNetworks = ["SUI"] as const;
+  const { data: networks, isLoading: networksLoading } =
+    useGetSupportedNetworkQuery();
+
+  useEffect(() => {
+    if (networks && networks.length > 0) {
+      setNetwork(networks[0].symbol);
+    }
+  }, [networks]);
 
   if (!open) return null;
+
+  const selectedNetwork = networks?.find((n) => n.symbol === network);
 
   const handleSubmit = () => {
     if (!firstName || !lastName || !email || !network) return;
@@ -29,38 +40,30 @@ const PopupModal = ({ open, onClose, isLoading, onSubmit }: PopupModalProps) => 
         <h2 className="text-xl font-bold text-gray-900 mb-2">
           Continue to Checkout
         </h2>
-        <p className="text-sm text-gray-500 mb-6">
-          Enter your details to proceed with this payment.
-        </p>
 
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-4">
-            <div>
-              <label className="text-sm font-medium text-gray-700">
-                Name
-              </label>
-
-              <div className="mt-1 flex gap-3">
-                <input
-                  type="text"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  className="w-1/2 h-11 rounded-md border border-gray-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900"
-                  placeholder="First name"
-                />
-
-                <input
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className="w-1/2 h-11 rounded-md border border-gray-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900"
-                  placeholder="Last name"
-                />
-              </div>
+          {/* Name */}
+          <div>
+            <label className="text-sm font-medium text-gray-700">Name</label>
+            <div className="mt-1 flex gap-3">
+              <input
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="w-1/2 h-11 rounded-md border border-gray-200 px-3 text-sm focus:ring-2 focus:ring-blue-900"
+                placeholder="First name"
+              />
+              <input
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className="w-1/2 h-11 rounded-md border border-gray-200 px-3 text-sm focus:ring-2 focus:ring-blue-900"
+                placeholder="Last name"
+              />
             </div>
           </div>
 
-
+          {/* Email */}
           <div>
             <label className="text-sm font-medium text-gray-700">
               Email Address
@@ -69,29 +72,65 @@ const PopupModal = ({ open, onClose, isLoading, onSubmit }: PopupModalProps) => 
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full h-11 rounded-md border border-gray-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900"
+              className="mt-1 w-full h-11 rounded-md border border-gray-200 px-3 text-sm focus:ring-2 focus:ring-blue-900"
               placeholder="john@example.com"
             />
           </div>
 
-          <div>
+          {/* Network Dropdown */}
+          <div className="relative">
             <label className="text-sm font-medium text-gray-700">
               Network
             </label>
-            <select
-              value={network}
-              onChange={(e) => setNetwork(e.target.value)}
-              className="mt-1 w-full h-11 rounded-md border border-gray-200 px-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-900"
+
+            <button
+              type="button"
+              disabled={networksLoading}
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="mt-1 w-full h-11 rounded-md border border-gray-200 px-3 text-sm bg-white flex items-center justify-between focus:ring-2 focus:ring-blue-900"
             >
-              {supportedNetworks.map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
+              {selectedNetwork ? (
+                <div className="flex items-center gap-2">
+                  <img
+                    src={selectedNetwork.logo}
+                    alt={selectedNetwork.symbol}
+                    className="w-5 h-5 rounded-full object-cover"
+                  />
+                  <span>{selectedNetwork.symbol}</span>
+                </div>
+              ) : (
+                "Select network"
+              )}
+
+              <span className="text-xs">▼</span>
+            </button>
+
+            {isDropdownOpen && (
+              <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-md">
+                {networks?.map((n) => (
+                  <button
+                    key={n.symbol}
+                    type="button"
+                    onClick={() => {
+                      setNetwork(n.symbol);
+                      setIsDropdownOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100"
+                  >
+                    <img
+                      src={n.logo}
+                      alt={n.symbol}
+                      className="w-5 h-5 rounded-full object-cover"
+                    />
+                    {n.symbol}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
+        {/* Buttons */}
         <div className="flex gap-3 mt-6">
           <Button variant="ghost" className="flex-1" onClick={onClose}>
             Cancel
@@ -101,14 +140,13 @@ const PopupModal = ({ open, onClose, isLoading, onSubmit }: PopupModalProps) => 
             variant="default"
             className="flex-1 bg-blue-950 text-white hover:bg-blue-900 flex items-center justify-center gap-2"
             onClick={handleSubmit}
-            disabled={isLoading}
+            disabled={isLoading || networksLoading}
           >
             {isLoading && (
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
             )}
             {isLoading ? "Processing..." : "Proceed"}
           </Button>
-
         </div>
       </Card>
     </div>

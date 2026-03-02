@@ -17,6 +17,21 @@ type PayLinkData = {
   }
 }
 
+type GetSupportedNetworks = {
+  symbol: string,
+  logo: string
+}
+
+export const useGetSupportedNetworkQuery = () => {
+  return useQuery<GetSupportedNetworks[]>({
+    queryKey: ["networks"],
+    queryFn: async () => {
+      const { data } = await client.get("/networks");
+      return data.data;
+    }
+  })
+}
+
 
 export const useGetPayLinkInformationQuery = (payLinkId?: string) => {
   return useQuery<PayLinkData>({
