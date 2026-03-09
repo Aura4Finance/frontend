@@ -6,7 +6,7 @@ import { z } from 'zod';
 import Wrapper from "../layouts/Wrapper";
 import { FaRegEye } from 'react-icons/fa';
 import { FaRegEyeSlash } from 'react-icons/fa';
-import { FaLock } from 'react-icons/fa6';
+import { FaLock, FaShieldHalved } from 'react-icons/fa6';
 import { FcGoogle } from "react-icons/fc";
 import { IoMdContact } from "react-icons/io";
 import {
@@ -26,7 +26,104 @@ import {
 } from '@orafi/ui/form';
 import { Button } from "@orafi/ui/button";
 import { Input } from "@orafi/ui/input";
-import { useLoginMutation, type LoginSchema } from '../hooks/useLoginMutation';
+import { useLoginMutation, useLogin2FAMutation, type LoginSchema } from '../hooks/useLoginMutation';
+
+const TwoFAStep = ({
+  userId,
+  onBack,
+}: {
+  userId: string;
+  onBack: () => void;
+}) => {
+  const login2FAMutation = useLogin2FAMutation();
+
+  const totpSchema = z.object({
+    token: z.string().min(6, 'Enter the 6-digit code from your authenticator app'),
+  });
+
+  const form = useForm({
+    resolver: zodResolver(totpSchema),
+    defaultValues: { token: '' },
+  });
+
+  const handleSubmit = (value: { token: string }) => {
+    login2FAMutation.mutate({ userId, token: value.token });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <Card className="w-full max-w-sm border border-blue-950/20 shadow-2xl">
+        <CardHeader className="text-center pb-4">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-blue-950/10">
+            <FaShieldHalved className="h-7 w-7 text-blue-950" />
+          </div>
+          <CardTitle className="text-xl font-semibold">
+            Two-Factor Authentication
+          </CardTitle>
+          <CardDescription className="text-sm leading-relaxed">
+            Open your authenticator app and enter the 6-digit code to continue.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="token"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Authenticator Code</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <FaShieldHalved className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={6}
+                          placeholder="000000"
+                          autoFocus
+                          className="pl-10 text-center text-lg font-mono tracking-[0.3em] border-l-4"
+                          {...field}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage className="text-red-800" />
+                  </FormItem>
+                )}
+              />
+
+              <Button
+                variant="ghost"
+                size="lg"
+                asChild={false}
+                className="w-full bg-blue-950 text-white font-semibold px-6 py-3 rounded-lg hover:opacity-90"
+                disabled={login2FAMutation.isPending}
+              >
+                {login2FAMutation.isPending ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-xl" />
+                    <span>Verifying...</span>
+                  </div>
+                ) : (
+                  'Verify & Login'
+                )}
+              </Button>
+
+              <button
+                type="button"
+                onClick={onBack}
+                className="w-full text-center text-sm text-gray-500 hover:text-blue-950 transition-colors"
+              >
+                &larr; Back to login
+              </button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
 
 const Signin = () => {
 
@@ -68,6 +165,10 @@ const Signin = () => {
   }
   const handleLoginMutation = (value: LoginSchema) => {
     loginMutation.mutate(value);
+  }
+
+  const handleBackToLogin = () => {
+    loginMutation.reset();
   }
 
   return (
@@ -186,6 +287,13 @@ const Signin = () => {
           </Form >
         </CardContent>
       </Card>
+      {/* 2FA Step Overlay */}
+      {loginMutation.isSuccess && loginMutation.data && (
+        <TwoFAStep
+          userId={loginMutation.data}
+          onBack={handleBackToLogin}
+        />
+      )}
     </Wrapper >
   )
 }

@@ -5,6 +5,8 @@ import { persist } from "zustand/middleware";
 export type TransactionType = "PAYMENT" | "PAYOUT" | "REFUND";
 export type TransactionStatus = "PENDING" | "COMPLETED" | "FAILED";
 export type TransactionToken = "USDC" | "BTC" | "ETH" | "EUR" | "USD";
+export type TransactionCurrency = "NGN" | "USD" | "EUR" | "GBP" | "GHS" | "KES";
+export type TransactionNetwork = "SUI" | "SOLANA" | "ETHEREUM" | "BASE" | "POLYGON";
 export type PaymentMethod = "PAYMENT_LINK" | "HOSTED_CHECKOUT";
 export type DatePresetInterval = 
   | "today" 
@@ -27,6 +29,8 @@ export interface TransactionFiltersState {
   type?: TransactionType;
   status?: TransactionStatus;
   token?: TransactionToken;
+  currency?: TransactionCurrency;
+  network?: TransactionNetwork;
   
   // Date filter
   date?: DateFilter;
@@ -50,6 +54,8 @@ export interface TransactionFiltersStore extends TransactionFiltersState {
   setType: (type?: TransactionType) => void;
   setStatus: (status?: TransactionStatus) => void;
   setToken: (token?: TransactionToken) => void;
+  setCurrency: (currency?: TransactionCurrency) => void;
+  setNetwork: (network?: TransactionNetwork) => void;
   setDate: (date?: DateFilter) => void;
   setPaymentMethod: (method?: PaymentMethod) => void;
   setPaymentLinkId: (id?: string) => void;
@@ -73,6 +79,8 @@ const defaultFilters: TransactionFiltersState = {
   type: undefined,
   status: undefined,
   token: undefined,
+  currency: undefined,
+  network: undefined,
   date: undefined,
   paymentMethod: undefined,
   paymentLinkId: undefined,
@@ -92,6 +100,8 @@ export const useTransactionFilters = create<TransactionFiltersStore>()(
       setType: (type) => set({ type, cursor: undefined }),
       setStatus: (status) => set({ status, cursor: undefined }),
       setToken: (token) => set({ token, cursor: undefined }),
+      setCurrency: (currency) => set({ currency, cursor: undefined }),
+      setNetwork: (network) => set({ network, cursor: undefined }),
       setDate: (date) => set({ date, cursor: undefined }),
       setPaymentMethod: (paymentMethod) => set({ paymentMethod, cursor: undefined }),
       setPaymentLinkId: (paymentLinkId) => set({ paymentLinkId, cursor: undefined }),
@@ -114,6 +124,8 @@ export const useTransactionFilters = create<TransactionFiltersStore>()(
         if (state.type) params.type = state.type;
         if (state.status) params.status = state.status;
         if (state.token) params.token = state.token;
+        if (state.currency) params.currency = state.currency;
+        if (state.network) params.network = state.network;
         if (state.paymentMethod) params.paymentMethod = state.paymentMethod;
         if (state.paymentLinkId) params.paymentLinkId = state.paymentLinkId;
         if (state.customerId) params.customerId = state.customerId;
@@ -141,6 +153,8 @@ export const useTransactionFilters = create<TransactionFiltersStore>()(
         const type = params.get("type") as TransactionType | null;
         const status = params.get("status") as TransactionStatus | null;
         const token = params.get("token") as TransactionToken | null;
+        const currency = params.get("currency") as TransactionCurrency | null;
+        const network = params.get("network") as TransactionNetwork | null;
         const paymentMethod = params.get("paymentMethod") as PaymentMethod | null;
         const paymentLinkId = params.get("paymentLinkId");
         const customerId = params.get("customerId");
@@ -152,6 +166,8 @@ export const useTransactionFilters = create<TransactionFiltersStore>()(
         if (type) filters.type = type;
         if (status) filters.status = status;
         if (token) filters.token = token;
+        if (currency) filters.currency = currency;
+        if (network) filters.network = network;
         if (paymentMethod) filters.paymentMethod = paymentMethod;
         if (paymentLinkId) filters.paymentLinkId = paymentLinkId;
         if (customerId) filters.customerId = customerId;
@@ -185,6 +201,8 @@ export const useTransactionFilters = create<TransactionFiltersStore>()(
         type: state.type,
         status: state.status,
         token: state.token,
+        currency: state.currency,
+        network: state.network,
         date: state.date,
         paymentMethod: state.paymentMethod,
         limit: state.limit,
@@ -206,6 +224,8 @@ export const buildTransactionParams = (
   if (filters.type) params.type = filters.type;
   if (filters.status) params.status = filters.status;
   if (filters.token) params.token = filters.token;
+  if (filters.currency) params.currency = filters.currency;
+  if (filters.network) params.network = filters.network;
   if (filters.paymentMethod) params.paymentMethod = filters.paymentMethod;
   if (filters.paymentLinkId) params.paymentLinkId = filters.paymentLinkId;
   if (filters.customerId) params.customerId = filters.customerId;

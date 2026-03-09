@@ -5,6 +5,8 @@ import {
   type TransactionType,
   type TransactionStatus,
   type TransactionToken,
+  type TransactionCurrency,
+  type TransactionNetwork,
   type PaymentMethod,
   type DatePresetInterval,
   type DateFilter,
@@ -35,6 +37,23 @@ const tokenOptions: FilterOption<TransactionToken>[] = [
   { label: "ETH", value: "ETH" },
   { label: "EUR", value: "EUR" },
   { label: "USD", value: "USD" },
+];
+
+const currencyOptions: FilterOption<TransactionCurrency>[] = [
+  { label: "NGN", value: "NGN" },
+  { label: "USD", value: "USD" },
+  { label: "EUR", value: "EUR" },
+  { label: "GBP", value: "GBP" },
+  { label: "GHS", value: "GHS" },
+  { label: "KES", value: "KES" },
+];
+
+const networkOptions: FilterOption<TransactionNetwork>[] = [
+  { label: "Sui", value: "SUI" },
+  { label: "Solana", value: "SOLANA" },
+  { label: "Ethereum", value: "ETHEREUM" },
+  { label: "Base", value: "BASE" },
+  { label: "Polygon", value: "POLYGON" },
 ];
 
 const paymentMethodOptions: FilterOption<PaymentMethod>[] = [
@@ -314,6 +333,8 @@ export default function TransactionFilters({ onApply, onSearch, searchLoading }:
     type,
     status,
     token,
+    currency,
+    network,
     date,
     paymentMethod,
     customerId,
@@ -322,6 +343,8 @@ export default function TransactionFilters({ onApply, onSearch, searchLoading }:
     setType,
     setStatus,
     setToken,
+    setCurrency,
+    setNetwork,
     setDate,
     setPaymentMethod,
     setCustomerId,
@@ -340,7 +363,7 @@ export default function TransactionFilters({ onApply, onSearch, searchLoading }:
   }, [localSearch, onSearch]);
 
   // Count active filters
-  const activeFilterCount = [type, status, token, date, paymentMethod, customerId, paymentLinkId, userId].filter(Boolean).length;
+  const activeFilterCount = [type, status, token, currency, network, date, paymentMethod, customerId, paymentLinkId, userId].filter(Boolean).length;
 
   // Get active filter labels for chips
   const getActiveFilters = useCallback(() => {
@@ -356,6 +379,13 @@ export default function TransactionFilters({ onApply, onSearch, searchLoading }:
     }
     if (token) {
       filters.push({ label: `Token: ${token}`, onRemove: () => setToken(undefined) });
+    }
+    if (currency) {
+      filters.push({ label: `Currency: ${currency}`, onRemove: () => setCurrency(undefined) });
+    }
+    if (network) {
+      const option = networkOptions.find((o) => o.value === network);
+      filters.push({ label: `Network: ${option?.label}`, onRemove: () => setNetwork(undefined) });
     }
     if (date) {
       const label = date.type === "preset" 
@@ -378,7 +408,7 @@ export default function TransactionFilters({ onApply, onSearch, searchLoading }:
     }
 
     return filters;
-  }, [type, status, token, date, paymentMethod, customerId, paymentLinkId, userId, setType, setStatus, setToken, setDate, setPaymentMethod, setCustomerId, setPaymentLinkId, setUserId]);
+  }, [type, status, token, currency, network, date, paymentMethod, customerId, paymentLinkId, userId, setType, setStatus, setToken, setCurrency, setNetwork, setDate, setPaymentMethod, setCustomerId, setPaymentLinkId, setUserId]);
 
   const activeFilters = getActiveFilters();
 
@@ -408,6 +438,8 @@ export default function TransactionFilters({ onApply, onSearch, searchLoading }:
         <Dropdown label="Type" value={type} options={typeOptions} onChange={setType} />
         <Dropdown label="Status" value={status} options={statusOptions} onChange={setStatus} />
         <Dropdown label="Token" value={token} options={tokenOptions} onChange={setToken} />
+        <Dropdown label="Currency" value={currency} options={currencyOptions} onChange={setCurrency} />
+        <Dropdown label="Network" value={network} options={networkOptions} onChange={setNetwork} />
         <DatePicker date={date} onChange={setDate} />
 
         {/* More Filters Toggle */}

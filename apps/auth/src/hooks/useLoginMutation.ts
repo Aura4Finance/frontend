@@ -3,6 +3,8 @@ import client from "../client/client";
 import { toast } from "sonner";
 
 export interface LoginSchema {
+  firstname: string;
+  lastname: string;
   email: string;
   password: string;
 }
@@ -11,6 +13,22 @@ export const useLoginMutation = () => {
   return useMutation({
     mutationFn: async (data: LoginSchema) => {
       const response = await client.post("/auth/login", data);
+      const userId = response.data.data.userId;
+      return userId;
+    },
+    onSuccess: () => {
+      toast.success("Continue to 2FA verification");
+    },
+    onError: (error: any) => {
+      toast.error(error.response.data.message || "Invalid Login Credentials");
+    },
+  });
+};
+
+export const useLogin2FAMutation = () => {
+  return useMutation({
+    mutationFn: async (user: { userId: string, token: string }) => {
+      const response = await client.post("/auth/login/2fa", { userId: user.userId, token: user.token });
       const code = response.data.data.code;
       window.location.href = `https://dashboard.orafi.app/auth/callback?code=${code}`;
     },
@@ -21,4 +39,4 @@ export const useLoginMutation = () => {
       toast.error(error.response.data.message || "Invalid Login Credentials");
     },
   });
-};
+} 

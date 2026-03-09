@@ -333,6 +333,8 @@ const Transactions = () => {
                       <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">ID</th>
                       <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Customer</th>
                       <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Amount</th>
+                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Currency</th>
+                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Network</th>
                       <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Type</th>
                       <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Merchant</th>
                       <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Status</th>
@@ -354,6 +356,14 @@ const Transactions = () => {
                           </div>
                         </td>
                         <td className="px-4 py-2.5 text-xs font-medium text-gray-900">{tx.amount?.toLocaleString() || 0} {tx.token}</td>
+                        <td className="px-4 py-2.5 text-xs text-gray-600">{tx.currency || 'N/A'}</td>
+                        <td className="px-4 py-2.5">
+                          {tx.network ? (
+                            <span className="inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full bg-indigo-100 text-indigo-700">{tx.network}</span>
+                          ) : (
+                            <span className="text-xs text-gray-400">N/A</span>
+                          )}
+                        </td>
                         <td className="px-4 py-2.5">
                           <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${
                             tx.type === 'payment' ? 'bg-blue-100 text-blue-700' : 
@@ -456,6 +466,18 @@ const Transactions = () => {
                   selectedTransaction.type === 'payout' ? 'bg-purple-100 text-purple-700' : 
                   'bg-orange-100 text-orange-700'
                 }`}>{selectedTransaction.type}</span>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-[11px] text-gray-500">Currency</p>
+                <p className="font-semibold text-sm text-gray-900">{selectedTransaction.currency || 'N/A'}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-[11px] text-gray-500">Network</p>
+                {selectedTransaction.network ? (
+                  <span className="inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full bg-indigo-100 text-indigo-700">{selectedTransaction.network}</span>
+                ) : (
+                  <p className="font-semibold text-sm text-gray-400">N/A</p>
+                )}
               </div>
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Mode</p>
@@ -564,12 +586,12 @@ const Transactions = () => {
                       </div>
                     </div>
                   )}
-                  {selectedTransaction.payment.wallet?.pubKey && (
+                  {selectedTransaction.payment.wallet?.address && (
                     <div className="bg-blue-50 rounded-lg p-3 col-span-2">
                       <p className="text-[11px] text-blue-600">Wallet Public Key</p>
                       <div className="flex items-center gap-1">
-                        <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payment.wallet.pubKey}</p>
-                        <CopyButton text={selectedTransaction.payment.wallet.pubKey} />
+                        <p className="font-medium text-xs text-gray-900 break-all">{selectedTransaction.payment.wallet.address}</p>
+                        <CopyButton text={selectedTransaction.payment.wallet.address} />
                       </div>
                     </div>
                   )}

@@ -8,9 +8,11 @@ interface Payment {
   refunded: boolean;
   depositAddress: string;
   wallet: {
-    pubKey: string
+    address: string
   };
   txRef: string;
+  currency: string;
+  network: string;
   paymentMethod: string;
   redirectUrl: string;
   paylinkId: string;
@@ -39,6 +41,8 @@ export interface Transaction {
   status: string;
   amount: number;
   amountInUSDC: number;
+  currency: string;
+  network: string;
   mode: string;
   createdAt: string;
   confirmedAt: string;
@@ -76,6 +80,8 @@ interface TransactionsParams {
   status?: string;
   type?: string;
   token?: string;
+  currency?: string;
+  network?: string;
   startDate?: string;
   endDate?: string;
   sortBy?: string;

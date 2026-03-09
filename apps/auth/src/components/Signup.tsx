@@ -37,8 +37,8 @@ const Signup = () => {
   const { setEmail } = useAuth()
 
   const signUpSchema = z.object({
-    firstName: z.string("Enter your username"),
-    lastName: z.string("Enter your lastname"),
+    firstname: z.string("Enter your username"),
+    lastname: z.string("Enter your lastname"),
     email: z.email('Please enter a valid email address'),
     password: z.string().min(8, 'Password must be at least 8 characters'),
     confirmPassword: z.string(),
@@ -50,8 +50,8 @@ const Signup = () => {
   const form = useForm({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
-      firstName: '',
-      lastName: '',
+      firstname: '',
+      lastname: '',
       email: '',
       password: '',
       confirmPassword: ''
@@ -60,6 +60,8 @@ const Signup = () => {
 
   const handleCreateAccountMutation = (value: LoginSchema) => {
     signUpMutation.mutate({
+      firstname: value.firstname,
+      lastname: value.lastname,
       email: value.email,
       password: value.password
     });
@@ -101,7 +103,7 @@ const Signup = () => {
             <form onSubmit={form.handleSubmit(handleCreateAccountMutation)}>
               <FormField
                 control={form.control}
-                name="firstName"
+                name="firstname"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Firstname</FormLabel>
@@ -121,7 +123,7 @@ const Signup = () => {
               />
               <FormField
                 control={form.control}
-                name="lastName"
+                name="lastname"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Lastname</FormLabel>
