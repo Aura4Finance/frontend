@@ -1,29 +1,151 @@
 import { useState } from "react";
 import DashboardWrapper from "./DashboardWrapper";
 import {
-  Card,
-  CardDescription,
-  CardContent
-} from "@orafi/ui";
-import {
   FiCopy,
   FiMenu,
-  FiDollarSign,
-  FiArrowUpRight,
-  FiArrowDownLeft,
+  FiEye,
+  FiEyeOff,
   FiSend,
   FiUsers,
-  FiBarChart2,
   FiLink,
   FiCreditCard,
-  FiHeadphones
+  FiHeadphones,
+  FiRefreshCw,
+  FiChevronDown,
 } from "react-icons/fi";
+import {
+  BarChart,
+  Bar,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
+
+// --- Mock Data ---
+
+const RATES_TO_NGN: Record<string, number> = {
+  USDC: 1_580,
+  USDT: 1_575,
+  SUI: 520,
+  ETH: 5_200_000,
+};
+
+const mockBalances: Record<string, number> = {
+  USDC: 12_450.75,
+  USDT: 8_320.00,
+  SUI: 2_150.50,
+  ETH: 1.4325,
+};
+
+const coinOptions = Object.keys(mockBalances);
+
+const mockCustomerData = [
+  { label: "Mar 2", count: 5 },
+  { label: "Mar 3", count: 12 },
+  { label: "Mar 4", count: 8 },
+  { label: "Mar 5", count: 15 },
+  { label: "Mar 6", count: 10 },
+  { label: "Mar 7", count: 18 },
+  { label: "Mar 8", count: 7 },
+  { label: "Mar 9", count: 22 },
+];
+
+const mockTransactionChartData = [
+  { label: "Mar 2", all: 30, success: 22, failed: 5, pending: 3 },
+  { label: "Mar 3", all: 45, success: 35, failed: 4, pending: 6 },
+  { label: "Mar 4", all: 28, success: 20, failed: 6, pending: 2 },
+  { label: "Mar 5", all: 52, success: 40, failed: 7, pending: 5 },
+  { label: "Mar 6", all: 38, success: 30, failed: 3, pending: 5 },
+  { label: "Mar 7", all: 60, success: 48, failed: 8, pending: 4 },
+  { label: "Mar 8", all: 35, success: 27, failed: 4, pending: 4 },
+  { label: "Mar 9", all: 48, success: 38, failed: 6, pending: 4 },
+];
+
+const mockRecentTransactions = [
+  {
+    id: "TXN-00A1",
+    customer: { name: "John Doe", email: "john@example.com" },
+    amount: "120.50",
+    token: "USDC",
+    type: "Payment",
+    status: "Completed",
+    date: "2026-03-09",
+  },
+  {
+    id: "TXN-00A2",
+    customer: { name: "Jane Smith", email: "jane@example.com" },
+    amount: "85.00",
+    token: "USDC",
+    type: "Payout",
+    status: "Pending",
+    date: "2026-03-09",
+  },
+  {
+    id: "TXN-00A3",
+    customer: { name: "Michael Brown", email: "mike@example.com" },
+    amount: "240.75",
+    token: "USDC",
+    type: "Refund",
+    status: "Failed",
+    date: "2026-03-08",
+  },
+  {
+    id: "TXN-00A4",
+    customer: { name: "Sarah Lee", email: "sarah@example.com" },
+    amount: "310.00",
+    token: "USDC",
+    type: "Payment",
+    status: "Completed",
+    date: "2026-03-08",
+  },
+  {
+    id: "TXN-00A5",
+    customer: { name: "David Kim", email: "david@example.com" },
+    amount: "55.25",
+    token: "USDC",
+    type: "Payment",
+    status: "Completed",
+    date: "2026-03-07",
+  },
+  {
+    id: "TXN-00A6",
+    customer: { name: "Alice Chen", email: "alice@example.com" },
+    amount: "190.00",
+    token: "USDC",
+    type: "Payout",
+    status: "Pending",
+    date: "2026-03-07",
+  },
+];
+
+const txFilterColors: Record<string, string> = {
+  all: "#3b82f6",
+  success: "#22c55e",
+  failed: "#ef4444",
+  pending: "#f59e0b",
+};
+
+// --- Component ---
 
 const Dashboard = () => {
   const network = "Testnet";
   const [isOpen, setIsOpen] = useState(false);
+  const [balanceVisible, setBalanceVisible] = useState(true);
+  const [txChartFilter, setTxChartFilter] = useState<"all" | "success" | "failed" | "pending">("all");
+  const [selectedCoin, setSelectedCoin] = useState("USDC");
+  const [coinDropdownOpen, setCoinDropdownOpen] = useState(false);
+
+  const currentBalance = mockBalances[selectedCoin] ?? 0;
+  const ngnBalance = currentBalance * (RATES_TO_NGN[selectedCoin] ?? 0);
+
   return (
     <DashboardWrapper>
+      {/* Header */}
       <div className="flex justify-between items-center px-6 py-4 shadow-sm bg-white">
         <div className="flex items-center gap-3">
           <div className="font-semibold text-2xl text-black sm:text-xl">
@@ -33,10 +155,11 @@ const Dashboard = () => {
 
         <div className="hidden sm:flex items-center gap-2 font-semibold px-3 py-1.5 rounded-full text-sm cursor-default select-none bg-gray-100 text-black w-fit">
           <span
-            className={`text-sm font-medium px-3 py-1 rounded-full ${network == "Testnet"
-              ? "bg-red-600 text-white"
-              : "bg-blue-950 text-white"
-              }`}
+            className={`text-sm font-medium px-3 py-1 rounded-full ${
+              network === "Testnet"
+                ? "bg-red-600 text-white"
+                : "bg-blue-950 text-white"
+            }`}
           >
             {network}
           </span>
@@ -52,10 +175,11 @@ const Dashboard = () => {
           {isOpen && (
             <div className="absolute right-0 top-10 bg-white border rounded-lg shadow-md w-48 p-3 flex flex-col gap-2 z-50">
               <span
-                className={`text-xs font-medium px-3 py-1 rounded-full ${network === "Testnet"
-                  ? "bg-blue-950 text-white"
-                  : "bg-gray-200 text-gray-800"
-                  }`}
+                className={`text-xs font-medium px-3 py-1 rounded-full ${
+                  network === "Testnet"
+                    ? "bg-blue-950 text-white"
+                    : "bg-gray-200 text-gray-800"
+                }`}
               >
                 {network}
               </span>
@@ -68,183 +192,256 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="flex flex-wrap justify-center items-center px-4 py-4 bg-transparent w-full gap-3 sm:gap-4 md:gap-6 overflow-x-hidden">
-        <Card className="bg-white w-full sm:w-[45%] lg:w-[20%] p-4 flex flex-col justify-between">
-          <CardDescription className="font-semibold text-gray-600">Total Revenue</CardDescription>
-          <CardContent className="flex justify-between items-center mt-2">
-            <div>
-              <span className="font-semibold">234 USDC</span>
-              <div className="flex font-thin">
-                <FiArrowDownLeft className="text-red-400" />
-                <span className="text-[12px]">+12.5% vs last month</span>
+      <div className="p-4 space-y-6">
+        {/* Balance Card */}
+        <div className="flex flex-col items-center py-8">
+          {/* Coin Selector Dropdown */}
+          <div className="relative mb-4">
+            <button
+              type="button"
+              onClick={() => setCoinDropdownOpen(!coinDropdownOpen)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors text-sm font-medium text-gray-700"
+            >
+              {selectedCoin}
+              <FiChevronDown
+                size={14}
+                className={`transition-transform ${coinDropdownOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+            {coinDropdownOpen && (
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50 min-w-[100px]">
+                {coinOptions.map((coin) => (
+                  <button
+                    key={coin}
+                    onClick={() => {
+                      setSelectedCoin(coin);
+                      setCoinDropdownOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-1.5 text-sm hover:bg-gray-50 transition-colors ${
+                      coin === selectedCoin
+                        ? "text-blue-600 font-semibold"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    {coin}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Balance Display */}
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-2 mb-1">
+              <span className="text-3xl font-bold text-gray-900 tracking-tight">
+                {balanceVisible
+                  ? `${currentBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })} ${selectedCoin}`
+                  : "••••••••"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setBalanceVisible((v) => !v)}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+              >
+                {balanceVisible ? <FiEye size={18} /> : <FiEyeOff size={18} />}
+              </button>
+            </div>
+            <p className="text-sm text-gray-500">
+              {balanceVisible
+                ? `≈ ₦${ngnBalance.toLocaleString("en-NG", { minimumFractionDigits: 2 })}`
+                : "••••••••"}
+            </p>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Quick Actions</h3>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+            {[
+              { icon: FiSend, label: "Payout" },
+              { icon: FiRefreshCw, label: "Refund" },
+              { icon: FiUsers, label: "Customers" },
+              { icon: FiLink, label: "Pay Link" },
+              { icon: FiCreditCard, label: "Fiat Acct" },
+              { icon: FiHeadphones, label: "Support" },
+            ].map(({ icon: Icon, label }) => (
+              <button
+                key={label}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all cursor-pointer"
+              >
+                <Icon className="text-blue-950 text-lg" />
+                <span className="text-[11px] font-medium text-gray-700">{label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* New Customers Chart */}
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <h3 className="text-sm font-semibold text-gray-900 mb-1">New Customers</h3>
+            <p className="text-xs text-gray-500 mb-3">Daily signups — last 8 days</p>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={mockCustomerData} barCategoryGap="20%">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis
+                    dataKey="label"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#6b7280", fontSize: 10 }}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#6b7280", fontSize: 10 }}
+                    allowDecimals={false}
+                  />
+                  <Tooltip
+                    formatter={(value: number) => [value, "Customers"]}
+                    contentStyle={{
+                      backgroundColor: "#fff",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "6px",
+                      boxShadow: "0 2px 4px -1px rgb(0 0 0 / 0.1)",
+                      fontSize: "12px",
+                    }}
+                  />
+                  <Bar
+                    dataKey="count"
+                    fill="#6366f1"
+                    radius={[4, 4, 0, 0]}
+                    name="Customers"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Transaction Count Chart */}
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-sm font-semibold text-gray-900">Transactions</h3>
+              <div className="flex gap-1">
+                {(["all", "success", "failed", "pending"] as const).map((filter) => (
+                  <button
+                    key={filter}
+                    type="button"
+                    onClick={() => setTxChartFilter(filter)}
+                    className={`px-2 py-0.5 text-[10px] font-medium rounded-full transition-colors ${
+                      txChartFilter === filter
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                  </button>
+                ))}
               </div>
             </div>
-            <FiDollarSign className="font-bold text-3xl text-blue-700 p-1.5 bg-blue-200 rounded" />
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white w-full sm:w-[45%] lg:w-[20%] p-4 flex flex-col justify-between">
-          <CardDescription className="font-semibold text-gray-600">Total Transactions</CardDescription>
-          <CardContent className="flex justify-between items-center mt-2">
-            <div>
-              <span className="font-semibold">156</span>
-              <div className="flex font-thin">
-                <FiArrowUpRight className="text-green-400" />
-                <span className="text-[12px]">+8.5% vs last month</span>
-              </div>
+            <p className="text-xs text-gray-500 mb-3">Daily count — last 8 days</p>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={mockTransactionChartData}>
+                  <defs>
+                    <linearGradient id="txGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={txFilterColors[txChartFilter]} stopOpacity={0.3} />
+                      <stop offset="95%" stopColor={txFilterColors[txChartFilter]} stopOpacity={0.05} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis
+                    dataKey="label"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#6b7280", fontSize: 10 }}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#6b7280", fontSize: 10 }}
+                    allowDecimals={false}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#fff",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "6px",
+                      boxShadow: "0 2px 4px -1px rgb(0 0 0 / 0.1)",
+                      fontSize: "11px",
+                    }}
+                    formatter={(value: number) => [value.toLocaleString(), "Transactions"]}
+                    labelFormatter={(label: string) => `Date: ${label}`}
+                  />
+                  <Legend wrapperStyle={{ fontSize: "10px" }} />
+                  <Area
+                    type="monotone"
+                    dataKey={txChartFilter}
+                    stroke={txFilterColors[txChartFilter]}
+                    strokeWidth={2}
+                    fill="url(#txGradient)"
+                    dot={{ fill: txFilterColors[txChartFilter], r: 3 }}
+                    name={txChartFilter.charAt(0).toUpperCase() + txChartFilter.slice(1)}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
-            <FiDollarSign className="font-bold text-3xl text-blue-700 p-1.5 bg-blue-200 rounded" />
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white w-full sm:w-[45%] lg:w-[20%] p-4 flex flex-col justify-between">
-          <CardDescription className="font-semibold text-gray-600">Refunds Processed</CardDescription>
-          <CardContent className="flex justify-between items-center mt-2">
-            <div>
-              <span className="font-semibold">14</span>
-              <div className="flex font-thin">
-                <FiArrowUpRight className="text-green-400" />
-                <span className="text-[12px]">+8.5% vs last month</span>
-              </div>
-            </div>
-            <FiDollarSign className="font-bold text-3xl text-blue-700 p-1.5 bg-blue-200 rounded" />
-          </CardContent>
-        </Card>
-
-        <Card className="bg-white w-full sm:w-[45%] lg:w-[20%] p-4 flex flex-col justify-between">
-          <CardDescription className="font-semibold text-gray-600">Active Customers</CardDescription>
-          <CardContent className="flex justify-between items-center mt-2">
-            <div>
-              <span className="font-semibold">86</span>
-              <div className="flex font-thin">
-                <FiArrowUpRight className="text-green-400" />
-                <span className="text-[12px]">+4.1% vs last month</span>
-              </div>
-            </div>
-            <FiDollarSign className="font-bold text-3xl text-blue-700 p-1.5 bg-blue-200 rounded" />
-          </CardContent>
-        </Card>
-      </div>
-      <div className="flex justify-center font-semibold mt-16 mb-5"> Quick Actions</div>
-      <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6 md:gap-8 px-4 pb-8 text-center">
-        <div className="w-1/2 sm:w-1/3 lg:w-1/6 flex flex-col items-center mb-4">
-          <FiSend className="text-black text-2xl mb-1" />
-          <span className="text-sm font-medium text-gray-700">Initiate Payout</span>
+          </div>
         </div>
 
-        <div className="w-1/2 sm:w-1/3 lg:w-1/6 flex flex-col items-center mb-4">
-          <FiUsers className="text-black text-2xl mb-1" />
-          <span className="text-sm font-medium text-gray-700">Refund Customer</span>
-        </div>
-
-        <div className="w-1/2 sm:w-1/3 lg:w-1/6 flex flex-col items-center mb-4">
-          <FiBarChart2 className="text-black text-2xl mb-1" />
-          <span className="text-sm font-medium text-gray-700">Check Balances</span>
-        </div>
-        <div className="w-1/2 sm:w-1/3 lg:w-1/6 flex flex-col items-center mb-4">
-          <FiLink className="text-black text-2xl mb-1" />
-          <span className="text-sm font-medium text-gray-700">Create Payment Link</span>
-        </div>
-
-        <div className="w-1/2 sm:w-1/3 lg:w-1/6 flex flex-col items-center mb-4">
-          <FiCreditCard className="text-black text-2xl mb-1" />
-          <span className="text-sm font-medium text-gray-700">Add Fiat Account</span>
-        </div>
-
-        <div className="w-1/2 sm:w-1/3 lg:w-1/6 flex flex-col items-center mb-4">
-          <FiHeadphones className="text-black text-2xl mb-1" />
-          <span className="text-sm font-medium text-gray-700">Customer Service</span>
-        </div>
-      </div>
-      <div className="px-4 mt-10">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Recent Transactions</h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full border border-gray-200 bg-white rounded-lg shadow-sm">
-            <thead>
-              <tr className="bg-gray-100 text-gray-700 text-sm">
-                <th className="px-4 py-3 text-left font-semibold">ID</th>
-                <th className="px-4 py-3 text-left font-semibold">Customer</th>
-                <th className="px-4 py-3 text-left font-semibold">Amount</th>
-                <th className="px-4 py-3 text-left font-semibold">Token</th>
-                <th className="px-4 py-3 text-left font-semibold">Type</th>
-                <th className="px-4 py-3 text-left font-semibold">Status</th>
-                <th className="px-4 py-3 text-left font-semibold">Date</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {[
-                {
-                  id: "TXN-001",
-                  customer: { name: "John Doe", email: "john@example.com" },
-                  amount: "120.50",
-                  token: "USDC",
-                  type: "Payment",
-                  status: "Completed",
-                  date: "2025-10-25",
-                },
-                {
-                  id: "TXN-002",
-                  customer: { name: "Jane Smith", email: "jane@example.com" },
-                  amount: "85.00",
-                  token: "USDC",
-                  type: "Payout",
-                  status: "Pending",
-                  date: "2025-10-27",
-                },
-                {
-                  id: "TXN-003",
-                  customer: { name: "Michael Brown", email: "mike@example.com" },
-                  amount: "240.75",
-                  token: "USDC",
-                  type: "Refund",
-                  status: "Failed",
-                  date: "2025-10-29",
-                },
-                {
-                  id: "TXN-004",
-                  customer: { name: "Sarah Lee", email: "sarah@example.com" },
-                  amount: "310.00",
-                  token: "USDC",
-                  type: "Payment",
-                  status: "Completed",
-                  date: "2025-10-30",
-                },
-              ].map((tx) => (
-                <tr
-                  key={tx.id}
-                  className="border-t border-gray-200 hover:bg-gray-50 transition"
-                >
-                  <td className="px-4 py-3 text-sm text-gray-800 font-medium">
-                    {tx.id}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-800">
-                    <div className="font-semibold text-black">{tx.customer.name}</div>
-                    <div className="text-xs text-gray-500">{tx.customer.email}</div>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-800 flex items-center gap-1">
-                    <span>{tx.amount}</span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-800">{tx.token}</td>
-                  <td className="px-4 py-3 text-sm text-gray-800">{tx.type}</td>
-                  <td className="px-4 py-3 text-sm">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium
-                  ${tx.status === "Completed"
-                          ? "bg-green-100 text-green-700"
-                          : tx.status === "Pending"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-red-100 text-red-700"
-                        }`}
+        {/* Recent Transactions */}
+        <div>
+          <h2 className="text-sm font-semibold text-gray-900 mb-3">Recent Transactions</h2>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">ID</th>
+                    <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Customer</th>
+                    <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Amount</th>
+                    <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Token</th>
+                    <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Type</th>
+                    <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Status</th>
+                    <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase">Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {mockRecentTransactions.map((tx) => (
+                    <tr
+                      key={tx.id}
+                      className="hover:bg-gray-50 transition-colors"
                     >
-                      {tx.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{tx.date}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      <td className="px-4 py-2.5 text-xs font-medium text-blue-600">{tx.id}</td>
+                      <td className="px-4 py-2.5">
+                        <div className="font-medium text-xs text-gray-900">{tx.customer.name}</div>
+                        <div className="text-[10px] text-gray-500">{tx.customer.email}</div>
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-gray-800">{tx.amount}</td>
+                      <td className="px-4 py-2.5 text-xs text-gray-800">{tx.token}</td>
+                      <td className="px-4 py-2.5 text-xs text-gray-800">{tx.type}</td>
+                      <td className="px-4 py-2.5 text-xs">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                            tx.status === "Completed"
+                              ? "bg-green-100 text-green-700"
+                              : tx.status === "Pending"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-red-100 text-red-700"
+                          }`}
+                        >
+                          {tx.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-gray-600">{tx.date}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </DashboardWrapper>
