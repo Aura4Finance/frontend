@@ -45,8 +45,8 @@ const TwoFAPopup = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <Card className="w-full max-w-md border border-blue-950/20 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-10">
+      <Card className="w-full max-w-md border border-blue-950/20 shadow-2xl p-5">
         <CardHeader className="text-center pb-4">
           <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-blue-950/10">
             <FaShieldHalved className="h-7 w-7 text-blue-950" />

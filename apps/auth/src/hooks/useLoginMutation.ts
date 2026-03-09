@@ -3,6 +3,11 @@ import client from "../client/client";
 import { toast } from "sonner";
 
 export interface LoginSchema {
+  email: string;
+  password: string;
+}
+
+export interface SignUpSchema {
   firstname: string;
   lastname: string;
   email: string;

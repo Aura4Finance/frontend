@@ -27,7 +27,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useSignUpMutation } from "../hooks/useSignupMutation";
-import type { LoginSchema } from "../hooks/useLoginMutation";
+import type { SignUpSchema } from "../hooks/useLoginMutation";
 import { useAuth } from "../store/auth";
 
 
@@ -58,7 +58,7 @@ const Signup = () => {
     },
   });
 
-  const handleCreateAccountMutation = (value: LoginSchema) => {
+  const handleCreateAccountMutation = (value: SignUpSchema) => {
     signUpMutation.mutate({
       firstname: value.firstname,
       lastname: value.lastname,

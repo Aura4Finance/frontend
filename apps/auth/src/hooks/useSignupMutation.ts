@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import client from "../client/client";
 import { toast } from "sonner";
-import type { LoginSchema } from "./useLoginMutation";
+import type { SignUpSchema } from "./useLoginMutation";
 import { useLocation } from "wouter";
 
 interface verifyEmailSchema {
@@ -17,7 +17,7 @@ export interface TwoFASetup {
 export const useSignUpMutation = () => {
   const [, setLocation] = useLocation();
   return useMutation({
-    mutationFn: async (data: LoginSchema) => {
+    mutationFn: async (data: SignUpSchema) => {
       await client.post("/auth/create-account", data);
     },
     onSuccess: () => {
