@@ -2,18 +2,39 @@ import axios from "axios";
 import { create } from "zustand";
 import { persist } from "zustand/middleware"; 
 
+export interface UserProfile {
+  id: string
+  firstname: string
+  lastname: string
+  email: string
+  twoFactorEnabled: boolean
+  createdAt: string
+  businessProfile: {
+    id: string
+    businessName: string
+    businessSector: string
+    country: string
+    website: string
+    onboarded: boolean
+    isLive: boolean
+    wallet: {
+      address: string
+    }[]
+  } 
+}
+
 interface AccessToken {
-  token: string | null;
-  setToken: (token: string) => void;
-  clearToken: () => void;
+  profile: UserProfile | null;
+  setProfile: (profile: UserProfile) => void;
+  clearProfile: () => void;
 }
 
 export const tokenStore = create<AccessToken>()(
   persist(
     (set) => ({
-      token: null,
-      setToken: (token) => set({ token }),
-      clearToken: () => set({ token: null }),
+      profile: null,
+      setProfile: (profile) => set({ profile }),
+      clearProfile: () => set({ profile: null }),
     }),
     {
       name: "access-token", 
@@ -28,12 +49,15 @@ const client = axios.create({
 });
 
 
-client.interceptors.request.use((config) => {
-  const token = tokenStore.getState().token;
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+client.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      tokenStore.getState().clearProfile();
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
   }
-  return config;
-});
+);
 
 export default client;

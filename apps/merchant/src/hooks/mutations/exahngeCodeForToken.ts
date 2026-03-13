@@ -1,11 +1,11 @@
 import { useMutation } from "@tanstack/react-query";
-import client from "../../store/client";
+import client, { type UserProfile } from "../../store/client";
 import { toast } from "sonner";
 import { tokenStore } from "../../store/client";
 import { useLocation } from "wouter";
 
 export const useExchangeCodeForToken = () => {
-    const { setToken } = tokenStore();
+    const { setProfile } = tokenStore();
     const [, setLocation] = useLocation();
     return useMutation({
         mutationFn: async (otp: string) => {
@@ -15,13 +15,25 @@ export const useExchangeCodeForToken = () => {
             }else {
                 payload = { otp, type: "orafi" };
             }
-            const response = await client.post('/auth/exchange-code', payload);
-            return response.data.data.accessToken;
+            await client.post('/auth/exchange-code', payload);
         },
-        onSuccess: (accessToken: string) => {
-            setToken(accessToken);
-            setLocation("/dashboard");
-            toast.success("Welcome back!");
+        onSuccess: () => {
+            useMutation({
+                mutationFn: async () => {
+                    const response = await client.get("/auth/profile");
+                    return response.data.data.profile as UserProfile;
+                },
+                onSuccess: (profile) => {
+                    setProfile(profile);
+                    tokenStore.getState().setProfile(profile);
+                    setLocation("/dashboard");
+                    toast.success("Welcome back!");
+                },
+                onError: (error: any) => {
+                    toast.error(error.response.data.message || "Unable to fetch user profile")
+                    window.location.replace("http://localhost:3100/signin");
+                }
+            });
         },
         onError: (error: any) => {
             toast.error(error.response.data.message || "Unable to validate login request")

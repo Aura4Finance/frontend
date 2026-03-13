@@ -11,13 +11,13 @@ import Fiats from "./components/Fiats";
 import PaymentLink from "./components/PaymentLink";
 
 function App() {
-    const { token } = tokenStore();
+    const { profile } = tokenStore();
   return (  
     <>
       <Route>
         <Switch>
           {
-            !token ? (
+            !profile ? (
               <>
               <Route path="/auth/callback" component={Callback}/>
               <Route path="/" component={Dashboard}/>
