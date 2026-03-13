@@ -5,13 +5,10 @@ import {
   FiMenu,
   FiEye,
   FiEyeOff,
-  FiSend,
   FiUsers,
-  FiLink,
-  FiCreditCard,
-  FiHeadphones,
-  FiRefreshCw,
   FiChevronDown,
+  FiCheckCircle,
+  FiTrendingUp,
 } from "react-icons/fi";
 import {
   BarChart,
@@ -130,6 +127,23 @@ const txFilterColors: Record<string, string> = {
   pending: "#f59e0b",
 };
 
+const totalCompletedTransactions = mockTransactionChartData.reduce(
+  (sum, item) => sum + item.success,
+  0,
+);
+
+const totalActiveCustomers = new Set(
+  mockRecentTransactions.map((transaction) => transaction.customer.email),
+).size;
+
+const totalTransactionVolume = mockRecentTransactions.reduce((sum, transaction) => {
+  if (transaction.status !== "Completed") {
+    return sum;
+  }
+
+  return sum + Number(transaction.amount) * (RATES_TO_NGN[transaction.token] ?? 0);
+}, 0);
+
 // --- Component ---
 
 const Dashboard = () => {
@@ -142,6 +156,29 @@ const Dashboard = () => {
 
   const currentBalance = mockBalances[selectedCoin] ?? 0;
   const ngnBalance = currentBalance * (RATES_TO_NGN[selectedCoin] ?? 0);
+  const dashboardKpis = [
+    {
+      label: "Completed transactions",
+      value: totalCompletedTransactions.toLocaleString("en-US"),
+      helper: "Successful transactions processed so far",
+      icon: FiCheckCircle,
+      iconClassName: "bg-emerald-50 text-emerald-600",
+    },
+    {
+      label: "Active customers",
+      value: totalActiveCustomers.toLocaleString("en-US"),
+      helper: "Customers with recent transaction activity",
+      icon: FiUsers,
+      iconClassName: "bg-violet-50 text-violet-600",
+    },
+    {
+      label: "Total transaction volume",
+      value: `₦${totalTransactionVolume.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      helper: "Completed volume across the current dataset",
+      icon: FiTrendingUp,
+      iconClassName: "bg-blue-50 text-blue-600",
+    },
+  ];
 
   return (
     <DashboardWrapper>
@@ -254,27 +291,27 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div>
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Quick Actions</h3>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-            {[
-              { icon: FiSend, label: "Payout" },
-              { icon: FiRefreshCw, label: "Refund" },
-              { icon: FiUsers, label: "Customers" },
-              { icon: FiLink, label: "Pay Link" },
-              { icon: FiCreditCard, label: "Fiat Acct" },
-              { icon: FiHeadphones, label: "Support" },
-            ].map(({ icon: Icon, label }) => (
-              <button
-                key={label}
-                className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all cursor-pointer"
-              >
-                <Icon className="text-blue-950 text-lg" />
-                <span className="text-[11px] font-medium text-gray-700">{label}</span>
-              </button>
-            ))}
-          </div>
+        {/* KPI Summary */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {dashboardKpis.map(({ label, value, helper, icon: Icon, iconClassName }) => (
+            <div
+              key={label}
+              className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
+            >
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">
+                    {label}
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-gray-900">{value}</p>
+                </div>
+                <div className={`rounded-full p-3 ${iconClassName}`}>
+                  <Icon className="text-lg" />
+                </div>
+              </div>
+              <p className="text-sm text-gray-500">{helper}</p>
+            </div>
+          ))}
         </div>
 
         {/* Charts */}
