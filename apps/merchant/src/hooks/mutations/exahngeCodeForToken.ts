@@ -15,7 +15,8 @@ export const useExchangeCodeForToken = () => {
             }else {
                 payload = { otp, type: "orafi" };
             }
-            await client.post('/auth/exchange-code', payload);
+            const response = await client.post('/auth/exchange-code', payload);
+            return response.data;
         },
         onSuccess: () => {
             useMutation({
@@ -30,14 +31,15 @@ export const useExchangeCodeForToken = () => {
                     toast.success("Welcome back!");
                 },
                 onError: (error: any) => {
-                    toast.error(error.response.data.message || "Unable to fetch user profile")
+                    toast.error(error.response?.data?.message || "Unable to fetch user profile")
                     window.location.replace("http://localhost:3100/signin");
                 }
             });
         },
         onError: (error: any) => {
-            toast.error(error.response.data.message || "Unable to validate login request")
-            window.location.replace("http://localhost:3100/signin");
+            console.log(error.response);
+            toast.error(error.response?.data?.message || "Unable to validate login request")
+            //window.location.replace("http://localhost:3100/signin");
         }
     })
 }

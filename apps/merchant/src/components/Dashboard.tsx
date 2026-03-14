@@ -9,10 +9,10 @@ import {
   FiChevronDown,
   FiCheckCircle,
   FiTrendingUp,
+  FiArrowUp,
+  FiArrowDown,
 } from "react-icons/fi";
 import {
-  BarChart,
-  Bar,
   AreaChart,
   Area,
   XAxis,
@@ -20,129 +20,45 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts";
+import { useDashboard } from "../hooks/mutations/useDashboard";
 
-// --- Mock Data ---
-
+// --- Static balance mock (no balance endpoint yet) ---
 const RATES_TO_NGN: Record<string, number> = {
   USDC: 1_580,
   USDT: 1_575,
   SUI: 520,
   ETH: 5_200_000,
 };
-
 const mockBalances: Record<string, number> = {
   USDC: 12_450.75,
-  USDT: 8_320.00,
-  SUI: 2_150.50,
+  USDT: 8_320.0,
+  SUI: 2_150.5,
   ETH: 1.4325,
 };
-
 const coinOptions = Object.keys(mockBalances);
 
-const mockCustomerData = [
-  { label: "Mar 2", count: 5 },
-  { label: "Mar 3", count: 12 },
-  { label: "Mar 4", count: 8 },
-  { label: "Mar 5", count: 15 },
-  { label: "Mar 6", count: 10 },
-  { label: "Mar 7", count: 18 },
-  { label: "Mar 8", count: 7 },
-  { label: "Mar 9", count: 22 },
-];
-
-const mockTransactionChartData = [
-  { label: "Mar 2", all: 30, success: 22, failed: 5, pending: 3 },
-  { label: "Mar 3", all: 45, success: 35, failed: 4, pending: 6 },
-  { label: "Mar 4", all: 28, success: 20, failed: 6, pending: 2 },
-  { label: "Mar 5", all: 52, success: 40, failed: 7, pending: 5 },
-  { label: "Mar 6", all: 38, success: 30, failed: 3, pending: 5 },
-  { label: "Mar 7", all: 60, success: 48, failed: 8, pending: 4 },
-  { label: "Mar 8", all: 35, success: 27, failed: 4, pending: 4 },
-  { label: "Mar 9", all: 48, success: 38, failed: 6, pending: 4 },
-];
-
-const mockRecentTransactions = [
-  {
-    id: "TXN-00A1",
-    customer: { name: "John Doe", email: "john@example.com" },
-    amount: "120.50",
-    token: "USDC",
-    type: "Payment",
-    status: "Completed",
-    date: "2026-03-09",
-  },
-  {
-    id: "TXN-00A2",
-    customer: { name: "Jane Smith", email: "jane@example.com" },
-    amount: "85.00",
-    token: "USDC",
-    type: "Payout",
-    status: "Pending",
-    date: "2026-03-09",
-  },
-  {
-    id: "TXN-00A3",
-    customer: { name: "Michael Brown", email: "mike@example.com" },
-    amount: "240.75",
-    token: "USDC",
-    type: "Refund",
-    status: "Failed",
-    date: "2026-03-08",
-  },
-  {
-    id: "TXN-00A4",
-    customer: { name: "Sarah Lee", email: "sarah@example.com" },
-    amount: "310.00",
-    token: "USDC",
-    type: "Payment",
-    status: "Completed",
-    date: "2026-03-08",
-  },
-  {
-    id: "TXN-00A5",
-    customer: { name: "David Kim", email: "david@example.com" },
-    amount: "55.25",
-    token: "USDC",
-    type: "Payment",
-    status: "Completed",
-    date: "2026-03-07",
-  },
-  {
-    id: "TXN-00A6",
-    customer: { name: "Alice Chen", email: "alice@example.com" },
-    amount: "190.00",
-    token: "USDC",
-    type: "Payout",
-    status: "Pending",
-    date: "2026-03-07",
-  },
-];
-
-const txFilterColors: Record<string, string> = {
-  all: "#3b82f6",
-  success: "#22c55e",
-  failed: "#ef4444",
-  pending: "#f59e0b",
-};
-
-const totalCompletedTransactions = mockTransactionChartData.reduce(
-  (sum, item) => sum + item.success,
-  0,
+// --- Skeleton helpers ---
+const KpiSkeleton = () => (
+  <div className="animate-pulse rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+    <div className="mb-4 flex items-start justify-between gap-4">
+      <div className="flex-1 space-y-2">
+        <div className="h-3 w-3/4 rounded bg-gray-200" />
+        <div className="h-7 w-1/2 rounded bg-gray-200" />
+      </div>
+      <div className="h-12 w-12 rounded-full bg-gray-100" />
+    </div>
+    <div className="h-3 w-full rounded bg-gray-200" />
+  </div>
 );
 
-const totalActiveCustomers = new Set(
-  mockRecentTransactions.map((transaction) => transaction.customer.email),
-).size;
-
-const totalTransactionVolume = mockRecentTransactions.reduce((sum, transaction) => {
-  if (transaction.status !== "Completed") {
-    return sum;
-  }
-
-  return sum + Number(transaction.amount) * (RATES_TO_NGN[transaction.token] ?? 0);
-}, 0);
+const ChartSkeleton = () => (
+  <div className="animate-pulse rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+    <div className="mb-2 h-4 w-1/3 rounded bg-gray-200" />
+    <div className="mb-4 h-3 w-1/2 rounded bg-gray-200" />
+    <div className="h-52 rounded bg-gray-100" />
+  </div>
+);
 
 // --- Component ---
 
@@ -150,33 +66,49 @@ const Dashboard = () => {
   const network = "Testnet";
   const [isOpen, setIsOpen] = useState(false);
   const [balanceVisible, setBalanceVisible] = useState(true);
-  const [txChartFilter, setTxChartFilter] = useState<"all" | "success" | "failed" | "pending">("all");
   const [selectedCoin, setSelectedCoin] = useState("USDC");
   const [coinDropdownOpen, setCoinDropdownOpen] = useState(false);
 
+  const { data, isLoading, isError } = useDashboard();
+
   const currentBalance = mockBalances[selectedCoin] ?? 0;
   const ngnBalance = currentBalance * (RATES_TO_NGN[selectedCoin] ?? 0);
+
+  // Chart data comes straight from the API's transactionMetrics array
+  const chartData = data?.transactionMetrics ?? [];
+
   const dashboardKpis = [
     {
       label: "Completed transactions",
-      value: totalCompletedTransactions.toLocaleString("en-US"),
-      helper: "Successful transactions processed so far",
+      value: data?.transactionCount.total.toLocaleString("en-US") ?? "—",
+      helper: data
+        ? `${data.transactionCount.percentageUp}% ${data.transactionCount.trend === "up" ? "increase" : "decrease"} from last period`
+        : "—",
       icon: FiCheckCircle,
       iconClassName: "bg-emerald-50 text-emerald-600",
+      trend: data?.transactionCount.trend,
     },
     {
       label: "Active customers",
-      value: totalActiveCustomers.toLocaleString("en-US"),
-      helper: "Customers with recent transaction activity",
+      value: data?.customerCount.total.toLocaleString("en-US") ?? "—",
+      helper: data
+        ? `${data.customerCount.percentageUp}% ${data.customerCount.trend === "up" ? "increase" : "decrease"} from last period`
+        : "—",
       icon: FiUsers,
       iconClassName: "bg-violet-50 text-violet-600",
+      trend: data?.customerCount.trend,
     },
     {
       label: "Total transaction volume",
-      value: `₦${totalTransactionVolume.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      helper: "Completed volume across the current dataset",
+      value: data
+        ? `$${data.transactionVolume.totalVolumeInUSDC.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC`
+        : "—",
+      helper: data
+        ? `${data.transactionVolume.transactionCount.toLocaleString()} transactions settled`
+        : "—",
       icon: FiTrendingUp,
       iconClassName: "bg-blue-50 text-blue-600",
+      trend: undefined as "up" | "down" | undefined,
     },
   ];
 
@@ -293,139 +225,168 @@ const Dashboard = () => {
 
         {/* KPI Summary */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {dashboardKpis.map(({ label, value, helper, icon: Icon, iconClassName }) => (
-            <div
-              key={label}
-              className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
-            >
-              <div className="mb-4 flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">
-                    {label}
-                  </p>
-                  <p className="mt-2 text-2xl font-semibold text-gray-900">{value}</p>
+          {isLoading
+            ? Array.from({ length: 3 }).map((_, i) => <KpiSkeleton key={i} />)
+            : dashboardKpis.map(({ label, value, helper, icon: Icon, iconClassName, trend }) => (
+                <div
+                  key={label}
+                  className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
+                >
+                  <div className="mb-3 flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">
+                        {label}
+                      </p>
+                      <p className="mt-2 text-2xl font-semibold text-gray-900">{value}</p>
+                    </div>
+                    <div className={`rounded-full p-3 ${iconClassName}`}>
+                      <Icon className="text-lg" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {trend === "up" && (
+                      <FiArrowUp className="shrink-0 text-emerald-500" size={13} />
+                    )}
+                    {trend === "down" && (
+                      <FiArrowDown className="shrink-0 text-red-400" size={13} />
+                    )}
+                    <p
+                      className={`text-xs ${
+                        trend === "up"
+                          ? "text-emerald-600"
+                          : trend === "down"
+                            ? "text-red-500"
+                            : "text-gray-500"
+                      }`}
+                    >
+                      {helper}
+                    </p>
+                  </div>
                 </div>
-                <div className={`rounded-full p-3 ${iconClassName}`}>
-                  <Icon className="text-lg" />
-                </div>
-              </div>
-              <p className="text-sm text-gray-500">{helper}</p>
-            </div>
-          ))}
+              ))}
         </div>
 
         {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* New Customers Chart */}
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-900 mb-1">New Customers</h3>
-            <p className="text-xs text-gray-500 mb-3">Daily signups — last 8 days</p>
-            <div className="h-52">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={mockCustomerData} barCategoryGap="20%">
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis
-                    dataKey="label"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "#6b7280", fontSize: 10 }}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "#6b7280", fontSize: 10 }}
-                    allowDecimals={false}
-                  />
-                  <Tooltip
-                    formatter={(value: number) => [value, "Customers"]}
-                    contentStyle={{
-                      backgroundColor: "#fff",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "6px",
-                      boxShadow: "0 2px 4px -1px rgb(0 0 0 / 0.1)",
-                      fontSize: "12px",
-                    }}
-                  />
-                  <Bar
-                    dataKey="count"
-                    fill="#6366f1"
-                    radius={[4, 4, 0, 0]}
-                    name="Customers"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {isLoading ? (
+            <>
+              <ChartSkeleton />
+              <ChartSkeleton />
+            </>
+          ) : isError ? (
+            <div className="col-span-2 rounded-xl border border-red-100 bg-red-50 p-6 text-center text-sm text-red-500">
+              Failed to load chart data. Please refresh.
             </div>
-          </div>
-
-          {/* Transaction Count Chart */}
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-sm font-semibold text-gray-900">Transactions</h3>
-              <div className="flex gap-1">
-                {(["all", "success", "failed", "pending"] as const).map((filter) => (
-                  <button
-                    key={filter}
-                    type="button"
-                    onClick={() => setTxChartFilter(filter)}
-                    className={`px-2 py-0.5 text-[10px] font-medium rounded-full transition-colors ${
-                      txChartFilter === filter
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                    }`}
-                  >
-                    {filter.charAt(0).toUpperCase() + filter.slice(1)}
-                  </button>
-                ))}
+          ) : (
+            <>
+              {/* Transaction Count Trend */}
+              <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                <h3 className="text-sm font-semibold text-gray-900">Transaction Count</h3>
+                <p className="mb-3 text-xs text-gray-500">Daily count trend</p>
+                <div className="h-52">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>
+                      <defs>
+                        <linearGradient id="countGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.25} />
+                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.02} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis
+                        dataKey="label"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: "#6b7280", fontSize: 10 }}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: "#6b7280", fontSize: 10 }}
+                        allowDecimals={false}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#fff",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          boxShadow: "0 2px 4px -1px rgb(0 0 0 / 0.1)",
+                          fontSize: "11px",
+                        }}
+                        formatter={(value: number) => [value.toLocaleString(), "Transactions"]}
+                        labelFormatter={(label: string) => `Date: ${label}`}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="count"
+                        stroke="#3b82f6"
+                        strokeWidth={2}
+                        fill="url(#countGradient)"
+                        dot={{ fill: "#3b82f6", r: 3 }}
+                        name="Count"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
-            </div>
-            <p className="text-xs text-gray-500 mb-3">Daily count — last 8 days</p>
-            <div className="h-52">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={mockTransactionChartData}>
-                  <defs>
-                    <linearGradient id="txGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={txFilterColors[txChartFilter]} stopOpacity={0.3} />
-                      <stop offset="95%" stopColor={txFilterColors[txChartFilter]} stopOpacity={0.05} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis
-                    dataKey="label"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "#6b7280", fontSize: 10 }}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "#6b7280", fontSize: 10 }}
-                    allowDecimals={false}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#fff",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "6px",
-                      boxShadow: "0 2px 4px -1px rgb(0 0 0 / 0.1)",
-                      fontSize: "11px",
-                    }}
-                    formatter={(value: number) => [value.toLocaleString(), "Transactions"]}
-                    labelFormatter={(label: string) => `Date: ${label}`}
-                  />
-                  <Legend wrapperStyle={{ fontSize: "10px" }} />
-                  <Area
-                    type="monotone"
-                    dataKey={txChartFilter}
-                    stroke={txFilterColors[txChartFilter]}
-                    strokeWidth={2}
-                    fill="url(#txGradient)"
-                    dot={{ fill: txFilterColors[txChartFilter], r: 3 }}
-                    name={txChartFilter.charAt(0).toUpperCase() + txChartFilter.slice(1)}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+
+              {/* Transaction Volume Trend */}
+              <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                <h3 className="text-sm font-semibold text-gray-900">Transaction Volume</h3>
+                <p className="mb-3 text-xs text-gray-500">Daily volume trend (USDC)</p>
+                <div className="h-52">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>
+                      <defs>
+                        <linearGradient id="volumeGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.25} />
+                          <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.02} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis
+                        dataKey="label"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: "#6b7280", fontSize: 10 }}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: "#6b7280", fontSize: 10 }}
+                        tickFormatter={(v: number) =>
+                          v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v)
+                        }
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#fff",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          boxShadow: "0 2px 4px -1px rgb(0 0 0 / 0.1)",
+                          fontSize: "11px",
+                        }}
+                        formatter={(value: number) => [
+                          `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                          "Volume (USDC)",
+                        ]}
+                        labelFormatter={(label: string) => `Date: ${label}`}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="volumeInUSDC"
+                        stroke="#8b5cf6"
+                        strokeWidth={2}
+                        fill="url(#volumeGradient)"
+                        dot={{ fill: "#8b5cf6", r: 3 }}
+                        name="Volume (USDC)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
       </div>

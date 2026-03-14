@@ -44,7 +44,7 @@ export const tokenStore = create<AccessToken>()(
 );
 
 const client = axios.create({
-  baseURL: "http://localhost:3000/api/v1",
+  baseURL: "http://localhost:3000/v1",
   withCredentials: true,
 });
 
@@ -54,7 +54,7 @@ client.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       tokenStore.getState().clearProfile();
-      window.location.href = "/login";
+      window.location.href = "https://auth.orafi.app/login";
     }
     return Promise.reject(error);
   }
