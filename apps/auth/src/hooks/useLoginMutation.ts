@@ -34,7 +34,7 @@ export const useLogin2FAMutation = () => {
   return useMutation({
     mutationFn: async (user: { userId: string, token: string }) => {
       const response = await client.post("/auth/login/2fa", { userId: user.userId, token: user.token });
-      const code = response.data.data.code;
+      const code = response.data.data.secret;
       window.location.href = `https://dashboard.orafi.app/auth/callback?code=${code}`;
     },
     onSuccess: () => {

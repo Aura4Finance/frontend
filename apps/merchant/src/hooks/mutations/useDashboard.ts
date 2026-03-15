@@ -43,6 +43,16 @@ export const useDashboard = () => {
     );
 }
 
+export const  getRate = () => {
+    return useQuery<{ [key: string]: number }>({
+        queryKey: ["exchange-rates"],
+        queryFn: async () => {
+            const response = await client.get("/rates?currency=NGN");
+            return response.data.data;
+        }
+    });
+};
+
 export const useBalance = () => {
     return useQuery<Balances[]>({
         queryKey: ["balances"],
