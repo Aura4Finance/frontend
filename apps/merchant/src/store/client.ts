@@ -54,7 +54,7 @@ client.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       tokenStore.getState().clearProfile();
-      window.location.href = "https://auth.orafi.app/login";
+      window.location.href = "https://auth.orafi.app/signin";
     }
     return Promise.reject(error);
   }
