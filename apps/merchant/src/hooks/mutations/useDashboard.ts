@@ -4,12 +4,12 @@ import client from "../../store/client";
 type DashboardMetrics = {
     transactionCount: {
         total: number;
-        percentageUp: number;
+        percentageChange: number;
         trend: "up" | "down"
     },
     customerCount: {
         total: number;
-        percentageUp: number;
+        percentageChange: number;
         trend: "up" | "down"
     },
     transactionVolume: {
@@ -26,6 +26,11 @@ type DashboardMetrics = {
     }[]
 }
 
+type Balances = {
+    coinType: string;
+    balance: number;
+}
+
 
 export const useDashboard = () => {
     return useQuery<DashboardMetrics>({
@@ -36,4 +41,26 @@ export const useDashboard = () => {
         }
     }
     );
+}
+
+export const useBalance = () => {
+    return useQuery<Balances[]>({
+        queryKey: ["balances"],
+        queryFn: async () => {
+            const response = await client.get("/user/transactions/payout/balances");
+            const data = response.data.data;
+            const balances: { coinType: string; balance: number | string }[] = Array.isArray(data)
+                ? data
+                : data?.balances ?? [];
+
+            return balances.map((entry) => {
+                const normalizedBalance = Number(entry.balance);
+
+                return {
+                    coinType: entry.coinType,
+                    balance: Number.isFinite(normalizedBalance) ? normalizedBalance / 1_000_000 : 0,
+                };
+            });
+        }
+    })
 }

@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import client from "../../store/client";
 import { toast } from "sonner";
+import { tokenStore, type UserProfile } from "../../store/client";
 
 
 export const useRequestEmailChange = () => {
@@ -45,6 +46,35 @@ export const useChangePassword = () => {
         }
     })
 }
+
+export const useLogout = () => {
+    return useMutation({
+        mutationFn: async () => {
+            await client.post("/auth/logout")
+        },
+        onSuccess: () => {
+            toast.success("User logged out successfully!")
+        },
+        onError: (error: any) => {
+            toast.error(error.response.data.message || "Unable to log user out!")
+        }
+    })
+}
+
+export const getUserProfile = () => {
+    return useQuery({
+        queryKey: ["user-profile"],
+        queryFn: fetchUserProfile,
+    });
+}
+
+export const fetchUserProfile = async () => {
+    const response = await client.get("/user/profile");
+    const profile = (response.data.data?.profile ?? response.data.profile ?? response.data.data) as UserProfile;
+    tokenStore.getState().setProfile(profile);
+    return profile;
+}
+    
 
 type APIKey = {
     id: string

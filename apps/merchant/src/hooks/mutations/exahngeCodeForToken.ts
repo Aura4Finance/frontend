@@ -1,12 +1,12 @@
-import { useMutation } from "@tanstack/react-query";
-import client, { type UserProfile } from "../../store/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import client from "../../store/client";
 import { toast } from "sonner";
-import { tokenStore } from "../../store/client";
 import { useLocation } from "wouter";
+import { fetchUserProfile } from "./useSettings";
 
 export const useExchangeCodeForToken = () => {
-    const { setProfile } = tokenStore();
     const [, setLocation] = useLocation();
+    const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (otp: string) => {
             let payload = {};
@@ -16,28 +16,18 @@ export const useExchangeCodeForToken = () => {
                 payload = { otp, type: "orafi" };
             }
             const response = await client.post('/auth/exchange-code', payload);
-            return response.data;
+            return response.data.message;
         },
-        onSuccess: () => {
-            useMutation({
-                mutationFn: async () => {
-                    const response = await client.get("/auth/profile");
-                    return response.data.data.profile as UserProfile;
-                },
-                onSuccess: (profile) => {
-                    setProfile(profile);
-                    tokenStore.getState().setProfile(profile);
-                    setLocation("/dashboard");
-                    toast.success("Welcome back!");
-                },
-                onError: (error: any) => {
-                    toast.error(error.response?.data?.message || "Unable to fetch user profile")
-                    window.location.replace("http://localhost:3100/signin");
-                }
+        onSuccess: async (message: string) => {
+            await queryClient.fetchQuery({
+                queryKey: ["user-profile"],
+                queryFn: fetchUserProfile,
             });
+
+            toast.success(message || "User logged in successfully!")
+            setLocation('/dashboard')
         },
         onError: (error: any) => {
-            console.log(error.response);
             toast.error(error.response?.data?.message || "Unable to validate login request")
             //window.location.replace("http://localhost:3100/signin");
         }

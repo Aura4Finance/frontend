@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DashboardWrapper from "./DashboardWrapper";
 import {
   FiCopy,
@@ -21,22 +21,15 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { useDashboard } from "../hooks/mutations/useDashboard";
+import { useBalance, useDashboard } from "../hooks/mutations/useDashboard";
+import { tokenStore } from "../store/client";
 
-// --- Static balance mock (no balance endpoint yet) ---
 const RATES_TO_NGN: Record<string, number> = {
   USDC: 1_580,
   USDT: 1_575,
   SUI: 520,
   ETH: 5_200_000,
 };
-const mockBalances: Record<string, number> = {
-  USDC: 12_450.75,
-  USDT: 8_320.0,
-  SUI: 2_150.5,
-  ETH: 1.4325,
-};
-const coinOptions = Object.keys(mockBalances);
 
 // --- Skeleton helpers ---
 const KpiSkeleton = () => (
@@ -62,49 +55,80 @@ const ChartSkeleton = () => (
 
 // --- Component ---
 
+const shortenAddress = (address: string) => {
+  if (address.length <= 12) {
+    return address;
+  }
+
+  return `${address.slice(0, 6)}....${address.slice(-4)}`;
+};
+
 const Dashboard = () => {
-  const network = "Testnet";
+  const { profile } = tokenStore();
   const [isOpen, setIsOpen] = useState(false);
   const [balanceVisible, setBalanceVisible] = useState(true);
-  const [selectedCoin, setSelectedCoin] = useState("USDC");
+  const [selectedCoin, setSelectedCoin] = useState("");
   const [coinDropdownOpen, setCoinDropdownOpen] = useState(false);
 
   const { data, isLoading, isError } = useDashboard();
+  const { data: balances = [] } = useBalance();
 
-  const currentBalance = mockBalances[selectedCoin] ?? 0;
+  const coinOptions = useMemo(
+    () => [...new Set(balances.map(({ coinType }) => coinType))],
+    [balances]
+  );
+
+  useEffect(() => {
+    if (!coinOptions.length) {
+      return;
+    }
+
+    if (!selectedCoin || !coinOptions.includes(selectedCoin)) {
+      setSelectedCoin(coinOptions[0]);
+    }
+  }, [coinOptions, selectedCoin]);
+
+  const network = profile?.businessProfile.isLive ? "Mainnet" : "Testnet";
+  const walletAddress = profile?.businessProfile.wallet?.[0]?.address ?? "—";
+  const shortWalletAddress = walletAddress === "—" ? walletAddress : shortenAddress(walletAddress);
+
+  const currentBalance = balances.find(({ coinType }) => coinType === selectedCoin)?.balance ?? 0;
   const ngnBalance = currentBalance * (RATES_TO_NGN[selectedCoin] ?? 0);
 
   // Chart data comes straight from the API's transactionMetrics array
   const chartData = data?.transactionMetrics ?? [];
+  const transactionCount = data?.transactionCount;
+  const customerCount = data?.customerCount;
+  const transactionVolume = data?.transactionVolume;
 
   const dashboardKpis = [
     {
       label: "Completed transactions",
-      value: data?.transactionCount.total.toLocaleString("en-US") ?? "—",
-      helper: data
-        ? `${data.transactionCount.percentageUp}% ${data.transactionCount.trend === "up" ? "increase" : "decrease"} from last period`
+      value: transactionCount?.total?.toLocaleString("en-US") ?? "—",
+      helper: transactionCount
+        ? `${transactionCount.percentageChange}% ${transactionCount.trend === "up" ? "increase" : "decrease"} from last period`
         : "—",
       icon: FiCheckCircle,
       iconClassName: "bg-emerald-50 text-emerald-600",
-      trend: data?.transactionCount.trend,
+      trend: transactionCount?.trend,
     },
     {
       label: "Active customers",
-      value: data?.customerCount.total.toLocaleString("en-US") ?? "—",
-      helper: data
-        ? `${data.customerCount.percentageUp}% ${data.customerCount.trend === "up" ? "increase" : "decrease"} from last period`
+      value: customerCount?.total?.toLocaleString("en-US") ?? "—",
+      helper: customerCount
+        ? `${customerCount.percentageChange}% ${customerCount.trend === "up" ? "increase" : "decrease"} from last period`
         : "—",
       icon: FiUsers,
       iconClassName: "bg-violet-50 text-violet-600",
-      trend: data?.customerCount.trend,
+      trend: customerCount?.trend,
     },
     {
       label: "Total transaction volume",
-      value: data
-        ? `$${data.transactionVolume.totalVolumeInUSDC.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC`
+      value: transactionVolume
+        ? `$${transactionVolume.totalVolumeInUSDC.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC`
         : "—",
-      helper: data
-        ? `${data.transactionVolume.transactionCount.toLocaleString()} transactions settled`
+      helper: transactionVolume
+        ? `${transactionVolume.transactionCount.toLocaleString()} transactions settled`
         : "—",
       icon: FiTrendingUp,
       iconClassName: "bg-blue-50 text-blue-600",
@@ -118,7 +142,7 @@ const Dashboard = () => {
       <div className="flex justify-between items-center px-6 py-4 shadow-sm bg-white">
         <div className="flex items-center gap-3">
           <div className="font-semibold text-2xl text-black sm:text-xl">
-            Hi, Emmanuel
+            Hi, {profile?.firstname ? profile.firstname : "there"}!{" "}
           </div>
         </div>
 
@@ -132,7 +156,7 @@ const Dashboard = () => {
           >
             {network}
           </span>
-          <span>0x32344....3456</span>
+          <span>{shortWalletAddress}</span>
           <FiCopy className="text-blue-950 cursor-pointer" />
         </div>
 
@@ -146,14 +170,14 @@ const Dashboard = () => {
               <span
                 className={`text-xs font-medium px-3 py-1 rounded-full ${
                   network === "Testnet"
-                    ? "bg-blue-950 text-white"
-                    : "bg-gray-200 text-gray-800"
+                    ? "bg-red-600 text-white"
+                    : "bg-blue-950 text-white"
                 }`}
               >
                 {network}
               </span>
               <div className="flex items-center justify-between text-sm font-semibold text-black bg-gray-100 px-2 py-1 rounded-md">
-                <span>0x32344....3456</span>
+                <span>{shortWalletAddress}</span>
                 <FiCopy className="text-blue-950 cursor-pointer" />
               </div>
             </div>
@@ -169,9 +193,10 @@ const Dashboard = () => {
             <button
               type="button"
               onClick={() => setCoinDropdownOpen(!coinDropdownOpen)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors text-sm font-medium text-gray-700"
+              disabled={!coinOptions.length}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors text-sm font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {selectedCoin}
+              {selectedCoin || "No balances"}
               <FiChevronDown
                 size={14}
                 className={`transition-transform ${coinDropdownOpen ? "rotate-180" : ""}`}
@@ -204,7 +229,7 @@ const Dashboard = () => {
             <div className="flex items-center justify-center gap-2 mb-1">
               <span className="text-3xl font-bold text-gray-900 tracking-tight">
                 {balanceVisible
-                  ? `${currentBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })} ${selectedCoin}`
+                  ? `${currentBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })} ${selectedCoin || ""}`
                   : "••••••••"}
               </span>
               <button
