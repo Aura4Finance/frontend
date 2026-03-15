@@ -230,7 +230,7 @@ const Dashboard = () => {
               <span className="text-3xl font-bold text-gray-900 tracking-tight">
                 {balanceVisible
                   ? `${currentBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })} ${selectedCoin || ""}`
-                  : "••••••••"}
+                  : "********"}
               </span>
               <button
                 type="button"
@@ -243,7 +243,7 @@ const Dashboard = () => {
             <p className="text-sm text-gray-500">
               {balanceVisible
                 ? `≈ ₦${ngnBalance.toLocaleString("en-NG", { minimumFractionDigits: 2 })}`
-                : "••••••••"}
+                : "********"}
             </p>
           </div>
         </div>

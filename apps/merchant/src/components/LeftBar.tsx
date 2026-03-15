@@ -87,21 +87,21 @@ const LeftBar = () => {
                 </div>
 
                 {/* Navigation Cards */}
-                <div className="flex-1 overflow-y-hidden px-3 py-6 space-y-3">
+                <div className="flex-1 overflow-y-hidden px-4 py-7 space-y-2">
                     {navItems.map((item, index) => {
                         const isActive = activeTab === item.name;
                         return (
-                            <Link to={item.route} key={index}>
+                            <Link to={item.route} key={index} className="block">
                                 <Card
                                     onClick={() => setActiveTab(item.name as any)}
-                                    className={`border-none rounded-0 cursor-pointer transition-all duration-200 ${collapsed ? "p-4 flex justify-center" : "p-4"
+                                    className={`border-none rounded-0 cursor-pointer transition-all duration-200 ${collapsed ? "py-2 px-2 flex justify-center" : "py-2 px-3"
                                         } ${isActive
                                             ? "bg-linear-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-700   shadow-md scale-[1.03]"
                                             : "hover:shadow-md hover:scale-[1.02]"
                                         }`}
                                 >
                                     <CardContent
-                                        className={`flex items-center ${collapsed ? "justify-center" : "justify-start gap-x-4"
+                                        className={`p-0 flex items-center ${collapsed ? "justify-center" : "justify-start gap-x-4"
                                             }`}
                                     >
                                         <span
