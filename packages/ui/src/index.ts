@@ -5,5 +5,6 @@ export * from "./input";
 export * from "./label";
 export * from "./skeleton";
 export * from "./select";
+export * from "./tabs";
 export * from "./lib/util";
 import "./index.css";

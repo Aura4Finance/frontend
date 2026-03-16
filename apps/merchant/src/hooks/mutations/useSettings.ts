@@ -61,10 +61,11 @@ export const useLogout = () => {
     })
 }
 
-export const getUserProfile = () => {
+export const getUserProfile = (enabled = true) => {
     return useQuery({
         queryKey: ["user-profile"],
         queryFn: fetchUserProfile,
+        enabled,
     });
 }
 

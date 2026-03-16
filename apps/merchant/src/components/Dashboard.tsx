@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import DashboardWrapper from "./DashboardWrapper";
 import {
-  FiCopy,
-  FiMenu,
   FiEye,
   FiEyeOff,
   FiUsers,
@@ -22,7 +20,6 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useBalance, useDashboard } from "../hooks/mutations/useDashboard";
-import { tokenStore } from "../store/client";
 
 const RATES_TO_NGN: Record<string, number> = {
   USDC: 1_580,
@@ -53,19 +50,7 @@ const ChartSkeleton = () => (
   </div>
 );
 
-// --- Component ---
-
-const shortenAddress = (address: string) => {
-  if (address.length <= 12) {
-    return address;
-  }
-
-  return `${address.slice(0, 6)}....${address.slice(-4)}`;
-};
-
 const Dashboard = () => {
-  const { profile } = tokenStore();
-  const [isOpen, setIsOpen] = useState(false);
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [selectedCoin, setSelectedCoin] = useState("");
   const [coinDropdownOpen, setCoinDropdownOpen] = useState(false);
@@ -87,10 +72,6 @@ const Dashboard = () => {
       setSelectedCoin(coinOptions[0]);
     }
   }, [coinOptions, selectedCoin]);
-
-  const network = profile?.businessProfile.isLive ? "Mainnet" : "Testnet";
-  const walletAddress = profile?.businessProfile.wallet?.[0]?.address ?? "—";
-  const shortWalletAddress = walletAddress === "—" ? walletAddress : shortenAddress(walletAddress);
 
   const currentBalance = balances.find(({ coinType }) => coinType === selectedCoin)?.balance ?? 0;
   const ngnBalance = currentBalance * (RATES_TO_NGN[selectedCoin] ?? 0);
@@ -138,53 +119,6 @@ const Dashboard = () => {
 
   return (
     <DashboardWrapper>
-      {/* Header */}
-      <div className="flex justify-between items-center px-6 py-4 shadow-sm bg-white">
-        <div className="flex items-center gap-3">
-          <div className="font-semibold text-2xl text-black sm:text-xl">
-            Hi, {profile?.firstname ? profile.firstname : "there"}!{" "}
-          </div>
-        </div>
-
-        <div className="hidden sm:flex items-center gap-2 font-semibold px-3 py-1.5 rounded-full text-sm cursor-default select-none bg-gray-100 text-black w-fit">
-          <span
-            className={`text-sm font-medium px-3 py-1 rounded-full ${
-              network === "Testnet"
-                ? "bg-red-600 text-white"
-                : "bg-blue-950 text-white"
-            }`}
-          >
-            {network}
-          </span>
-          <span>{shortWalletAddress}</span>
-          <FiCopy className="text-blue-950 cursor-pointer" />
-        </div>
-
-        <div className="flex sm:hidden items-center gap-2 relative">
-          <FiMenu
-            className="text-blue-950 text-xl cursor-pointer"
-            onClick={() => setIsOpen(!isOpen)}
-          />
-          {isOpen && (
-            <div className="absolute right-0 top-10 bg-white border rounded-lg shadow-md w-48 p-3 flex flex-col gap-2 z-50">
-              <span
-                className={`text-xs font-medium px-3 py-1 rounded-full ${
-                  network === "Testnet"
-                    ? "bg-red-600 text-white"
-                    : "bg-blue-950 text-white"
-                }`}
-              >
-                {network}
-              </span>
-              <div className="flex items-center justify-between text-sm font-semibold text-black bg-gray-100 px-2 py-1 rounded-md">
-                <span>{shortWalletAddress}</span>
-                <FiCopy className="text-blue-950 cursor-pointer" />
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
       <div className="p-4 space-y-6">
         {/* Balance Card */}
         <div className="flex flex-col items-center py-8">
