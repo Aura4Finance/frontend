@@ -35,8 +35,8 @@ export const useVerifyEmailChange = () => {
 export const useChangePassword = () => {
     return useMutation({
         mutationFn: async ({ oldPassword, newPassword }: { oldPassword: string; newPassword: string }) => {
-            await client.post("/user/security/change-password", { oldPassword });
-            await client.post("/user/security/complete-change-password", { newPassword });
+            await client.post("/user/security/change-password", { password: oldPassword });
+            await client.post("/user/security/complete-password-change", { password: newPassword });
         },
         onSuccess: () => {
             toast.success("Password changed successfully!")
@@ -126,7 +126,7 @@ export const getAPIKeys = () => {
         queryKey: ["api-keys"],
         queryFn: async () => {
             const response = await client.get("/user/api-keys");
-            return response.data.data as APIKey;
+            return response.data.data as APIKey[];
         }
     })
 }

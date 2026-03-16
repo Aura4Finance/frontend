@@ -61,7 +61,7 @@ const DashboardWrapper = ({ children }: { children: React.ReactNode }) => {
     <div className="flex min-h-screen">
       <LeftBar />
       <main
-        className={`w-screen bg-gray-50 transition-all duration-300 ${collapsed ? "ml-20" : "ml-55"}`}
+        className={`w-full bg-gray-50 transition-all duration-300 ${collapsed ? "ml-20" : "ml-55"}`}
       >
         <header className="sticky top-0 z-20 border-b border-gray-100 bg-white/95 px-4 py-4 shadow-sm backdrop-blur sm:px-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

@@ -57,9 +57,9 @@ const LeftBar = () => {
     } = useActiveTabStore();
 
     return (
-        <div className="fixed z-0 top-0 min-h-screen transition-colors duration-300 w-screen">
+        <div className="fixed z-0 top-0 min-h-screen transition-colors duration-300 w-screen pointer-events-none">
             <aside
-                className={`${collapsed ? "w-20" : "w-55"
+                className={`pointer-events-auto ${collapsed ? "w-20" : "w-55"
                     } h-screen bg-blue-950 border-r border-slate-200 dark:border-gray-700 transition-all duration-300 flex flex-col shadow-sm`}
             >
                 <div className="p-4 border-b border-slate-200 dark:border-gray-700 flex items-center gap-x-4">

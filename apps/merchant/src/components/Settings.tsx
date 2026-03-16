@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { FiCopy, FiLogOut, FiRefreshCcw } from "react-icons/fi";
-import { Input, Tabs, TabsContent, TabsList, TabsTrigger } from "@orafi/ui";
+import { Input } from "@orafi/ui";
 import { useLocation } from "wouter";
 import DashboardWrapper from "./DashboardWrapper";
 import { useActiveTabStore } from "../store/activeTab";
@@ -42,8 +42,7 @@ const Settings = () => {
   const [, setLocation] = useLocation();
   const { profile: storedProfile, clearProfile } = tokenStore();
 
-  const { data: queriedProfile, refetch: refetchProfile, isLoading: profileLoading } =
-    getUserProfile();
+  const { data: queriedProfile, refetch: refetchProfile, isLoading: profileLoading } = getUserProfile();
   const { data: apiKeys, isLoading: apiKeysLoading, refetch: refetchApiKeys } = getAPIKeys();
 
   const requestEmailChangeMutation = useRequestEmailChange();
@@ -66,6 +65,7 @@ const Settings = () => {
   const [copiedItem, setCopiedItem] = useState<"live" | "test" | "wallet" | null>(null);
 
   const profile = queriedProfile ?? storedProfile;
+  const apiKey = Array.isArray(apiKeys) && apiKeys.length > 0 ? apiKeys[0] : undefined;
 
   useEffect(() => {
     setDashboardTab("Settings");
@@ -188,12 +188,12 @@ const Settings = () => {
   };
 
   const handleRegenerateApiKey = () => {
-    if (!twoFAKey.trim() || !apiKeys?.id) {
+    if (!twoFAKey.trim() || !apiKey?.id) {
       return;
     }
 
     regenerateApiKeysMutation.mutate(
-      { twoFAKey: twoFAKey.trim(), keyId: apiKeys.id },
+      { twoFAKey: twoFAKey.trim(), keyId: apiKey.id },
       {
         onSuccess: () => {
           refetchApiKeys();
@@ -218,18 +218,37 @@ const Settings = () => {
     setLocation("/");
   };
 
+  const tabs = [
+    { id: "profile", label: "User Profile Information" },
+    { id: "api-keys", label: "API Keys" },
+    { id: "notifications", label: "Notifications" },
+    { id: "preferences", label: "Preferences" },
+  ];
+
   return (
     <DashboardWrapper>
       <div className="space-y-6 bg-gray-50 p-4 sm:p-6">
-        <Tabs value={activeTabValue} onValueChange={setActiveTabValue} className="space-y-4">
-          <TabsList className="h-auto w-full flex-wrap justify-start gap-1 rounded-2xl border border-gray-100 bg-white p-2">
-            <TabsTrigger value="profile">User Profile Information</TabsTrigger>
-            <TabsTrigger value="api-keys">API Keys</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
-            <TabsTrigger value="preferences">Preferences</TabsTrigger>
-          </TabsList>
+        {/* Tab Navigation */}
+        <div className="flex flex-wrap gap-2 border-b border-gray-200">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTabValue(tab.id)}
+              className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-[2px] ${
+                activeTabValue === tab.id
+                  ? "border-blue-950 text-blue-950"
+                  : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-          <TabsContent value="profile" className="mt-0 space-y-6">
+        {/* Tab Content */}
+        <div className="space-y-6">
+          {activeTabValue === "profile" && (
+            <>
             <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
               <h2 className="text-base font-semibold text-gray-900">Profile information</h2>
               <p className="mt-1 text-sm text-gray-500">Your account and business details.</p>
@@ -266,7 +285,7 @@ const Settings = () => {
               <p className="mt-1 text-sm text-gray-500">Request and verify your email change.</p>
 
               <form onSubmit={handleRequestEmailChange} className="mt-4 space-y-4">
-                <div>
+                <div className="max-w-md">
                   <label className="text-sm font-medium text-gray-700">New email</label>
                   <Input
                     type="email"
@@ -288,7 +307,7 @@ const Settings = () => {
                 onSubmit={handleVerifyEmailChange}
                 className="mt-5 space-y-4 border-t border-gray-100 pt-4"
               >
-                <div>
+                <div className="max-w-md">
                   <label className="text-sm font-medium text-gray-700">Verification email</label>
                   <Input
                     type="email"
@@ -298,7 +317,7 @@ const Settings = () => {
                     className="mt-1"
                   />
                 </div>
-                <div>
+                <div className="max-w-md">
                   <label className="text-sm font-medium text-gray-700">Verification token</label>
                   <Input
                     value={verifyToken}
@@ -317,15 +336,16 @@ const Settings = () => {
                 </button>
               </form>
             </section>
-          </TabsContent>
+            </>
+          )}
 
-          <TabsContent value="api-keys" className="mt-0">
+          {activeTabValue === "api-keys" && (
             <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
               <h2 className="text-base font-semibold text-gray-900">API keys</h2>
               <p className="mt-1 text-sm text-gray-500">Generate or rotate keys using your 2FA key.</p>
 
               <form onSubmit={handleGenerateApiKey} className="mt-4 space-y-4">
-                <div>
+                <div className="max-w-md">
                   <label className="text-sm font-medium text-gray-700">2FA key</label>
                   <Input
                     value={twoFAKey}
@@ -344,7 +364,7 @@ const Settings = () => {
                   <button
                     type="button"
                     onClick={handleRegenerateApiKey}
-                    disabled={regenerateApiKeysMutation.isPending || !twoFAKey.trim() || !apiKeys?.id}
+                    disabled={regenerateApiKeysMutation.isPending || !twoFAKey.trim() || !apiKey?.id}
                     className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <FiRefreshCcw size={14} />
@@ -356,11 +376,11 @@ const Settings = () => {
               <div className="mt-4 space-y-3 border-t border-gray-100 pt-4">
                 <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
                   <p className="text-xs font-medium uppercase tracking-[0.12em] text-gray-500">Live key</p>
-                  <p className="mt-1 break-all text-sm font-semibold text-gray-900">{apiKeys?.liveKey ?? "—"}</p>
-                  {apiKeys?.liveKey && (
+                  <p className="mt-1 break-all text-sm font-semibold text-gray-900">{apiKey?.liveKey ?? "—"}</p>
+                  {apiKey?.liveKey && (
                     <button
                       type="button"
-                      onClick={() => copyValue(apiKeys.liveKey, "live")}
+                      onClick={() => copyValue(apiKey.liveKey, "live")}
                       className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-800"
                     >
                       <FiCopy size={13} />
@@ -371,11 +391,11 @@ const Settings = () => {
 
                 <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
                   <p className="text-xs font-medium uppercase tracking-[0.12em] text-gray-500">Test key</p>
-                  <p className="mt-1 break-all text-sm font-semibold text-gray-900">{apiKeys?.testKey ?? "—"}</p>
-                  {apiKeys?.testKey && (
+                  <p className="mt-1 break-all text-sm font-semibold text-gray-900">{apiKey?.testKey ?? "—"}</p>
+                  {apiKey?.testKey && (
                     <button
                       type="button"
-                      onClick={() => copyValue(apiKeys.testKey, "test")}
+                      onClick={() => copyValue(apiKey.testKey, "test")}
                       className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-800"
                     >
                       <FiCopy size={13} />
@@ -385,22 +405,25 @@ const Settings = () => {
                 </div>
 
                 <div className="grid grid-cols-1 gap-2 text-xs text-gray-500 sm:grid-cols-2">
-                  <p>Created: {formatDate(apiKeys?.createdAt)}</p>
-                  <p>Last used: {formatDate(apiKeys?.lastUsed)}</p>
+                  <p>Created: {formatDate(apiKey?.createdAt)}</p>
+                  <p>Last used: {formatDate(apiKey?.lastUsed)}</p>
                 </div>
                 {apiKeysLoading && <p className="text-xs text-gray-500">Loading API keys...</p>}
               </div>
             </section>
-          </TabsContent>
+          )}
 
-          <TabsContent value="notifications" className="mt-0">
+          {activeTabValue === "notifications" && (
             <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
               <h2 className="text-base font-semibold text-gray-900">Notifications</h2>
               <p className="mt-1 text-sm text-gray-500">Turn account notifications on or off.</p>
 
               <div className="mt-4 rounded-lg border border-gray-100 bg-gray-50 p-3">
                 <p className="text-sm font-semibold text-gray-900">Notification preference</p>
-                <p className="text-xs text-gray-500">Manage your account notification updates.</p>
+                <p className="text-xs text-gray-500">
+                  When notifications are on, you will receive alerts for successful payments. If
+                  notifications are off, you will not receive payment notifications.
+                </p>
                 <button
                   type="button"
                   onClick={handleToggleNotification}
@@ -413,15 +436,16 @@ const Settings = () => {
                 </button>
               </div>
             </section>
-          </TabsContent>
+          )}
 
-          <TabsContent value="preferences" className="mt-0 space-y-6">
+          {activeTabValue === "preferences" && (
+            <>
             <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
               <h2 className="text-base font-semibold text-gray-900">Security</h2>
               <p className="mt-1 text-sm text-gray-500">Change your account password.</p>
 
               <form onSubmit={handleChangePassword} className="mt-4 space-y-4">
-                <div>
+                <div className="max-w-md">
                   <label className="text-sm font-medium text-gray-700">Current password</label>
                   <Input
                     type="password"
@@ -432,7 +456,7 @@ const Settings = () => {
                   />
                 </div>
 
-                <div>
+                <div className="max-w-md">
                   <label className="text-sm font-medium text-gray-700">New password</label>
                   <Input
                     type="password"
@@ -443,7 +467,7 @@ const Settings = () => {
                   />
                 </div>
 
-                <div>
+                <div className="max-w-md">
                   <label className="text-sm font-medium text-gray-700">Confirm new password</label>
                   <Input
                     type="password"
@@ -492,8 +516,9 @@ const Settings = () => {
                 </button>
               </div>
             </section>
-          </TabsContent>
-        </Tabs>
+            </>
+          )}
+        </div>
 
         <div className="flex justify-end pt-4">
           <button
