@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { FiCopy } from "react-icons/fi";
+import { FiAlertTriangle, FiCopy } from "react-icons/fi";
+import { Link } from "wouter";
 import LeftBar from "../components/LeftBar";
 import { useActiveTabStore } from "../store/activeTab";
 import { tokenStore } from "../store/client";
@@ -63,6 +64,22 @@ const DashboardWrapper = ({ children }: { children: React.ReactNode }) => {
       <main
         className={`w-full bg-gray-50 transition-all duration-300 ${collapsed ? "ml-20" : "ml-55"}`}
       >
+        {!profile?.businessProfile?.onboarded && (
+          <div className="flex items-center justify-between gap-4 bg-yellow-400 px-4 py-2.5 sm:px-6">
+            <div className="flex items-center gap-2 text-yellow-900">
+              <FiAlertTriangle size={16} className="shrink-0" />
+              <p className="text-sm font-medium">
+                Your account setup is incomplete. Complete onboarding to unlock all features.
+              </p>
+            </div>
+            <Link
+              to="/onboarding"
+              className="shrink-0 rounded-md bg-yellow-900 px-3 py-1.5 text-xs font-semibold text-yellow-50 transition-colors hover:bg-yellow-800"
+            >
+              Complete onboarding
+            </Link>
+          </div>
+        )}
         <header className="sticky top-0 z-20 border-b border-gray-100 bg-white/95 px-4 py-4 shadow-sm backdrop-blur sm:px-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>

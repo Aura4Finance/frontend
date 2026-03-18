@@ -7,6 +7,7 @@ import Dashboard from "./components/Dashboard";
 import Settings  from "./components/Settings";
 import Customers from "./components/Customers";
 import  Balances from "./components/Balances";
+import Onboarding from "./components/Onboarding";
 import Transactions from "./components/Transactions";
 import Fiats from "./components/Fiats";
 import PaymentLink from "./components/PaymentLink";
@@ -27,6 +28,11 @@ function App() {
       </>
     );
   }
+
+  if (!isProfileLoading && !profile && !isAuthCallbackRoute) {
+    window.location.href = "https://auth.orafi.app/signin";
+    return null;
+  }
   return (  
     <>
       <Route>
@@ -39,6 +45,7 @@ function App() {
             ) : (
               <Switch>
                 <Route path="/" component={Dashboard}/>
+                <Route path="/onboarding" component={Onboarding}/>
                 <Route path="/dashboard" component={Dashboard}/>
                 <Route path="/dashboard/settings" component={Settings}/>
                 <Route path="/dashboard/customers" component={Customers}/>

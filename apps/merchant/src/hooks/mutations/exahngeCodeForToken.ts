@@ -3,6 +3,7 @@ import client from "../../store/client";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { fetchUserProfile } from "./useSettings";
+import type { UserProfile } from "../../store/client";
 
 export const useExchangeCodeForToken = () => {
     const [, setLocation] = useLocation();
@@ -19,13 +20,14 @@ export const useExchangeCodeForToken = () => {
             return response.data.message;
         },
         onSuccess: async (message: string) => {
-            await queryClient.fetchQuery({
+            const profile = await queryClient.fetchQuery({
                 queryKey: ["user-profile"],
                 queryFn: fetchUserProfile,
             });
 
             toast.success(message || "User logged in successfully!")
-            setLocation('/dashboard')
+            const isOnboarded = Boolean((profile as UserProfile | undefined)?.businessProfile?.onboarded);
+            setLocation(isOnboarded ? '/dashboard' : '/onboarding')
         },
         onError: (error: any) => {
             toast.error(error.response?.data?.message || "Unable to validate login request")

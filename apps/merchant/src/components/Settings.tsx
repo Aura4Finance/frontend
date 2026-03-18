@@ -101,7 +101,7 @@ const Settings = () => {
       { label: "Business", value: profile?.businessProfile?.businessName ?? "—" },
       { label: "Sector", value: profile?.businessProfile?.businessSector ?? "—" },
       { label: "Country", value: profile?.businessProfile?.country ?? "—" },
-      { label: "Website", value: profile?.businessProfile?.website || "—" },
+      { label: "Website", value: profile?.businessProfile?.websiteLink || "—" },
       {
         label: "Mode",
         value: profile?.businessProfile?.isLive ? "Live" : "Test",
