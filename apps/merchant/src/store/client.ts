@@ -14,7 +14,7 @@ export interface UserProfile {
     businessName: string
     businessSector: string
     country: string
-    website: string
+    websiteLink: string
     onboarded: boolean
     isLive: boolean
     wallet: {

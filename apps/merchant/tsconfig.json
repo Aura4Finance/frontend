@@ -1,4 +1,11 @@
 {
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@orafi/transactions": ["../../packages/transactions/src/index.ts"],
+      "@orafi/transactions/*": ["../../packages/transactions/src/*"]
+    }
+  },
   "files": [],
   "references": [
     { "path": "./tsconfig.app.json" },

@@ -13,6 +13,7 @@
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "@orafi/ui": "workspace:*",
+    "@orafi/transactions": "workspace:*",
     "@tanstack/react-query": "^5.90.5",
     "axios": "^1.13.0",
     "zustand": "^4.5.7",

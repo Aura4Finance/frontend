@@ -10,6 +10,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@orafi/ui': path.resolve(__dirname, '../../packages/ui/src'),
+      '@orafi/transactions': path.resolve(__dirname, '../../packages/transactions/src'),
     },
   },
   server: {
