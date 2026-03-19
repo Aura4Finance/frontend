@@ -126,7 +126,7 @@ const LeftBar = () => {
                 </div>
                 <Select
                     value={network}
-                    onChange={(e: any) => setNetwork(e?.valueOf)}
+                    onChange={(e: any) => setNetwork(e?.value || e)}
                     placeholder="On-chain Network"
                     options={networkOptions} />
             </aside>

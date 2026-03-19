@@ -317,6 +317,7 @@ const Transactions = () => {
         });
       },
       onError: (error: any) => {
+        console.log(error)
         setResultData({
           type: "error",
           title: "Payout Failed",
@@ -327,7 +328,7 @@ const Transactions = () => {
     });
   };
 
-  const totalPayoutableBalance = balances.find((b) => b.coinType === "SUI")?.balance || 0;
+  const totalPayoutableBalance = balances.find((b) => b.coinType === "USDC")?.balance || 0;
 
   return (
     <DashboardWrapper>

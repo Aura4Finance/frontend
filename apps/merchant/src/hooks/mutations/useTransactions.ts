@@ -117,7 +117,7 @@ export const usePayout = () => {
       
       // Scenario 1: Using presaved crypto settlement account
       if (cryptoSettlementAccountId) {
-        const response = await client.post(`/user/transactions/payout`, { 
+        const response = await client.post(`/user/transactions/payout/crypto`, { 
           amount, 
           cryptoSettlementAccountId 
         });
@@ -138,7 +138,7 @@ export const usePayout = () => {
           payloadData.save = true;
         }
         
-        const response = await client.post(`/user/transactions/payout`, payloadData);
+        const response = await client.post(`/user/transactions/payout/crypto`, payloadData);
         return response.data.data as PayoutSuccessful;
       }
       
@@ -160,7 +160,7 @@ export const useRetryPayout = () => {
   return useMutation({
     mutationFn: async ({ transactionId, twoFAKey }: { transactionId: string, twoFAKey: string }) => {
       client.defaults.headers.common["2-fa-key"] = twoFAKey;
-      const response = await client.post(`/user/transactions/payout/retry`, { transactionId });
+      const response = await client.post(`/user/transactions/payout/crypto/retry`, { transactionId });
       return response.data.data as PayoutSuccessful;
     },
     onSuccess: () => {
