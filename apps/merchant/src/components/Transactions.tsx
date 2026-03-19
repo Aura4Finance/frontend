@@ -51,7 +51,13 @@ const Transactions = () => {
   
   // Success/Failure modal state
   const [resultModalOpen, setResultModalOpen] = useState(false);
-  const [resultData, setResultData] = useState<{ type: "success" | "error"; message: string; title: string }>({
+  const [resultData, setResultData] = useState<{
+    type: "success" | "error";
+    message: string;
+    title: string;
+    data?: any;
+    action?: "refund" | "retry_refund" | "retry_payout" | "refund_payment";
+  }>({
     type: "success",
     message: "",
     title: "",
@@ -184,11 +190,13 @@ const Transactions = () => {
         twoFAKey: refundData.twoFAKey,
       },
       {
-        onSuccess: () => {
+        onSuccess: (data: any) => {
           setResultData({
             type: "success",
             title: "Refund Successful",
             message: "The refund has been processed successfully.",
+            data: data,
+            action: "refund",
           });
           setResultModalOpen(true);
           setRefundModalOpen(false);
@@ -200,6 +208,7 @@ const Transactions = () => {
             type: "error",
             title: "Refund Failed",
             message: error?.response?.data?.message || "Failed to process refund",
+            action: "refund",
           });
           setResultModalOpen(true);
         },
@@ -317,7 +326,7 @@ const Transactions = () => {
         });
       },
       onError: (error: any) => {
-        console.log(error)
+        //console.log(error)
         setResultData({
           type: "error",
           title: "Payout Failed",
@@ -536,7 +545,7 @@ const Transactions = () => {
 
             {/* Action Buttons */}
             <div className="flex gap-2">
-              {selectedTransaction.type === "payment" && selectedTransaction.status.toLowerCase() === "completed" && (
+              {selectedTransaction.type === "PAYMENT" && selectedTransaction.status.toLowerCase() == "completed" && !selectedTransaction.payment?.refunded && (
                 <button
                   onClick={() => setRefundModalOpen(true)}
                   disabled={isRefunding}
@@ -545,7 +554,7 @@ const Transactions = () => {
                   {isRefunding ? "Processing..." : "Refund Payment"}
                 </button>
               )}
-              {selectedTransaction.type === "refund" && selectedTransaction.status.toLowerCase() === "failed" && (
+              {selectedTransaction.type === "REFUND" && selectedTransaction.status.toLowerCase() === "failed" && (
                 <button
                   onClick={() => setRetryRefundModalOpen(true)}
                   disabled={isRetryingRefund}
@@ -554,7 +563,7 @@ const Transactions = () => {
                   {isRetryingRefund ? "Processing..." : "Retry Refund"}
                 </button>
               )}
-              {selectedTransaction.type === "payout" && selectedTransaction.status.toLowerCase() === "failed" && (
+              {selectedTransaction.type === "PAYOUT" && selectedTransaction.status.toLowerCase() === "failed" && (
                 <button
                   onClick={() => setRetryPayoutModalOpen(true)}
                   disabled={isRetryingPayout}
@@ -580,9 +589,9 @@ const Transactions = () => {
                 <p className="text-[11px] text-gray-500">Type</p>
                 <span
                   className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                    selectedTransaction.type === "payment"
+                    selectedTransaction.type === "PAYMENT"
                       ? "bg-blue-100 text-blue-700"
-                      : selectedTransaction.type === "payout"
+                      : selectedTransaction.type === "PAYOUT"
                         ? "bg-purple-100 text-purple-700"
                         : "bg-orange-100 text-orange-700"
                   }`}
@@ -829,11 +838,9 @@ const Transactions = () => {
                 </div>
               </div>
             )}
-
-
             {selectedTransaction.status.toLowerCase() === "completed" &&
               selectedTransaction.type === "payment" &&
-              !selectedTransaction.payment?.refunded && (
+              !selectedTransaction.payment?.refunded  && (
                 <div className="rounded-lg bg-blue-50 p-3 text-xs text-blue-600">
                   Click the "Refund Payment" button above to initiate a refund for this transaction.
                 </div>
