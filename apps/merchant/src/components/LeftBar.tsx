@@ -2,6 +2,7 @@ import { Button } from "@orafi/ui";
 import { Card, CardContent, Select } from "@orafi/ui";
 import { MdOutlineMenu, MdDashboard, MdSettings } from "react-icons/md";
 import { Link } from "wouter";
+import { useEffect, useState } from "react";
 import {
     RiMoneyDollarCircleLine,
     RiCustomerService2Line,
@@ -11,6 +12,7 @@ import {
 } from "react-icons/ri";
 import logo from "@orafi/ui/assets/OraFi.png";
 import { useActiveTabStore } from "../store/activeTab";
+import { useGetSupoortedNetworks } from "../hooks/mutations/useTransactions";
 
 const navItems = [
     { name: "Dashboard", icon: <MdDashboard size={22} />, color: "text-blue-600", route: "/dashboard" },
@@ -22,29 +24,6 @@ const navItems = [
     { name: "Settings", icon: <MdSettings size={22} />, color: "text-slate-600", route: "/dashboard/settings" },
 ];
 
-const networks = [
-  {
-    label: "SUI",
-    value: "SUI",
-  },
-  {
-    label: "BASE",
-    value: "BASE",
-  },
-  {
-    label: "ETH",
-    value: "ETH", 
-  },
-  {
-    label: "BNB",
-    value: "BNB",
-  },
-  {
-    label: "SOLANA",
-    value: "SOLANA",
-  },
-]
-
 
 const LeftBar = () => {
     const {
@@ -55,6 +34,23 @@ const LeftBar = () => {
         setActiveTab,
         toggleCollapse
     } = useActiveTabStore();
+
+    const { data: supportedNetworks = [] } = useGetSupoortedNetworks();
+    const [networkOptions, setNetworkOptions] = useState<Array<{ label: string; value: string }>>([]);
+
+    useEffect(() => {
+        if (supportedNetworks && supportedNetworks.length > 0) {
+            const options = supportedNetworks.map((net) => ({
+                label: net.symbol,
+                value: net.symbol,
+            }));
+            setNetworkOptions(options);
+            // Set first network as default if not already set
+            if (!network && options.length > 0) {
+                setNetwork(options[0].value as any);
+            }
+        }
+    }, [supportedNetworks, network, setNetwork]);
 
     return (
         <div className="fixed z-0 top-0 min-h-screen transition-colors duration-300 w-screen pointer-events-none">
@@ -132,7 +128,7 @@ const LeftBar = () => {
                     value={network}
                     onChange={(e: any) => setNetwork(e?.valueOf)}
                     placeholder="On-chain Network"
-                    options={networks} />
+                    options={networkOptions} />
             </aside>
         </div>
     );

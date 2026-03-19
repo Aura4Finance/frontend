@@ -275,6 +275,19 @@ export default function TransactionFilters({ onApply, onSearch, searchLoading }:
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [localSearch, setLocalSearch] = useState("");
 
+  // Local state for draft filters (not applied yet)
+  const [localType, setLocalType] = useState<TransactionType | undefined>();
+  const [localStatus, setLocalStatus] = useState<TransactionStatus | undefined>();
+  const [localToken, setLocalToken] = useState<TransactionToken | undefined>();
+  const [localCurrency, setLocalCurrency] = useState<TransactionCurrency | undefined>();
+  const [localNetwork, setLocalNetwork] = useState<TransactionNetwork | undefined>();
+  const [localDate, setLocalDate] = useState<DateFilter | undefined>();
+  const [localPaymentMethod, setLocalPaymentMethod] = useState<PaymentMethod | undefined>();
+  const [localCustomerId, setLocalCustomerId] = useState<string | undefined>();
+  const [localPaymentLinkId, setLocalPaymentLinkId] = useState<string | undefined>();
+  const [localUserId, setLocalUserId] = useState<string | undefined>();
+
+  const storeFilters = useTransactionFilters();
   const {
     type,
     status,
@@ -297,7 +310,21 @@ export default function TransactionFilters({ onApply, onSearch, searchLoading }:
     setPaymentLinkId,
     setUserId,
     resetFilters,
-  } = useTransactionFilters();
+  } = storeFilters;
+
+  // Initialize local state from store filters on mount
+  useEffect(() => {
+    setLocalType(type);
+    setLocalStatus(status);
+    setLocalToken(token);
+    setLocalCurrency(currency);
+    setLocalNetwork(network);
+    setLocalDate(date);
+    setLocalPaymentMethod(paymentMethod);
+    setLocalCustomerId(customerId);
+    setLocalPaymentLinkId(paymentLinkId);
+    setLocalUserId(userId);
+  }, []);
 
   useEffect(() => {
     const trimmed = localSearch.trim();
@@ -308,6 +335,7 @@ export default function TransactionFilters({ onApply, onSearch, searchLoading }:
     return () => clearTimeout(timer);
   }, [localSearch, onSearch]);
 
+  // Count active filters from store (applied filters)
   const activeFilterCount = [type, status, token, currency, network, date, paymentMethod, customerId, paymentLinkId, userId].filter(Boolean).length;
 
   const getActiveFilters = useCallback(() => {
@@ -377,6 +405,35 @@ export default function TransactionFilters({ onApply, onSearch, searchLoading }:
   ]);
 
   const activeFilters = getActiveFilters();
+
+  const handleApplyFiltersClick = () => {
+    setType(localType);
+    setStatus(localStatus);
+    setToken(localToken);
+    setCurrency(localCurrency);
+    setNetwork(localNetwork);
+    setDate(localDate);
+    setPaymentMethod(localPaymentMethod);
+    setCustomerId(localCustomerId);
+    setPaymentLinkId(localPaymentLinkId);
+    setUserId(localUserId);
+    onApply?.();
+  };
+
+  const handleClearFilters = () => {
+    setLocalType(undefined);
+    setLocalStatus(undefined);
+    setLocalToken(undefined);
+    setLocalCurrency(undefined);
+    setLocalNetwork(undefined);
+    setLocalDate(undefined);
+    setLocalPaymentMethod(undefined);
+    setLocalCustomerId(undefined);
+    setLocalPaymentLinkId(undefined);
+    setLocalUserId(undefined);
+    resetFilters();
+    onApply?.();
+  };
 
   return (
     <div className="mb-4 space-y-3">

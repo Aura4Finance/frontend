@@ -31,36 +31,29 @@ export const useTransaction = (transactionId: string, enabled: boolean = true) =
   });
 };
 
-export const useRetryTransaction = () => {
+type RefundSuccessful = {
+  status: string;
+  amount: number;
+  txDigest: string;
+  executionTime:  number;
+  gasFee: number;
+  platforFee: number;
+  amountSent: number;
+}
+
+
+export const useRefund = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (transactionId: string) => {
-      const response = await client.post(`/user/transactions/${transactionId}/retry`);
-      return response.data.data;
-    },
-    onSuccess: (_, transactionId) => {
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["transaction", transactionId] });
-      toast.success("Transaction retry initiated successfully");
-    },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to retry transaction");
-    },
-  });
-};
-
-export const useRefundTransaction = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ transactionId, reason }: { transactionId: string; reason?: string }) => {
-      const response = await client.post(`/user/transactions/${transactionId}/refund`, { reason });
-      return response.data.data;
+    mutationFn: async ({ originalTxId, to, reason, twoFAKey }: { originalTxId: string; to: string; reason?: string, twoFAKey: string }) => {
+      client.defaults.headers.common["2-fa-key"] = twoFAKey;
+      const response = await client.post(`/user/transactions/refund`, { originalTxId, to, reason });
+      return response.data.data as RefundSuccessful;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["transaction", variables.transactionId] });
+      queryClient.invalidateQueries({ queryKey: ["transaction", variables.originalTxId] });
       toast.success("Refund processed successfully");
     },
     onError: (error: any) => {
@@ -68,3 +61,134 @@ export const useRefundTransaction = () => {
     },
   });
 };
+
+export const useRetryRefund = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ transactionId, twoFAKey }: { transactionId: string, twoFAKey: string }) => {
+      client.defaults.headers.common["2-fa-key"] = twoFAKey;
+      const response = await client.post(`/user/transactions/refund/retry`, { transactionId });
+      return response.data.data as RefundSuccessful;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["transaction", variables.transactionId] });
+      toast.success("Refund retry processed successfully");
+  },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Failed to process refund retry");
+  }
+  })
+}
+
+type PayoutSuccessful = {
+  status: string;
+  amount: number;
+  txDigest: string;
+  executionTime:  number;
+  gasFee: number;
+  platforFee: number;
+  amountRecieved: number;
+}
+
+export const usePayout = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ 
+      walletAddress, 
+      network, 
+      amount,
+      alias,
+      save,
+      cryptoSettlementAccountId,
+      twoFAKey
+    }: { 
+      amount: number; 
+      network?: string; 
+      walletAddress?: string;
+      twoFAKey: string;
+      alias?: string;
+      save?: boolean;
+      cryptoSettlementAccountId?: string;
+    }) => {
+      client.defaults.headers.common["2-fa-key"] = twoFAKey;
+      
+      // Scenario 1: Using presaved crypto settlement account
+      if (cryptoSettlementAccountId) {
+        const response = await client.post(`/user/transactions/payout`, { 
+          amount, 
+          cryptoSettlementAccountId 
+        });
+        return response.data.data as PayoutSuccessful;
+      }
+      
+      // Scenario 2: Using new wallet address
+      if (walletAddress && network) {
+        const payloadData: any = {
+          amount,
+          walletAddress,
+          network,
+        };
+        
+        // Add save and alias if user wants to save the account
+        if (save && alias) {
+          payloadData.alias = alias;
+          payloadData.save = true;
+        }
+        
+        const response = await client.post(`/user/transactions/payout`, payloadData);
+        return response.data.data as PayoutSuccessful;
+      }
+      
+      throw new Error("Either cryptoSettlementAccountId or walletAddress and network must be provided");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      toast.success("Payout processed successfully");
+    },
+    onError: (error: any) => {  
+      toast.error(error?.response?.data?.message || "Failed to process payout");
+    }
+  })
+}
+
+export const useRetryPayout = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ transactionId, twoFAKey }: { transactionId: string, twoFAKey: string }) => {
+      client.defaults.headers.common["2-fa-key"] = twoFAKey;
+      const response = await client.post(`/user/transactions/payout/retry`, { transactionId });
+      return response.data.data as PayoutSuccessful;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      toast.success("Payout retry processed successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Failed to process payout retry");
+    }
+  })
+}
+
+export const useGetSupoortedNetworks = () => {
+
+  type Networks = {
+    code: number;
+    name: string;
+    symbol: string;
+    isActie: boolean;
+    supportedTokens: string[];
+    logoUrl: string
+  }
+
+  return useQuery({
+    queryKey: ["supportedNetworks"],
+    queryFn: async () => {
+      const response = await client.get(`/networks`);
+      return response.data.data as  Networks[];
+    }
+  })
+}

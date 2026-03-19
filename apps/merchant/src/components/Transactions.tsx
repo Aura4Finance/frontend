@@ -10,16 +10,52 @@ import { tokenStore } from "../store/client";
 import { useActiveTabStore } from "../store/activeTab";
 import { buildTransactionParams, useTransactionFilters } from "../store/transactionFilters";
 import {
-  useRefundTransaction,
+  useRefund,
+  useRetryRefund,
+  useRetryPayout,
+  usePayout,
   useTransaction,
   useTransactions,
 } from "../hooks/mutations/useTransactions";
+import { useBalance } from "../hooks/mutations/useDashboard";
 
 const Transactions = () => {
   const [cursorHistory, setCursorHistory] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [searchId, setSearchId] = useState("");
+  
+  // Refund modal state
+  const [refundModalOpen, setRefundModalOpen] = useState(false);
+  const [refundData, setRefundData] = useState({ walletAddress: "", twoFAKey: "" });
+  
+  // Retry refund modal state
+  const [retryRefundModalOpen, setRetryRefundModalOpen] = useState(false);
+  const [retryRefundData, setRetryRefundData] = useState({ twoFAKey: "" });
+  
+  // Retry payout modal state
+  const [retryPayoutModalOpen, setRetryPayoutModalOpen] = useState(false);
+  const [retryPayoutData, setRetryPayoutData] = useState({ twoFAKey: "" });
+  
+  // Payout modal state
+  const [payoutModalOpen, setPayoutModalOpen] = useState(false);
+  const [payoutUsingAccount, setPayoutUsingAccount] = useState(true);
+  const [payoutData, setPayoutData] = useState({
+    amount: "",
+    walletAddress: "",
+    alias: "",
+    save: false,
+    twoFAKey: "",
+    cryptoSettlementAccountId: "",
+  });
+  
+  // Success/Failure modal state
+  const [resultModalOpen, setResultModalOpen] = useState(false);
+  const [resultData, setResultData] = useState<{ type: "success" | "error"; message: string; title: string }>({
+    type: "success",
+    message: "",
+    title: "",
+  });
 
   const { profile } = tokenStore();
   const { setActiveTab } = useActiveTabStore();
@@ -67,13 +103,6 @@ const Transactions = () => {
     syncUrlWithFilters();
   }, [filters, mode, syncUrlWithFilters]);
 
-  useEffect(() => {
-    const params = buildTransactionParams(filters, mode);
-    setAppliedParams(params);
-    setCursorHistory([]);
-    setCurrentPage(1);
-  }, [filters, mode]);
-
   const {
     data: transactionsData,
     isLoading: transactionsLoading,
@@ -81,7 +110,11 @@ const Transactions = () => {
     isFetching,
   } = useTransactions(appliedParams);
 
-  const { mutate: refundTransaction, isPending: isRefunding } = useRefundTransaction();
+  const { mutate: refundTransaction, isPending: isRefunding } = useRefund();
+  const { mutate: retryRefundTransaction, isPending: isRetryingRefund } = useRetryRefund();
+  const { mutate: retryPayoutTransaction, isPending: isRetryingPayout } = useRetryPayout();
+  const { mutate: initiatePayoutTransaction, isPending: isInitiatingPayout } = usePayout();
+  const { data: balances = [] } = useBalance();
 
   const handleNextPage = useCallback(() => {
     if (transactionsData?.hasNextPage && transactionsData.nextCursor) {
@@ -138,11 +171,175 @@ const Transactions = () => {
     }
   };
 
+  const handleRefund = () => {
+    if (!selectedTransaction) return;
+    if (!refundData.walletAddress || !refundData.twoFAKey) {
+      toast.error("Please provide wallet address and 2FA key");
+      return;
+    }
+    refundTransaction(
+      {
+        originalTxId: selectedTransaction.id,
+        to: refundData.walletAddress,
+        twoFAKey: refundData.twoFAKey,
+      },
+      {
+        onSuccess: () => {
+          setResultData({
+            type: "success",
+            title: "Refund Successful",
+            message: "The refund has been processed successfully.",
+          });
+          setResultModalOpen(true);
+          setRefundModalOpen(false);
+          setRefundData({ walletAddress: "", twoFAKey: "" });
+          setSelectedTransaction(null);
+        },
+        onError: (error: any) => {
+          setResultData({
+            type: "error",
+            title: "Refund Failed",
+            message: error?.response?.data?.message || "Failed to process refund",
+          });
+          setResultModalOpen(true);
+        },
+      }
+    );
+  };
+
+  const handleRetryRefund = () => {
+    if (!selectedTransaction) return;
+    if (!retryRefundData.twoFAKey) {
+      toast.error("Please provide 2FA key");
+      return;
+    }
+    retryRefundTransaction(
+      {
+        transactionId: selectedTransaction.id,
+        twoFAKey: retryRefundData.twoFAKey,
+      },
+      {
+        onSuccess: () => {
+          setResultData({
+            type: "success",
+            title: "Refund Retry Successful",
+            message: "The refund retry has been processed successfully.",
+          });
+          setResultModalOpen(true);
+          setRetryRefundModalOpen(false);
+          setRetryRefundData({ twoFAKey: "" });
+          setSelectedTransaction(null);
+        },
+        onError: (error: any) => {
+          setResultData({
+            type: "error",
+            title: "Refund Retry Failed",
+            message: error?.response?.data?.message || "Failed to process refund retry",
+          });
+          setResultModalOpen(true);
+        },
+      }
+    );
+  };
+
+  const handleRetryPayout = () => {
+    if (!selectedTransaction) return;
+    if (!retryPayoutData.twoFAKey) {
+      toast.error("Please provide 2FA key");
+      return;
+    }
+    retryPayoutTransaction(
+      {
+        transactionId: selectedTransaction.id,
+        twoFAKey: retryPayoutData.twoFAKey,
+      },
+      {
+        onSuccess: () => {
+          setResultData({
+            type: "success",
+            title: "Payout Retry Successful",
+            message: "The payout retry has been processed successfully.",
+          });
+          setResultModalOpen(true);
+          setRetryPayoutModalOpen(false);
+          setRetryPayoutData({ twoFAKey: "" });
+          setSelectedTransaction(null);
+        },
+        onError: (error: any) => {
+          setResultData({
+            type: "error",
+            title: "Payout Retry Failed",
+            message: error?.response?.data?.message || "Failed to process payout retry",
+          });
+          setResultModalOpen(true);
+        },
+      }
+    );
+  };
+
+  const handleInitiatePayout = () => {
+    if (!payoutData.amount || !payoutData.twoFAKey) {
+      toast.error("Please provide amount and 2FA key");
+      return;
+    }
+
+    const payoutParams = payoutUsingAccount
+      ? {
+          amount: parseFloat(payoutData.amount),
+          cryptoSettlementAccountId: payoutData.cryptoSettlementAccountId,
+          twoFAKey: payoutData.twoFAKey,
+        }
+      : {
+          amount: parseFloat(payoutData.amount),
+          walletAddress: payoutData.walletAddress,
+          network: "SUI", // For now, only SUI is supported
+          twoFAKey: payoutData.twoFAKey,
+          ...(payoutData.save && { alias: payoutData.alias }),
+          ...(payoutData.save && { save: true }),
+        };
+
+    initiatePayoutTransaction(payoutParams as any, {
+      onSuccess: () => {
+        setResultData({
+          type: "success",
+          title: "Payout Initiated",
+          message: `Successfully initiated payout of ${payoutData.amount} USDC`,
+        });
+        setResultModalOpen(true);
+        setPayoutModalOpen(false);
+        setPayoutData({
+          amount: "",
+          walletAddress: "",
+          alias: "",
+          save: false,
+          twoFAKey: "",
+          cryptoSettlementAccountId: "",
+        });
+      },
+      onError: (error: any) => {
+        setResultData({
+          type: "error",
+          title: "Payout Failed",
+          message: error?.response?.data?.message || "Failed to initiate payout",
+        });
+        setResultModalOpen(true);
+      },
+    });
+  };
+
+  const totalPayoutableBalance = balances.find((b) => b.coinType === "SUI")?.balance || 0;
+
   return (
     <DashboardWrapper>
       <div className="border-b border-gray-100 bg-white px-4 py-3">
         <div className="flex items-center justify-between">
             <p className="text-xs text-gray-500">Total Transactions: {totalCount.toLocaleString()}</p>
+            <button
+              onClick={() => setPayoutModalOpen(true)}
+              className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition-colors"
+            >
+              + Initiate Payout
+            </button>
         </div>
       </div>
 
@@ -200,10 +397,23 @@ const Transactions = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {transactions.map((tx) => (
+                    {transactions.map((tx) => {
+                      const getRowBgColor = (type: string) => {
+                        switch (type) {
+                          case "payment":
+                            return "bg-blue-50 hover:bg-blue-100";
+                          case "payout":
+                            return "bg-purple-50 hover:bg-purple-100";
+                          case "refund":
+                            return "bg-orange-50 hover:bg-orange-100";
+                          default:
+                            return "hover:bg-gray-50";
+                        }
+                      };
+                      return (
                       <tr
                         key={tx.id}
-                        className="cursor-pointer transition-colors hover:bg-gray-50"
+                        className={`cursor-pointer transition-colors ${getRowBgColor(tx.type)}`}
                         onClick={() => setSelectedTransaction(tx)}
                       >
                         <td className="px-4 py-2.5 text-xs font-medium text-blue-600">{tx.id.slice(0, 8)}...</td>
@@ -216,13 +426,16 @@ const Transactions = () => {
                           <div className="text-[11px] text-gray-500">{tx.customer?.email || "N/A"}</div>
                         </td>
                         <td className="px-4 py-2.5 text-xs font-medium text-gray-900">
-                          {tx.amount?.toLocaleString() || 0} {tx.token}
+                          {tx.amount?.toLocaleString() || 0}
                         </td>
                         <td className="px-4 py-2.5 text-xs text-gray-600">{tx.currency || "N/A"}</td>
                         <td className="px-4 py-2.5">
                           {tx.network ? (
-                            <span className="inline-flex rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-medium text-indigo-700">
-                              {tx.network}
+                            <span className="inline-flex items-center gap-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-medium text-indigo-700">
+                              {tx.network.logo && (
+                                <img src={tx.network.logo} alt={tx.network.symbol} className="w-3 h-3 rounded-full" />
+                              )}
+                              {tx.network.symbol}
                             </span>
                           ) : (
                             <span className="text-xs text-gray-400">N/A</span>
@@ -250,7 +463,8 @@ const Transactions = () => {
                           {tx.createdAt ? new Date(tx.createdAt).toLocaleString() : "N/A"}
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -319,11 +533,42 @@ const Transactions = () => {
               </span>
             </div>
 
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              {selectedTransaction.type === "payment" && selectedTransaction.status.toLowerCase() === "completed" && (
+                <button
+                  onClick={() => setRefundModalOpen(true)}
+                  disabled={isRefunding}
+                  className="flex-1 rounded-md bg-orange-600 px-3 py-2 text-xs font-medium text-white hover:bg-orange-700 disabled:opacity-50 transition-colors"
+                >
+                  {isRefunding ? "Processing..." : "Refund Payment"}
+                </button>
+              )}
+              {selectedTransaction.type === "refund" && selectedTransaction.status.toLowerCase() === "failed" && (
+                <button
+                  onClick={() => setRetryRefundModalOpen(true)}
+                  disabled={isRetryingRefund}
+                  className="flex-1 rounded-md bg-yellow-600 px-3 py-2 text-xs font-medium text-white hover:bg-yellow-700 disabled:opacity-50 transition-colors"
+                >
+                  {isRetryingRefund ? "Processing..." : "Retry Refund"}
+                </button>
+              )}
+              {selectedTransaction.type === "payout" && selectedTransaction.status.toLowerCase() === "failed" && (
+                <button
+                  onClick={() => setRetryPayoutModalOpen(true)}
+                  disabled={isRetryingPayout}
+                  className="flex-1 rounded-md bg-purple-600 px-3 py-2 text-xs font-medium text-white hover:bg-purple-700 disabled:opacity-50 transition-colors"
+                >
+                  {isRetryingPayout ? "Processing..." : "Retry Payout"}
+                </button>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-lg bg-gray-50 p-3">
                 <p className="text-[11px] text-gray-500">Amount</p>
                 <p className="text-sm font-semibold text-gray-900">
-                  {selectedTransaction.amount?.toLocaleString()} {selectedTransaction.token}
+                  {selectedTransaction.amount?.toLocaleString()}
                 </p>
               </div>
               <div className="rounded-lg bg-gray-50 p-3">
@@ -351,8 +596,11 @@ const Transactions = () => {
               <div className="rounded-lg bg-gray-50 p-3">
                 <p className="text-[11px] text-gray-500">Network</p>
                 {selectedTransaction.network ? (
-                  <span className="inline-flex rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-medium text-indigo-700">
-                    {selectedTransaction.network}
+                  <span className="inline-flex items-center gap-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-medium text-indigo-700">
+                    {selectedTransaction.network.logo && (
+                      <img src={selectedTransaction.network.logo} alt={selectedTransaction.network.symbol} className="w-3 h-3 rounded-full" />
+                    )}
+                    {selectedTransaction.network.symbol}
                   </span>
                 ) : (
                   <p className="text-sm font-semibold text-gray-400">N/A</p>
@@ -581,34 +829,283 @@ const Transactions = () => {
               </div>
             )}
 
+
             {selectedTransaction.status.toLowerCase() === "completed" &&
               selectedTransaction.type === "payment" &&
               !selectedTransaction.payment?.refunded && (
-                <div className="border-t border-gray-200 pt-2">
-                  <button
-                    onClick={() => {
-                      refundTransaction(
-                        { transactionId: selectedTransaction.id },
-                        {
-                          onSuccess: () => {
-                            toast.success("Transaction refunded successfully");
-                            setSelectedTransaction(null);
-                          },
-                          onError: (error: any) => {
-                            toast.error(error?.response?.data?.message || "Failed to refund transaction");
-                          },
-                        }
-                      );
-                    }}
-                    disabled={isRefunding}
-                    className="w-full rounded-lg bg-red-50 px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isRefunding ? "Processing..." : "Refund Transaction"}
-                  </button>
+                <div className="rounded-lg bg-blue-50 p-3 text-xs text-blue-600">
+                  Click the "Refund Payment" button above to initiate a refund for this transaction.
                 </div>
               )}
           </div>
         )}
+      </Modal>
+
+      {/* Refund Modal */}
+      <Modal isOpen={refundModalOpen} onClose={() => setRefundModalOpen(false)} title="Refund Payment" size="default">
+        {selectedTransaction && (
+          <div className="space-y-4">
+            <div className="rounded-lg bg-blue-50 p-3">
+              <p className="text-[11px] text-blue-600">Network</p>
+              <div className="flex items-center gap-2">
+                {selectedTransaction.network?.logo && (
+                  <img src={selectedTransaction.network.logo} alt={selectedTransaction.network.symbol} className="w-4 h-4 rounded-full" />
+                )}
+                <p className="text-sm font-semibold text-gray-900">{selectedTransaction.network?.symbol || "N/A"}</p>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Wallet Address</label>
+              <input
+                type="text"
+                value={refundData.walletAddress}
+                onChange={(e) => setRefundData({ ...refundData, walletAddress: e.target.value })}
+                placeholder={`Enter ${selectedTransaction.network?.symbol || "wallet"} address`}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">2FA Key</label>
+              <input
+                type="password"
+                value={refundData.twoFAKey}
+                onChange={(e) => setRefundData({ ...refundData, twoFAKey: e.target.value })}
+                placeholder="Enter your 2FA key"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleRefund}
+                disabled={isRefunding}
+                className="flex-1 rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              >
+                {isRefunding ? "Processing..." : "Confirm Refund"}
+              </button>
+              <button
+                onClick={() => setRefundModalOpen(false)}
+                className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Retry Refund Modal */}
+      <Modal isOpen={retryRefundModalOpen} onClose={() => setRetryRefundModalOpen(false)} title="Retry Refund" size="default">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">2FA Key</label>
+            <input
+              type="password"
+              value={retryRefundData.twoFAKey}
+              onChange={(e) => setRetryRefundData({ ...retryRefundData, twoFAKey: e.target.value })}
+              placeholder="Enter your 2FA key"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={handleRetryRefund}
+              disabled={isRetryingRefund}
+              className="flex-1 rounded-md bg-yellow-600 px-3 py-2 text-xs font-medium text-white hover:bg-yellow-700 disabled:opacity-50"
+            >
+              {isRetryingRefund ? "Processing..." : "Retry Refund"}
+            </button>
+            <button
+              onClick={() => setRetryRefundModalOpen(false)}
+              className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Retry Payout Modal */}
+      <Modal isOpen={retryPayoutModalOpen} onClose={() => setRetryPayoutModalOpen(false)} title="Retry Payout" size="default">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">2FA Key</label>
+            <input
+              type="password"
+              value={retryPayoutData.twoFAKey}
+              onChange={(e) => setRetryPayoutData({ ...retryPayoutData, twoFAKey: e.target.value })}
+              placeholder="Enter your 2FA key"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={handleRetryPayout}
+              disabled={isRetryingPayout}
+              className="flex-1 rounded-md bg-purple-600 px-3 py-2 text-xs font-medium text-white hover:bg-purple-700 disabled:opacity-50"
+            >
+              {isRetryingPayout ? "Processing..." : "Retry Payout"}
+            </button>
+            <button
+              onClick={() => setRetryPayoutModalOpen(false)}
+              className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Payout Modal */}
+      <Modal isOpen={payoutModalOpen} onClose={() => setPayoutModalOpen(false)} title="Initiate Payout" size="default">
+        <div className="space-y-4">
+          <div className="rounded-lg bg-blue-50 p-3">
+            <p className="text-[11px] text-blue-600">Available Balance (SUI)</p>
+            <p className="text-lg font-semibold text-gray-900">{totalPayoutableBalance.toLocaleString()} USDC</p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Payout Method</label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPayoutUsingAccount(true)}
+                className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors ${
+                  payoutUsingAccount
+                    ? "bg-blue-600 text-white"
+                    : "border border-gray-300 text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                Saved Account
+              </button>
+              <button
+                onClick={() => setPayoutUsingAccount(false)}
+                className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors ${
+                  !payoutUsingAccount
+                    ? "bg-blue-600 text-white"
+                    : "border border-gray-300 text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                New Address
+              </button>
+            </div>
+          </div>
+
+          {payoutUsingAccount && (
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Saved Account</label>
+              <div className="rounded-md border border-gray-300 px-3 py-2 text-xs text-gray-500">
+                No saved accounts
+              </div>
+            </div>
+          )}
+
+          {!payoutUsingAccount && (
+            <>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Wallet Address (SUI Network)</label>
+                <input
+                  type="text"
+                  value={payoutData.walletAddress}
+                  onChange={(e) => setPayoutData({ ...payoutData, walletAddress: e.target.value })}
+                  placeholder="Enter SUI wallet address"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="save-account"
+                  checked={payoutData.save}
+                  onChange={(e) => setPayoutData({ ...payoutData, save: e.target.checked })}
+                  className="w-4 h-4 rounded border-gray-300"
+                />
+                <label htmlFor="save-account" className="text-xs text-gray-600">
+                  Save this account for future payouts
+                </label>
+              </div>
+
+              {payoutData.save && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Account Alias</label>
+                  <input
+                    type="text"
+                    value={payoutData.alias}
+                    onChange={(e) => setPayoutData({ ...payoutData, alias: e.target.value })}
+                    placeholder="e.g., My Wallet"
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              )}
+            </>
+          )}
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Amount (USDC)</label>
+            <input
+              type="number"
+              value={payoutData.amount}
+              onChange={(e) => setPayoutData({ ...payoutData, amount: e.target.value })}
+              placeholder="Enter amount"
+              min="0"
+              step="0.01"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">2FA Key</label>
+            <input
+              type="password"
+              value={payoutData.twoFAKey}
+              onChange={(e) => setPayoutData({ ...payoutData, twoFAKey: e.target.value })}
+              placeholder="Enter your 2FA key"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={handleInitiatePayout}
+              disabled={isInitiatingPayout}
+              className="flex-1 rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              {isInitiatingPayout ? "Processing..." : "Initiate Payout"}
+            </button>
+            <button
+              onClick={() => setPayoutModalOpen(false)}
+              className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Result Modal */}
+      <Modal isOpen={resultModalOpen} onClose={() => setResultModalOpen(false)} title={resultData.title} size="default">
+        <div className="space-y-4">
+          <div
+            className={`rounded-lg p-4 ${
+              resultData.type === "success"
+                ? "bg-green-50 text-green-800"
+                : "bg-red-50 text-red-800"
+            }`}
+          >
+            <p className="text-sm">{resultData.message}</p>
+          </div>
+
+          <button
+            onClick={() => setResultModalOpen(false)}
+            className="w-full rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700"
+          >
+            Close
+          </button>
+        </div>
       </Modal>
     </DashboardWrapper>
   );

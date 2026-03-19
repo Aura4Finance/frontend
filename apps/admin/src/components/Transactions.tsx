@@ -342,8 +342,21 @@ const Transactions = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {transactions.map((tx) => (
-                      <tr key={tx.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => setSelectedTransaction(tx)}>
+                    {transactions.map((tx) => {
+                      const getRowBgColor = (type: string) => {
+                        switch (type) {
+                          case "payment":
+                            return "bg-blue-50 hover:bg-blue-100";
+                          case "payout":
+                            return "bg-purple-50 hover:bg-purple-100";
+                          case "refund":
+                            return "bg-orange-50 hover:bg-orange-100";
+                          default:
+                            return "hover:bg-gray-50";
+                        }
+                      };
+                      return (
+                      <tr key={tx.id} className={`cursor-pointer transition-colors ${getRowBgColor(tx.type)}`} onClick={() => setSelectedTransaction(tx)}>
                         <td className="px-4 py-2.5 text-xs font-medium text-blue-600">{tx.id.slice(0, 8)}...</td>
                         <td className="px-4 py-2.5">
                           <div className="font-medium text-xs text-gray-900">
@@ -359,7 +372,12 @@ const Transactions = () => {
                         <td className="px-4 py-2.5 text-xs text-gray-600">{tx.currency || 'N/A'}</td>
                         <td className="px-4 py-2.5">
                           {tx.network ? (
-                            <span className="inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full bg-indigo-100 text-indigo-700">{tx.network}</span>
+                            <span className="inline-flex items-center gap-2 px-2 py-0.5 text-[10px] font-medium rounded-full bg-indigo-100 text-indigo-700">
+                              {tx.network.logo && (
+                                <img src={tx.network.logo} alt={tx.network.symbol} className="w-3 h-3 rounded-full" />
+                              )}
+                              {tx.network.symbol}
+                            </span>
                           ) : (
                             <span className="text-xs text-gray-400">N/A</span>
                           )}
@@ -377,7 +395,8 @@ const Transactions = () => {
                         </td>
                         <td className="px-4 py-2.5 text-xs text-gray-600">{tx.createdAt ? new Date(tx.createdAt).toLocaleString() : 'N/A'}</td>
                       </tr>
-                    ))}
+                      );
+                    })})
                   </tbody>
                 </table>
               </div>
@@ -474,7 +493,12 @@ const Transactions = () => {
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Network</p>
                 {selectedTransaction.network ? (
-                  <span className="inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full bg-indigo-100 text-indigo-700">{selectedTransaction.network}</span>
+                  <span className="inline-flex items-center gap-2 px-2 py-0.5 text-[10px] font-medium rounded-full bg-indigo-100 text-indigo-700">
+                    {selectedTransaction.network.logo && (
+                      <img src={selectedTransaction.network.logo} alt={selectedTransaction.network.symbol} className="w-3 h-3 rounded-full" />
+                    )}
+                    {selectedTransaction.network.symbol}
+                  </span>
                 ) : (
                   <p className="font-semibold text-sm text-gray-400">N/A</p>
                 )}

@@ -35,7 +35,10 @@ export interface Transaction {
   amount: number;
   amountInUSDC: number;
   currency: string;
-  network: string;
+  network: {
+    symbol: string;
+    logo: string;
+  };
   mode: string;
   createdAt: string;
   confirmedAt: string;
