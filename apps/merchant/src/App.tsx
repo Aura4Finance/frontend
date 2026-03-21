@@ -6,7 +6,7 @@ import Callback from "./components/Callback";
 import Dashboard from "./components/Dashboard";
 import Settings  from "./components/Settings";
 import Customers from "./components/Customers";
-import  Balances from "./components/Balances";
+import Settlements from "./components/Settlements";
 import Onboarding from "./components/Onboarding";
 import Transactions from "./components/Transactions";
 import Fiats from "./components/Fiats";
@@ -49,7 +49,7 @@ function App() {
                 <Route path="/dashboard" component={Dashboard}/>
                 <Route path="/dashboard/settings" component={Settings}/>
                 <Route path="/dashboard/customers" component={Customers}/>
-                <Route path="/dashboard/balances" component={Balances}/>
+                <Route path="/dashboard/settlements" component={Settlements}/>
                 <Route path="/dashboard/transactions" component={Transactions}/>
                 <Route path="/dashboard/fiats" component={Fiats}/>
                 <Route path="/dashboard/payment-links" component={PaymentLink}/>

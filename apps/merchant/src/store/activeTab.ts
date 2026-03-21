@@ -6,7 +6,7 @@ export interface ActiveTabState {
   | "Dashboard"
   | "Transactions"
   | "Customers"
-  | "Balances"
+  | "Settlements"
   | "Payment Link"
   | "Bank Accounts"
   | "Settings";

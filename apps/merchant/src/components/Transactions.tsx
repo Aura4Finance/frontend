@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import type { Transaction } from "@orafi/transactions";
 import DashboardWrapper from "./DashboardWrapper";
@@ -18,12 +18,17 @@ import {
   useTransactions,
 } from "../hooks/mutations/useTransactions";
 import { useBalance } from "../hooks/mutations/useDashboard";
+import { useGetCryptoSettlements } from "../hooks/mutations/useSettlements";
 
 const Transactions = () => {
   const [cursorHistory, setCursorHistory] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [searchId, setSearchId] = useState("");
+  
+  // Payout dropdown state
+  const [payoutDropdownOpen, setPayoutDropdownOpen] = useState(false);
+  const [payoutType, setPayoutType] = useState<"crypto" | "fiat">("crypto");
   
   // Refund modal state
   const [refundModalOpen, setRefundModalOpen] = useState(false);
@@ -66,6 +71,22 @@ const Transactions = () => {
   const { profile } = tokenStore();
   const { setActiveTab } = useActiveTabStore();
   const mode = profile?.businessProfile?.isLive ? "live" : "test";
+  
+  // Dropdown ref for click outside handling
+  const payoutDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (payoutDropdownRef.current && !payoutDropdownRef.current.contains(event.target as Node)) {
+        setPayoutDropdownOpen(false);
+      }
+    };
+
+    if (payoutDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [payoutDropdownOpen]);
 
   const filters = useTransactionFilters();
   const setFromQueryParams = useTransactionFilters((state) => state.setFromQueryParams);
@@ -121,6 +142,7 @@ const Transactions = () => {
   const { mutate: retryPayoutTransaction, isPending: isRetryingPayout } = useRetryPayout();
   const { mutate: initiatePayoutTransaction, isPending: isInitiatingPayout } = usePayout();
   const { data: balances = [] } = useBalance();
+  const { data: cryptoSettlements = [] } = useGetCryptoSettlements();
 
   const handleNextPage = useCallback(() => {
     if (transactionsData?.hasNextPage && transactionsData.nextCursor) {
@@ -292,6 +314,16 @@ const Transactions = () => {
       return;
     }
 
+    if (payoutUsingAccount && !payoutData.cryptoSettlementAccountId) {
+      toast.error("Please select a settlement account");
+      return;
+    }
+
+    if (!payoutUsingAccount && !payoutData.walletAddress) {
+      toast.error("Please provide a wallet address");
+      return;
+    }
+
     const payoutParams = payoutUsingAccount
       ? {
           amount: parseFloat(payoutData.amount),
@@ -324,6 +356,7 @@ const Transactions = () => {
           twoFAKey: "",
           cryptoSettlementAccountId: "",
         });
+        setPayoutUsingAccount(true);
       },
       onError: (error: any) => {
         //console.log(error)
@@ -339,17 +372,51 @@ const Transactions = () => {
 
   const totalPayoutableBalance = balances.find((b) => b.coinType === "USDC")?.balance || 0;
 
+  const truncateAddress = (address: string, start = 6, end = 4) => {
+    if (address.length <= start + end) return address;
+    return `${address.slice(0, start)}...${address.slice(-end)}`;
+  };
+
   return (
     <DashboardWrapper>
       <div className="border-b border-gray-100 bg-white px-4 py-3">
         <div className="flex items-center justify-between">
             <p className="text-xs text-gray-500">Total Transactions: {totalCount.toLocaleString()}</p>
-            <button
-              onClick={() => setPayoutModalOpen(true)}
-              className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition-colors"
-            >
-              + Initiate Payout
-            </button>
+            <div className="relative" ref={payoutDropdownRef}>
+              <button
+                onClick={() => setPayoutDropdownOpen(!payoutDropdownOpen)}
+                className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition-colors"
+              >
+                + Initiate Payout
+              </button>
+              
+              {payoutDropdownOpen && (
+                <div className="absolute right-0 mt-1 w-48 rounded-lg border border-gray-200 bg-white shadow-lg z-50">
+                  <button
+                    onClick={() => {
+                      setPayoutType("crypto");
+                      setPayoutModalOpen(true);
+                      setPayoutDropdownOpen(false);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors border-b border-gray-100 first:rounded-t-lg"
+                  >
+                    <div className="font-medium text-gray-900">Crypto Payout</div>
+                    <div className="text-xs text-gray-500">Send to wallet address</div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setPayoutType("fiat");
+                      setPayoutModalOpen(true);
+                      setPayoutDropdownOpen(false);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors rounded-b-lg"
+                  >
+                    <div className="font-medium text-gray-900">Fiat Payout</div>
+                    <div className="text-xs text-gray-500 line-through decoration-gray-400">Coming soon</div>
+                  </button>
+                </div>
+              )}
+            </div>
         </div>
       </div>
 
@@ -969,129 +1036,188 @@ const Transactions = () => {
       </Modal>
 
       {/* Payout Modal */}
-      <Modal isOpen={payoutModalOpen} onClose={() => setPayoutModalOpen(false)} title="Initiate Payout" size="default">
-        <div className="space-y-4">
-          <div className="rounded-lg bg-blue-50 p-3">
-            <p className="text-[11px] text-blue-600">Available Balance (SUI)</p>
-            <p className="text-lg font-semibold text-gray-900">{totalPayoutableBalance.toLocaleString()} USDC</p>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Payout Method</label>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPayoutUsingAccount(true)}
-                className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors ${
-                  payoutUsingAccount
-                    ? "bg-blue-600 text-white"
-                    : "border border-gray-300 text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                Saved Account
-              </button>
-              <button
-                onClick={() => setPayoutUsingAccount(false)}
-                className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors ${
-                  !payoutUsingAccount
-                    ? "bg-blue-600 text-white"
-                    : "border border-gray-300 text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                New Address
-              </button>
+      <Modal 
+        isOpen={payoutModalOpen} 
+        onClose={() => {
+          setPayoutModalOpen(false);
+          setPayoutType("crypto");
+        }} 
+        title={`Initiate ${payoutType === "crypto" ? "Crypto" : "Fiat"} Payout`} 
+        size="default"
+      >
+        {payoutType === "fiat" ? (
+          <div className="space-y-4 text-center py-8">
+            <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-yellow-100">
+              <svg className="h-8 w-8 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
             </div>
+            <h3 className="text-lg font-semibold text-gray-900">Fiat Payout Coming Soon</h3>
+            <p className="text-sm text-gray-500">Fiat payout functionality will be available soon. Please use Crypto Payout for now.</p>
+            <button
+              onClick={() => {
+                setPayoutModalOpen(false);
+                setPayoutType("crypto");
+              }}
+              className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+            >
+              Back to Crypto Payout
+            </button>
           </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="rounded-lg bg-blue-50 p-3">
+              <p className="text-[11px] text-blue-600">Available Balance</p>
+              <p className="text-lg font-semibold text-gray-900">{totalPayoutableBalance.toLocaleString()} USDC</p>
+            </div>
 
-          {payoutUsingAccount && (
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Saved Account</label>
-              <div className="rounded-md border border-gray-300 px-3 py-2 text-xs text-gray-500">
-                No saved accounts
+              <label className="block text-xs font-medium text-gray-700 mb-1">Payout Method</label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPayoutUsingAccount(true)}
+                  disabled={cryptoSettlements.length === 0}
+                  className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors ${
+                    cryptoSettlements.length === 0
+                      ? "cursor-not-allowed bg-gray-100 text-gray-400"
+                      : payoutUsingAccount
+                        ? "bg-blue-600 text-white"
+                        : "border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  Saved Account
+                </button>
+                <button
+                  onClick={() => setPayoutUsingAccount(false)}
+                  className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors ${
+                    !payoutUsingAccount
+                      ? "bg-blue-600 text-white"
+                      : "border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  New Address
+                </button>
               </div>
             </div>
-          )}
 
-          {!payoutUsingAccount && (
-            <>
+            {payoutUsingAccount && (
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Wallet Address (SUI Network)</label>
-                <input
-                  type="text"
-                  value={payoutData.walletAddress}
-                  onChange={(e) => setPayoutData({ ...payoutData, walletAddress: e.target.value })}
-                  placeholder="Enter SUI wallet address"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <label className="block text-xs font-medium text-gray-700 mb-2">Select Settlement Account</label>
+                {cryptoSettlements.length === 0 ? (
+                  <div className="rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2 text-xs text-yellow-700">
+                    No saved settlement accounts. Go to <span className="font-semibold">Settlements</span> to add one first.
+                  </div>
+                ) : (
+                  <select
+                    value={payoutData.cryptoSettlementAccountId}
+                    onChange={(e) => setPayoutData({ ...payoutData, cryptoSettlementAccountId: e.target.value })}
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="">Select an account...</option>
+                    {cryptoSettlements.map((settlement) => (
+                      <option key={settlement.id} value={settlement.id}>
+                        {settlement.alias} • {truncateAddress(settlement.walletAddress)} ({settlement.network})
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
+            )}
 
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="save-account"
-                  checked={payoutData.save}
-                  onChange={(e) => setPayoutData({ ...payoutData, save: e.target.checked })}
-                  className="w-4 h-4 rounded border-gray-300"
-                />
-                <label htmlFor="save-account" className="text-xs text-gray-600">
-                  Save this account for future payouts
-                </label>
-              </div>
-
-              {payoutData.save && (
+            {!payoutUsingAccount && (
+              <>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Account Alias</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Wallet Address</label>
                   <input
                     type="text"
-                    value={payoutData.alias}
-                    onChange={(e) => setPayoutData({ ...payoutData, alias: e.target.value })}
-                    placeholder="e.g., My Wallet"
+                    value={payoutData.walletAddress}
+                    onChange={(e) => setPayoutData({ ...payoutData, walletAddress: e.target.value })}
+                    placeholder="Enter wallet address"
                     className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-              )}
-            </>
-          )}
 
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Amount (USDC)</label>
-            <input
-              type="number"
-              value={payoutData.amount}
-              onChange={(e) => setPayoutData({ ...payoutData, amount: e.target.value })}
-              placeholder="Enter amount"
-              min="0"
-              step="0.01"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="save-account"
+                    checked={payoutData.save}
+                    onChange={(e) => setPayoutData({ ...payoutData, save: e.target.checked })}
+                    className="w-4 h-4 rounded border-gray-300"
+                  />
+                  <label htmlFor="save-account" className="text-xs text-gray-600">
+                    Save this account for future payouts
+                  </label>
+                </div>
 
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">2FA Key</label>
-            <input
-              type="password"
-              value={payoutData.twoFAKey}
-              onChange={(e) => setPayoutData({ ...payoutData, twoFAKey: e.target.value })}
-              placeholder="Enter your 2FA key"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+                {payoutData.save && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Account Alias</label>
+                    <input
+                      type="text"
+                      value={payoutData.alias}
+                      onChange={(e) => setPayoutData({ ...payoutData, alias: e.target.value })}
+                      placeholder="e.g., My Wallet"
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                )}
+              </>
+            )}
 
-          <div className="flex gap-2">
-            <button
-              onClick={handleInitiatePayout}
-              disabled={isInitiatingPayout}
-              className="flex-1 rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-            >
-              {isInitiatingPayout ? "Processing..." : "Initiate Payout"}
-            </button>
-            <button
-              onClick={() => setPayoutModalOpen(false)}
-              className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Amount (USDC)</label>
+              <input
+                type="number"
+                value={payoutData.amount}
+                onChange={(e) => setPayoutData({ ...payoutData, amount: e.target.value })}
+                placeholder="Enter amount"
+                min="0"
+                step="0.01"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">2FA Key</label>
+              <input
+                type="password"
+                value={payoutData.twoFAKey}
+                onChange={(e) => setPayoutData({ ...payoutData, twoFAKey: e.target.value })}
+                placeholder="Enter your 2FA key"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleInitiatePayout}
+                disabled={isInitiatingPayout}
+                className="flex-1 rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              >
+                {isInitiatingPayout ? "Processing..." : "Initiate Payout"}
+              </button>
+              <button
+                onClick={() => {
+                  setPayoutModalOpen(false);
+                  setPayoutData({
+                    amount: "",
+                    walletAddress: "",
+                    alias: "",
+                    save: false,
+                    twoFAKey: "",
+                    cryptoSettlementAccountId: "",
+                  });
+                  setPayoutUsingAccount(true);
+                  setPayoutType("crypto");
+                }}
+                className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </Modal>
 
       {/* Result Modal */}
