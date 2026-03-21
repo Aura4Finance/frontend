@@ -2,19 +2,24 @@ import DashboardWrapper from "./DashboardWrapper";
 import { useEffect, useState } from "react";
 import { useActiveTabStore } from "../store/activeTab";
 import { useGetCryptoSettlements, useAddCryptoSettlements, useDeleteCryptoSettlementAccount } from "../hooks/mutations/useSettlements";
+import { useGetSupoortedNetworks } from "../hooks/mutations/useTransactions";
+import Modal from "./transactions/Modal";
 import { FiTrash2, FiCopy, FiCheck } from "react-icons/fi";
 
 const Settlements = () => {
   const { setActiveTab } = useActiveTabStore();
   const [activeTab, setActiveTabValue] = useState("crypto");
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [settlementToDelete, setSettlementToDelete] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ walletAddress: "", network: "SUI", alias: "" });
+  const [formData, setFormData] = useState({ walletAddress: "", network: "", alias: "" });
 
   // Crypto Settlements
   const { data: cryptoSettlements = [], isLoading: cryptoLoading, refetch: refetchCryptoSettlements } = useGetCryptoSettlements();
   const { mutate: addCryptoSettlement, isPending: isAddingCrypto } = useAddCryptoSettlements();
   const { mutate: deleteCryptoSettlement, isPending: isDeletingCrypto } = useDeleteCryptoSettlementAccount();
+  const { data: supportedNetworks = [] } = useGetSupoortedNetworks();
 
   useEffect(() => {
     setActiveTab("Settlements");
@@ -22,23 +27,30 @@ const Settlements = () => {
 
   const handleAddCryptoSettlement = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!formData.walletAddress.trim() || !formData.alias.trim()) {
+    if (!formData.walletAddress.trim() || !formData.alias.trim() || !formData.network) {
       return;
     }
     addCryptoSettlement(formData, {
       onSuccess: () => {
-        setFormData({ walletAddress: "", network: "SUI", alias: "" });
-        setShowAddForm(false);
+        setFormData({ walletAddress: "", network: "", alias: "" });
+        setShowAddModal(false);
         refetchCryptoSettlements();
       },
     });
   };
 
   const handleDeleteCryptoSettlement = (id: string) => {
-    if (confirm("Are you sure you want to delete this settlement account?")) {
-      deleteCryptoSettlement(id, {
+    setSettlementToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteCryptoSettlement = () => {
+    if (settlementToDelete) {
+      deleteCryptoSettlement(settlementToDelete, {
         onSuccess: () => {
           refetchCryptoSettlements();
+          setShowDeleteModal(false);
+          setSettlementToDelete(null);
         },
       });
     }
@@ -48,6 +60,10 @@ const Settlements = () => {
     navigator.clipboard.writeText(address);
     setCopiedId(address);
     setTimeout(() => setCopiedId(null), 1500);
+  };
+
+  const getNetworkBySymbol = (symbol: string) => {
+    return supportedNetworks.find((net: any) => net.symbol === symbol);
   };
 
 
@@ -88,60 +104,12 @@ const Settlements = () => {
                     <p className="mt-1 text-sm text-gray-500">Manage your crypto wallet addresses for payouts.</p>
                   </div>
                   <button
-                    onClick={() => setShowAddForm(!showAddForm)}
+                    onClick={() => setShowAddModal(true)}
                     className="rounded-md bg-blue-950 px-4 py-2 text-sm font-medium text-white hover:bg-blue-900 transition-colors"
                   >
-                    {showAddForm ? "Cancel" : "+ Add Account"}
+                    + Add Account
                   </button>
                 </div>
-
-                {/* Add Form */}
-                {showAddForm && (
-                  <form onSubmit={handleAddCryptoSettlement} className="mt-6 space-y-4 border-t border-gray-100 pt-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Wallet Address</label>
-                      <input
-                        type="text"
-                        value={formData.walletAddress}
-                        onChange={(e) => setFormData({ ...formData, walletAddress: e.target.value })}
-                        placeholder="Enter wallet address"
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Network</label>
-                      <select
-                        value={formData.network}
-                        onChange={(e) => setFormData({ ...formData, network: e.target.value })}
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="SUI">SUI Network</option>
-                        <option value="Ethereum">Ethereum</option>
-                        <option value="Bitcoin">Bitcoin</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Account Alias</label>
-                      <input
-                        type="text"
-                        value={formData.alias}
-                        onChange={(e) => setFormData({ ...formData, alias: e.target.value })}
-                        placeholder="e.g., My Main Wallet"
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={isAddingCrypto || !formData.walletAddress.trim() || !formData.alias.trim()}
-                      className="w-full rounded-md bg-blue-950 px-4 py-2 text-sm font-medium text-white hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      {isAddingCrypto ? "Adding..." : "Add Settlement Account"}
-                    </button>
-                  </form>
-                )}
               </section>
 
               {/* Crypto Settlements List */}
@@ -182,7 +150,16 @@ const Settlements = () => {
                               )}
                             </button>
                           </div>
-                          <p className="mt-2 text-xs text-gray-500">{settlement.network}</p>
+                          <div className="mt-2 flex items-center gap-2">
+                            {getNetworkBySymbol(settlement.network)?.logoUrl && (
+                              <img
+                                src={getNetworkBySymbol(settlement.network)?.logoUrl}
+                                alt={settlement.network}
+                                className="w-4 h-4 rounded-full"
+                              />
+                            )}
+                            <p className="text-xs text-gray-500">{settlement.network}</p>
+                          </div>
                         </div>
                         <button
                           onClick={() => handleDeleteCryptoSettlement(settlement.id)}
@@ -215,6 +192,146 @@ const Settlements = () => {
           )}
         </div>
       </div>
+
+      {/* Add Settlement Account Modal */}
+      <Modal
+        isOpen={showAddModal}
+        onClose={() => {
+          setShowAddModal(false);
+          setFormData({ walletAddress: "", network: "", alias: "" });
+        }}
+        title="Add Settlement Account"
+        size="default"
+      >
+        <form onSubmit={handleAddCryptoSettlement} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Wallet Address</label>
+            <input
+              type="text"
+              value={formData.walletAddress}
+              onChange={(e) => setFormData({ ...formData, walletAddress: e.target.value })}
+              placeholder="Enter wallet address"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Network</label>
+            {supportedNetworks.length === 0 ? (
+              <div className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-500">
+                Loading networks...
+              </div>
+            ) : (
+              <select
+                value={formData.network}
+                onChange={(e) => setFormData({ ...formData, network: e.target.value })}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select a network...</option>
+                {supportedNetworks.map((network: any) => (
+                  <option key={network.code} value={network.symbol}>
+                    {network.name} ({network.symbol})
+                  </option>
+                ))}
+              </select>
+            )}
+            {formData.network && getNetworkBySymbol(formData.network) && (
+              <div className="mt-2 flex items-center gap-2 rounded-md bg-gray-50 p-2">
+                {getNetworkBySymbol(formData.network)?.logoUrl && (
+                  <img
+                    src={getNetworkBySymbol(formData.network)?.logoUrl}
+                    alt={formData.network}
+                    className="w-5 h-5 rounded-full"
+                  />
+                )}
+                <span className="text-xs font-medium text-gray-700">{getNetworkBySymbol(formData.network)?.name}</span>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Account Alias</label>
+            <input
+              type="text"
+              value={formData.alias}
+              onChange={(e) => setFormData({ ...formData, alias: e.target.value })}
+              placeholder="e.g., My Main Wallet"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="flex gap-2 pt-4">
+            <button
+              type="submit"
+              disabled={isAddingCrypto || !formData.walletAddress.trim() || !formData.alias.trim() || !formData.network}
+              className="flex-1 rounded-md bg-blue-950 px-4 py-2 text-sm font-medium text-white hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isAddingCrypto ? "Adding..." : "Add Settlement Account"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowAddModal(false);
+                setFormData({ walletAddress: "", network: "", alias: "" });
+              }}
+              className="flex-1 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setSettlementToDelete(null);
+        }}
+        title="Delete Settlement Account"
+        size="default"
+      >
+        <div className="space-y-4">
+          <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+            <p className="text-sm text-red-800">
+              Are you sure you want to delete this settlement account? This action cannot be undone.
+            </p>
+          </div>
+
+          {settlementToDelete &&
+            cryptoSettlements.find((s) => s.id === settlementToDelete) && (
+              <div className="rounded-lg bg-gray-50 p-3">
+                <p className="text-xs text-gray-500 mb-1">Account Details</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {cryptoSettlements.find((s) => s.id === settlementToDelete)?.alias}
+                </p>
+                <p className="text-xs text-gray-600 mt-1 break-all">
+                  {cryptoSettlements.find((s) => s.id === settlementToDelete)?.walletAddress}
+                </p>
+              </div>
+            )}
+
+          <div className="flex gap-2">
+            <button
+              onClick={confirmDeleteCryptoSettlement}
+              disabled={isDeletingCrypto}
+              className="flex-1 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isDeletingCrypto ? "Deleting..." : "Delete Account"}
+            </button>
+            <button
+              onClick={() => {
+                setShowDeleteModal(false);
+                setSettlementToDelete(null);
+              }}
+              className="flex-1 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </Modal>
     </DashboardWrapper>
   );
 };
