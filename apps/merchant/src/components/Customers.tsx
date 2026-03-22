@@ -1,12 +1,13 @@
 import { useState, useCallback, useEffect } from "react";
 import { toast } from "sonner";
+import { FiTrash2, FiPlus } from "react-icons/fi";
 import type { Customer } from "@orafi/customers";
 import DashboardWrapper from "./DashboardWrapper";
 import CustomerFilters from "./CustomerFilters";
 import Modal from "./transactions/Modal";
 import CopyButton from "./transactions/CopyButton";
 import ErrorState from "./transactions/ErrorState";
-import { useCustomers, useCustomer } from "../hooks/mutations/useCustomers";
+import { useCustomers, useCustomer, useDeleteCustomer, useCreateCustomer } from "../hooks/mutations/useCustomers";
 import { useCustomerFilters, buildCustomerParams } from "../store/customerFilters";
 import { useActiveTabStore } from "../store/activeTab";
 import { tokenStore } from "../store/client";
@@ -16,6 +17,15 @@ const Customers = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [searchId, setSearchId] = useState("");
+  
+  // Delete modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
+  
+  // Create customer modal state
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createFormData, setCreateFormData] = useState({ firstname: "", lastname: "", email: "" });
+  
   const { setActiveTab } = useActiveTabStore();
   const { profile } = tokenStore();
   const mode = profile?.businessProfile?.isLive ? "live" : "test";
@@ -60,12 +70,15 @@ const Customers = () => {
     error: customersError,
     isFetching,
   } = useCustomers(appliedParams);
+  
+  const { mutate: deleteCustomer, isPending: isDeletingCustomer } = useDeleteCustomer();
+  const { mutate: createCustomer, isPending: isCreatingCustomer } = useCreateCustomer();
 
   // Handle next page
   const handleNextPage = useCallback(() => {
     if (customersData?.hasNextPage && customersData.nextCursor) {
       setCursorHistory((prev) => [...prev, appliedParams.cursor || ""]);
-      setAppliedParams((prev) => ({ ...prev, cursor: customersData.nextCursor }));
+      setAppliedParams((prev: any) => ({ ...prev, cursor: customersData.nextCursor }));
       setCurrentPage((prev) => prev + 1);
     }
   }, [customersData, appliedParams.cursor]);
@@ -76,7 +89,7 @@ const Customers = () => {
       const newHistory = [...cursorHistory];
       const previousCursor = newHistory.pop();
       setCursorHistory(newHistory);
-      setAppliedParams((prev) => ({ ...prev, cursor: previousCursor || undefined }));
+      setAppliedParams((prev: any) => ({ ...prev, cursor: previousCursor || undefined }));
       setCurrentPage((prev) => Math.max(1, prev - 1));
     }
   }, [cursorHistory]);
@@ -84,10 +97,42 @@ const Customers = () => {
   // Handle items per page change
   const handleItemsPerPageChange = useCallback((newLimit: number) => {
     filters.setLimit(newLimit);
-    setAppliedParams((prev) => ({ ...prev, limit: newLimit, cursor: undefined }));
+    setAppliedParams((prev: any) => ({ ...prev, limit: newLimit, cursor: undefined }));
     setCursorHistory([]);
     setCurrentPage(1);
   }, [filters]);
+
+  // Handle delete customer
+  const handleDeleteCustomer = (customer: Customer) => {
+    setCustomerToDelete(customer);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteCustomer = () => {
+    if (customerToDelete) {
+      deleteCustomer(customerToDelete.id, {
+        onSuccess: () => {
+          setShowDeleteModal(false);
+          setCustomerToDelete(null);
+        },
+      });
+    }
+  };
+
+  // Handle create customer
+  const handleCreateCustomer = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!createFormData.firstname.trim() || !createFormData.lastname.trim() || !createFormData.email.trim()) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+    createCustomer(createFormData, {
+      onSuccess: () => {
+        setCreateFormData({ firstname: "", lastname: "", email: "" });
+        setShowCreateModal(false);
+      },
+    });
+  };
 
   const customers = customersData?.customers || [];
   const totalCount = customersData?.count || 0;
@@ -111,9 +156,17 @@ const Customers = () => {
       {/* Header */}
       <div className="px-4 py-3 bg-white border-b border-gray-100">
         <div className="flex items-center justify-between">
-          <div className="text-right">
-            <p className="text-sm font-semibold text-gray-900">{totalCount.toLocaleString()}</p>
-            <p className="text-xs text-gray-500">Total Customers</p>
+          <div>
+            <p className="text-gray-500 text-xs mt-0.5">Total Customers: {totalCount.toLocaleString()}</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <FiPlus size={16} />
+              Create Customer
+            </button>
           </div>
         </div>
       </div>
@@ -129,7 +182,7 @@ const Customers = () => {
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-500">Show:</span>
             <select
-              value={filters.limit}
+              value={filters.limit || 10}
               onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
               className="text-xs border border-gray-200 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
@@ -167,11 +220,13 @@ const Customers = () => {
                       <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider">Customer</th>
                       <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider">Email</th>
                       <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider">Total Spent</th>
+                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider">Mode</th>
                       <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider">Joined</th>
+                      <th className="px-4 py-2.5 text-center text-[11px] font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {customers.map((customer) => (
+                    {customers.map((customer: Customer) => (
                       <tr
                         key={customer.id}
                         className="hover:bg-gray-50 cursor-pointer transition-colors"
@@ -191,10 +246,38 @@ const Customers = () => {
                         <td className="px-4 py-2.5 text-xs text-gray-900 font-medium">
                           ${Number(customer.totalSpent || 0).toLocaleString()}
                         </td>
+                        <td className="px-4 py-2.5">
+                          <div className="flex flex-wrap gap-1">
+                            {customer.mode && customer.mode.length > 0 ? (
+                              customer.mode.map((m: string) => (
+                                <span
+                                  key={m}
+                                  className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${getModeColor(m)}`}
+                                >
+                                  {m}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-xs text-gray-400">N/A</span>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-4 py-2.5 text-xs text-gray-600">
                           {customer.createdAt
                             ? new Date(customer.createdAt).toLocaleDateString()
                             : "N/A"}
+                        </td>
+                        <td className="px-4 py-2.5 text-center">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteCustomer(customer);
+                            }}
+                            disabled={isDeletingCustomer}
+                            className="rounded-md p-2 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                          >
+                            <FiTrash2 size={16} />
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -290,6 +373,20 @@ const Customers = () => {
                   ${Number(selectedCustomer.totalSpent || 0).toLocaleString()}
                 </p>
               </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-[11px] text-gray-500">Mode</p>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {selectedCustomer.mode && selectedCustomer.mode.length > 0 ? (
+                    selectedCustomer.mode.map((m: string) => (
+                      <span key={m} className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${getModeColor(m)}`}>
+                        {m}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-gray-400">N/A</span>
+                  )}
+                </div>
+              </div>
               <div className="bg-gray-50 rounded-lg p-3 col-span-2">
                 <p className="text-[11px] text-gray-500">Joined Date</p>
                 <p className="font-medium text-xs text-gray-900">
@@ -301,6 +398,122 @@ const Customers = () => {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Create Customer Modal */}
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => {
+          setShowCreateModal(false);
+          setCreateFormData({ firstname: "", lastname: "", email: "" });
+        }}
+        title="Create Customer"
+        size="default"
+      >
+        <form onSubmit={handleCreateCustomer} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+            <input
+              type="text"
+              value={createFormData.firstname}
+              onChange={(e) => setCreateFormData({ ...createFormData, firstname: e.target.value })}
+              placeholder="Enter first name"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+            <input
+              type="text"
+              value={createFormData.lastname}
+              onChange={(e) => setCreateFormData({ ...createFormData, lastname: e.target.value })}
+              placeholder="Enter last name"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input
+              type="email"
+              value={createFormData.email}
+              onChange={(e) => setCreateFormData({ ...createFormData, email: e.target.value })}
+              placeholder="Enter email"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="flex gap-2 pt-4">
+            <button
+              type="submit"
+              disabled={isCreatingCustomer}
+              className="flex-1 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isCreatingCustomer ? "Creating..." : "Create Customer"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowCreateModal(false);
+                setCreateFormData({ firstname: "", lastname: "", email: "" });
+              }}
+              className="flex-1 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setCustomerToDelete(null);
+        }}
+        title="Delete Customer"
+        size="default"
+      >
+        <div className="space-y-4">
+          <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+            <p className="text-sm text-red-800">
+              Are you sure you want to delete this customer? This action cannot be undone.
+            </p>
+          </div>
+
+          {customerToDelete && (
+            <div className="rounded-lg bg-gray-50 p-3">
+              <p className="text-xs text-gray-500 mb-1">Customer Details</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {customerToDelete.firstname} {customerToDelete.lastname}
+              </p>
+              <p className="text-xs text-gray-600 mt-1">
+                {customerToDelete.email}
+              </p>
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <button
+              onClick={confirmDeleteCustomer}
+              disabled={isDeletingCustomer}
+              className="flex-1 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isDeletingCustomer ? "Deleting..." : "Delete Customer"}
+            </button>
+            <button
+              onClick={() => {
+                setShowDeleteModal(false);
+                setCustomerToDelete(null);
+              }}
+              className="flex-1 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       </Modal>
     </DashboardWrapper>
   );

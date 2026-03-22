@@ -2,16 +2,16 @@ import DashboardWrapper from "./DashboardWrapper"
 import { useEffect } from "react";
 import { useActiveTabStore } from "../store/activeTab";
 
-const Fiats = () => {
+const Webhook = () => {
 
     const { setActiveTab } = useActiveTabStore();
 
     useEffect(()=> {
-      setActiveTab("Bank Accounts")
+      setActiveTab("Webhook")
     }, [])
   return (
-    <DashboardWrapper>Fiats</DashboardWrapper>
+    <DashboardWrapper>Webhook</DashboardWrapper>
   )
 }
 
-export default Fiats
+export default Webhook

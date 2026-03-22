@@ -17,6 +17,10 @@
     "paths": {
       "@orafi/ui/*": ["packages/ui/src/*"],
       "@orafi/wallet/*": ["packages/wallet/src/*"],
+      "@orafi/transactions": ["packages/transactions/src/index.ts"],
+      "@orafi/transactions/*": ["packages/transactions/src/*"],
+      "@orafi/customers": ["packages/customers/src/index.ts"],
+      "@orafi/customers/*": ["packages/customers/src/*"]
     }
   }
 }

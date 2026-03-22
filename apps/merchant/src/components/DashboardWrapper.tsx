@@ -10,9 +10,8 @@ const tabSubtitles: Record<string, string> = {
   Transactions: "Track and review all transactions",
   Customers: "Manage customer relationships",
   Balances: "Monitor available wallet balances",
-  "Payment Links": "Create and manage payment links",
   "Payment Link": "Create and manage payment links",
-  "Bank Accounts": "Manage linked fiat accounts",
+  Webhook: "Manage webhooks and webhook deliveries",
   Settings: "Manage your profile, security, and services",
 };
 

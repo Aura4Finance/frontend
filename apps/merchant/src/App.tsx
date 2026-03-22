@@ -9,7 +9,7 @@ import Customers from "./components/Customers";
 import Settlements from "./components/Settlements";
 import Onboarding from "./components/Onboarding";
 import Transactions from "./components/Transactions";
-import Fiats from "./components/Fiats";
+import Webhook from "./components/Webhook";
 import PaymentLink from "./components/PaymentLink";
 
 function App() {
@@ -51,7 +51,7 @@ function App() {
                 <Route path="/dashboard/customers" component={Customers}/>
                 <Route path="/dashboard/settlements" component={Settlements}/>
                 <Route path="/dashboard/transactions" component={Transactions}/>
-                <Route path="/dashboard/fiats" component={Fiats}/>
+                <Route path="/dashboard/webhook" component={Webhook}/>
                 <Route path="/dashboard/payment-links" component={PaymentLink}/>
               </Switch>
             )

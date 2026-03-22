@@ -7,6 +7,13 @@
     "module": "ESNext",
     "types": ["vite/client"],
     "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@orafi/transactions": ["../../packages/transactions/src/index.ts"],
+      "@orafi/transactions/*": ["../../packages/transactions/src/*"],
+      "@orafi/customers": ["../../packages/customers/src/index.ts"],
+      "@orafi/customers/*": ["../../packages/customers/src/*"]
+    },
 
     /* Bundler mode */
     "moduleResolution": "bundler",
