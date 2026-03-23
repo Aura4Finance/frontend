@@ -1,8 +1,8 @@
 import React, {
   createContext,
   useContext,
-  ReactNode,
-  HTMLAttributes,
+  type ReactNode,
+  type HTMLAttributes,
 } from "react";
 import { cn } from "../lib/util";
 

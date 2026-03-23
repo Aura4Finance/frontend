@@ -1,17 +1,461 @@
-import DashboardWrapper from "./DashboardWrapper"
-import { useEffect } from "react";
+import DashboardWrapper from "./DashboardWrapper";
+import { useEffect, useState } from "react";
 import { useActiveTabStore } from "../store/activeTab";
+import { toast } from "sonner";
+import {
+  useRegisterWehbook,
+  useGetWebhookDetails,
+  useGetWebhookEventTypes,
+  useSubcribeToWebhookEvent,
+  useRetrieveWebhookDeliveries,
+} from "../hooks/mutations/useWehbooks";
+import Modal from "./transactions/Modal";
+import CopyButton from "./transactions/CopyButton";
+import { FiCopy, FiCheck, FiAlertTriangle, FiEye, FiEyeOff } from "react-icons/fi";
 
 const Webhook = () => {
+  const { setActiveTab } = useActiveTabStore();
 
-    const { setActiveTab } = useActiveTabStore();
+  // State
+  const [activeModal, setActiveModal] = useState<"register" | "secret" | null>(null);
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [secretShown, setSecretShown] = useState(false);
+  const [secretCopied, setSecretCopied] = useState(false);
+  const [currentSecret, setCurrentSecret] = useState("");
+  const [showDeliveries, setShowDeliveries] = useState(false);
 
-    useEffect(()=> {
-      setActiveTab("Webhook")
-    }, [])
+  // API hooks
+  const registerWebhookMutation = useRegisterWehbook();
+  const { data: webhookDetails, isLoading: detailsLoading, refetch: refetchDetails } = useGetWebhookDetails();
+  const { data: eventTypes } = useGetWebhookEventTypes();
+  const { mutate: subscribeToEvent, isPending: isSubscribing } = useSubcribeToWebhookEvent();
+  const { data: deliveries, isLoading: deliveriesLoading, refetch: refetchDeliveries } = useRetrieveWebhookDeliveries();
+
+  useEffect(() => {
+    setActiveTab("Webhook");
+  }, [setActiveTab]);
+
+  const handleRegisterWebhook = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!webhookUrl.trim()) {
+      toast.error("Please enter a webhook URL");
+      return;
+    }
+
+    registerWebhookMutation.mutate(
+      { url: webhookUrl },
+      {
+        onSuccess: (data) => {
+          setCurrentSecret(data.secret);
+          setWebhookUrl("");
+          setActiveModal("secret");
+          refetchDetails();
+        },
+      }
+    );
+  };
+
+  const handleSubscribeEvent = (event: string) => {
+    subscribeToEvent(
+      { event: event as any },
+      {
+        onSuccess: () => {
+          toast.success(`Subscribed to ${event}`);
+          refetchDetails();
+        },
+      }
+    );
+  };
+
+  const handleCopySecret = async () => {
+    try {
+      await navigator.clipboard.writeText(currentSecret);
+      setSecretCopied(true);
+      setTimeout(() => setSecretCopied(false), 2000);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = currentSecret;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+      setSecretCopied(true);
+      setTimeout(() => setSecretCopied(false), 2000);
+    }
+  };
+
+  const formatDate = (date?: string) => {
+    if (!date) return "—";
+    return new Date(date).toLocaleString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "success":
+        return "bg-green-50 text-green-700 border-green-200";
+      case "failed":
+        return "bg-red-50 text-red-700 border-red-200";
+      case "pending":
+        return "bg-yellow-50 text-yellow-700 border-yellow-200";
+      default:
+        return "bg-gray-50 text-gray-700 border-gray-200";
+    }
+  };
+
+  const subscribedEvents = webhookDetails?.events || [];
+  const availableEvents = eventTypes || [];
+
   return (
-    <DashboardWrapper>Webhook</DashboardWrapper>
-  )
-}
+    <DashboardWrapper>
+      <div className="p-4 space-y-6">
+        {/* Webhook Information Card */}
+        {detailsLoading ? (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+            <div className="animate-pulse space-y-4">
+              <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+              <div className="h-10 bg-gray-200 rounded"></div>
+            </div>
+          </div>
+        ) : webhookDetails ? (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200 p-4">
+              <h2 className="text-lg font-semibold text-blue-900">Webhook Configuration</h2>
+              <p className="text-sm text-blue-700 mt-1">Manage your webhook endpoint and subscriptions</p>
+            </div>
+            <div className="p-6 space-y-4">
+              {/* URL */}
+              <div>
+                <label className="text-sm font-medium text-gray-700">Webhook URL</label>
+                <div className="mt-2 flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                  <input
+                    type="text"
+                    value={webhookDetails.url}
+                    readOnly
+                    className="flex-1 bg-transparent text-gray-700 outline-none text-sm"
+                  />
+                  <CopyButton text={webhookDetails.url} />
+                </div>
+              </div>
 
-export default Webhook
+              {/* Dates */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Created</label>
+                  <p className="text-sm text-gray-600 mt-1">{formatDate(webhookDetails.createdAt)}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Last Updated</label>
+                  <p className="text-sm text-gray-600 mt-1">{formatDate(webhookDetails.updatedAt)}</p>
+                </div>
+              </div>
+
+              {/* Event Subscriptions */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-medium text-gray-700">Event Subscriptions</label>
+                  <span className="text-xs text-gray-600">
+                    {subscribedEvents.length}/{availableEvents.length} subscribed
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 mb-3">
+                  Select events you want to receive webhooks for. Your webhook will be triggered whenever these events occur.
+                </p>
+                <div className="space-y-2">
+                  {availableEvents.length > 0 ? (
+                    availableEvents.map((event) => {
+                      const isSubscribed = subscribedEvents.includes(event.type);
+                      return (
+                        <button
+                          key={event.type}
+                          onClick={() => handleSubscribeEvent(event.type)}
+                          disabled={isSubscribing || isSubscribed}
+                          className={`w-full px-4 py-3 rounded-lg border-2 transition-all text-left ${
+                            isSubscribed
+                              ? "bg-blue-50 border-blue-300 cursor-default"
+                              : "bg-white border-gray-200 hover:border-blue-400 hover:bg-blue-50 cursor-pointer"
+                          } disabled:opacity-100`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <p className="font-medium text-sm text-gray-900">{event.name}</p>
+                              <p className="text-xs text-gray-500 mt-0.5">{event.type}</p>
+                            </div>
+                            <div className="ml-3 flex-shrink-0">
+                              {isSubscribed ? (
+                                <span className="inline-flex items-center gap-1 bg-blue-600 text-white text-xs px-2.5 py-1 rounded-full font-medium">
+                                  <span>✓</span>
+                                  <span>Subscribed</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 text-xs px-2.5 py-1 rounded-full font-medium hover:bg-blue-100">
+                                  + Add
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-gray-500">No events available</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <FiAlertTriangle className="text-yellow-600" size={20} />
+              <h3 className="font-medium text-gray-900">No Webhook Registered</h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Register a webhook URL to start receiving event notifications for your transactions.
+            </p>
+            <button
+              onClick={() => setActiveModal("register")}
+              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Register Webhook
+            </button>
+          </div>
+        )}
+
+        {/* Register Button (if webhook exists, show text instead) */}
+        {webhookDetails && (
+          <div className="flex justify-end">
+            <button
+              onClick={() => setActiveModal("register")}
+              className="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              Register New Webhook
+            </button>
+          </div>
+        )}
+
+        {/* Webhook Deliveries Section */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900">Webhook Deliveries</h3>
+            <button
+              onClick={() => {
+                setShowDeliveries(!showDeliveries);
+                if (!showDeliveries) refetchDeliveries();
+              }}
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
+              {showDeliveries ? "Hide" : "Show"} Logs
+            </button>
+          </div>
+
+          {showDeliveries && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              {deliveriesLoading ? (
+                <div className="p-8">
+                  <div className="animate-pulse space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="h-16 bg-gray-200 rounded"></div>
+                    ))}
+                  </div>
+                </div>
+              ) : deliveries && deliveries.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 border-b border-gray-100">
+                      <tr>
+                        <th className="px-4 py-3 text-left font-medium text-gray-700">Event</th>
+                        <th className="px-4 py-3 text-left font-medium text-gray-700">Status</th>
+                        <th className="px-4 py-3 text-left font-medium text-gray-700">Attempts</th>
+                        <th className="px-4 py-3 text-left font-medium text-gray-700">Response</th>
+                        <th className="px-4 py-3 text-left font-medium text-gray-700">Sent At</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {deliveries.map((delivery) => (
+                        <tr key={delivery.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3">
+                            <span className="text-gray-900 font-medium">{delivery.event}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span
+                              className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-medium ${getStatusColor(
+                                delivery.status
+                              )}`}
+                            >
+                              {delivery.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-gray-600">{delivery.attemptCount}</td>
+                          <td className="px-4 py-3 text-gray-600">{delivery.responseStatus || "—"}</td>
+                          <td className="px-4 py-3 text-gray-600 text-xs">{formatDate(delivery.createdAt)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-8 text-center">
+                  <p className="text-gray-500 text-sm">No webhook deliveries yet</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Info Box */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex gap-3">
+            <FiAlertTriangle className="text-blue-600 flex-shrink-0 mt-0.5" size={18} />
+            <div>
+              <h4 className="font-medium text-blue-900 text-sm mb-1">How to Verify Webhooks</h4>
+              <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                <li>Save your webhook secret immediately when registering a webhook</li>
+                <li>Use the secret to verify the webhook signature in the request headers</li>
+                <li>Calculate HMAC-SHA256 hash using your secret and request payload</li>
+                <li>Compare the computed hash with the signature in the X-Webhook-Signature header</li>
+                <li>Reject any requests with invalid signatures</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Register Webhook Modal */}
+      <Modal
+        isOpen={activeModal === "register"}
+        onClose={() => setActiveModal(null)}
+        title="Register Webhook"
+        size="default"
+      >
+        <form onSubmit={handleRegisterWebhook} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Webhook URL</label>
+            <input
+              type="url"
+              value={webhookUrl}
+              onChange={(e) => setWebhookUrl(e.target.value)}
+              placeholder="https://example.com/webhook"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              required
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Must be a valid HTTPS URL where we'll send webhook events
+            </p>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="submit"
+              disabled={registerWebhookMutation.isPending}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {registerWebhookMutation.isPending ? "Registering..." : "Register"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveModal(null)}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Secret Modal */}
+      <Modal
+        isOpen={activeModal === "secret"}
+        onClose={() => {
+          setActiveModal(null);
+          setSecretShown(false);
+          setCurrentSecret("");
+        }}
+        title="Webhook Secret"
+        size="default"
+      >
+        <div className="space-y-4">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex gap-3">
+            <FiAlertTriangle className="text-yellow-600 flex-shrink-0 mt-0.5" size={18} />
+            <div>
+              <p className="font-medium text-yellow-900 text-sm">
+                ⚠️ Save this secret now - it will never be shown again
+              </p>
+              <p className="text-sm text-yellow-800 mt-1">
+                You'll need this secret to verify webhook signatures. Store it securely!
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Your Webhook Secret</label>
+            <div className="flex items-center gap-2 bg-gray-100 border border-gray-300 rounded-lg p-4">
+              <input
+                type={secretShown ? "text" : "password"}
+                value={currentSecret}
+                readOnly
+                className="flex-1 bg-transparent text-gray-900 outline-none font-mono text-sm"
+              />
+              <button
+                onClick={() => setSecretShown(!secretShown)}
+                className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
+                type="button"
+              >
+                {secretShown ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+              </button>
+              <button
+                onClick={handleCopySecret}
+                className={`p-2 transition-colors rounded-md ${
+                  secretCopied
+                    ? "bg-green-50 text-green-600"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-200"
+                }`}
+                type="button"
+              >
+                {secretCopied ? <FiCheck size={18} /> : <FiCopy size={18} />}
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h4 className="font-medium text-blue-900 text-sm mb-2">How to use this secret:</h4>
+            <pre className="bg-white border border-blue-100 rounded p-3 text-xs overflow-x-auto text-gray-800">
+{`const crypto = require('crypto');
+
+function verifyWebhook(secret, payload, signature) {
+  const hash = crypto
+    .createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex');
+  
+  return hash === signature;
+}`}
+            </pre>
+          </div>
+
+          <button
+            onClick={() => {
+              setActiveModal(null);
+              setSecretShown(false);
+              setCurrentSecret("");
+            }}
+            className="w-full px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            I've Saved the Secret
+          </button>
+        </div>
+      </Modal>
+    </DashboardWrapper>
+  );
+};
+
+export default Webhook;

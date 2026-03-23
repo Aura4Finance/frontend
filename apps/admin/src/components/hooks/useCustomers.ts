@@ -1,33 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { client } from "../client/client";
 import { toast } from "sonner";
-import {type  Mode } from "../../store/mode";
-
-export interface Customer {
-  id: string;
-  firstname: string;
-  lastname: string;
-  email: string;
-  mode: Mode["mode"][];
-  totalSpent: number;
-  createdAt?: string;
-}
-
-interface CustomersParams {
-  amountSpent?: string;
-  limit?: number;
-  userId?: string;
-  mode?: Mode["mode"];
-  cursor?: string;
-  sortOrder?: "asc" | "desc";
-}
-
-interface CustomersResponse {
-  customers: Customer[];
-  count: number;
-  nextCursor: string;
-  hasNextPage: boolean
-}
+import type { Customer, CustomersParams, CustomersResponse } from "@orafi/customers";
 
 // Hooks
 export const useCustomers = (params: CustomersParams = {}) => {
