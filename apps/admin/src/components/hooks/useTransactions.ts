@@ -1,114 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { client } from "../client/client";
 import { toast } from "sonner";
-import { type Mode } from "../../store/mode";
-
-interface Payment {
-  id: string;
-  refunded: boolean;
-  depositAddress: string;
-  wallet: {
-    address: string
-  };
-  txRef: string;
-  currency: string;
-  network: string;
-  paymentMethod: string;
-  redirectUrl: string;
-  paylinkId: string;
-
-}
-
-interface Payout {
-  id: string;
-  method: string;
-  walletAddress: string;
-  txDigest: string;
-}
-
-interface Refund {
-  id: string;
-  reason: string;
-  walletAddress: string;
-  originalTxId: string;
-  txDigest: string;
-}
-
-// Types
-export interface Transaction {
-  id: string;
-  type: string;
-  status: string;
-  amount: number;
-  amountInUSDC: number;
-  currency: string;
-  network: string;
-  mode: string;
-  createdAt: string;
-  confirmedAt: string;
-  token: string;
-  customerId?: string;
-  webhookDeliveryId: string;
-  profileId:  string;
-  customer?: {
-    id: string;
-    firstname: string;
-    lastname: string;
-    email: string;
-    createdAt: string;
-    mode: Mode["mode"];
-    totalSpent: number;
-  };
-  profile: {
-    id: string;
-    businessName: string;
-    user: {
-      email: string
-    }
-  }
-  payment?: Payment;
-  refund?: Refund;
-  payout?: Payout;
-}
-
-interface TransactionsParams {
-  page?: number;
-  mode?: Mode["mode"]
-  limit?: number;
-  cursor?: string;
-  search?: string;
-  status?: string;
-  type?: string;
-  token?: string;
-  currency?: string;
-  network?: string;
-  startDate?: string;
-  endDate?: string;
-  sortBy?: string;
-  sortOrder?: "asc" | "desc";
-}
-
-interface TransactionsResponse {
-  transactions: Transaction[];
-  nextCursor: string;
-  hasNextPage: boolean;
-  count: number;
-}
-
-interface TransactionCountData {
-  total: number;
-  successful: number;
-  pending: number;
-  failed: number;
-}
-
-type TransactionMetricsData = {
-  date: string;
-  label: string;
-  count: number;
-  volume: number;
-  volumeInUSDC: number
-}[]
+import type { 
+  TransactionsParams, 
+  Transaction, 
+  TransactionsResponse, 
+  TransactionCountData,
+  TransactionMetricsData
+} from "@orafi/transactions"
 
 // Hooks
 export const useTransactions = (params: TransactionsParams = {}) => {

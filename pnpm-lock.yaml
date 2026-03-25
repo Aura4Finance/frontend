@@ -436,6 +436,12 @@ importers:
 
   apps/merchant:
     dependencies:
+      '@orafi/customers':
+        specifier: workspace:*
+        version: link:../../packages/customers
+      '@orafi/transactions':
+        specifier: workspace:*
+        version: link:../../packages/transactions
       '@orafi/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -506,6 +512,18 @@ importers:
       vite:
         specifier: ^7.1.7
         version: 7.3.1(@types/node@24.10.9)(jiti@2.6.1)(lightningcss@1.30.2)
+
+  packages/customers:
+    dependencies:
+      zustand:
+        specifier: ^4.4.0
+        version: 4.5.7(@types/react@19.2.8)(react@19.2.3)
+
+  packages/transactions:
+    dependencies:
+      zustand:
+        specifier: ^4.5.7
+        version: 4.5.7(@types/react@19.2.8)(react@19.2.3)
 
   packages/ui:
     dependencies:
