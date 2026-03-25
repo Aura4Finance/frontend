@@ -12,7 +12,6 @@ export const useTransactions = (params: TransactionsParams = {}) => {
     queryKey: ["transactions", params],
     queryFn: async () => {
       const response = await client.get("/user/transactions", { params });
-      console.log(response)
       return response.data.data;
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
