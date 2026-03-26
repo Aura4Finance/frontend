@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { client, tokenStore } from "../client/client";
+import { client } from "../client/client";
 import changePasswordStore from "../../store/changePassword";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
@@ -12,19 +12,16 @@ export interface LoginSchema {
 export const useLoginMutation = () => {
   const [, setLocation] = useLocation();
 
-  const setToken = tokenStore((s) => s.setToken);
   const setAuthInformationState = changePasswordStore(
     (s) => s.setAuthInformationState
   );
 
   return useMutation({
     mutationFn: async (data: LoginSchema) => {
-      const response = await client.post("/admin/auth/login", data);
-      return response.data.data.accessToken;
+      await client.post("/admin/auth/login", data);
     },
 
-    onSuccess: (accessToken: string) => {
-      setToken(accessToken);
+    onSuccess: () => {
       toast.success("Login Successful");
       setLocation("/dashboard");
     },
