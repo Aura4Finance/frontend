@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { FiTrash2, FiPlus, FiEdit2, FiLink2, FiImage, FiX, FiSearch } from "react-icons/fi";
 import DashboardWrapper from "./DashboardWrapper";
@@ -7,12 +7,12 @@ import CopyButton from "./transactions/CopyButton";
 import ErrorState from "./transactions/ErrorState";
 import { useGetPaylinks, useCreatePaylink, useEditPaylink, useDeletePaylink, type Paylink } from "../hooks/mutations/usePaylinks";
 import { useActiveTabStore } from "../store/activeTab";
-import { tokenStore } from "../store/client";
 
 const PaymentLink = () => {
   const { setActiveTab } = useActiveTabStore();
-  const { profile } = tokenStore();
-  const mode = profile?.businessProfile?.isLive ? "live" : "test";
+  const WALRUS_GATEWAY =
+  "https://aggregator.walrus-testnet.walrus.space/v1/blobs";
+  //const mode = profile?.businessProfile?.isLive ? "live" : "test";
 
   // Modals state
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -181,30 +181,31 @@ const PaymentLink = () => {
 
   return (
     <DashboardWrapper>
-      <div className="space-y-6">
-        {/* Header with Create Button */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex-1">
-            <h2 className="text-base font-semibold text-gray-900">All Payment Links</h2>
-            <p className="mt-1 text-sm text-gray-500">
-              {filteredPaylinks.length} payment {filteredPaylinks.length === 1 ? "link" : "links"} created
-            </p>
+      {/* Header */}
+      <div className="border-b border-gray-100 bg-white px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs text-gray-500">Total Payment Links: {paylinks.length.toLocaleString()}</p>
           </div>
-          <button
-            onClick={() => {
-              resetForm();
-              setShowCreateModal(true);
-            }}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 active:bg-blue-800"
-          >
-            <FiPlus className="h-4 w-4" />
-            Create Payment Link
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => {
+                resetForm();
+                setShowCreateModal(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <FiPlus size={16} />
+              Create Payment Link
+            </button>
+          </div>
         </div>
+      </div>
 
+      <div className="p-4">
         {/* Search Bar */}
         {paylinks.length > 0 && (
-          <div className="relative">
+          <div className="relative mb-4">
             <FiSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
@@ -218,20 +219,22 @@ const PaymentLink = () => {
 
         {/* Payment Links Grid */}
         {isLoading ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="animate-pulse rounded-lg border border-gray-200 p-4">
-                <div className="h-4 w-1/2 rounded bg-gray-200" />
-                <div className="mt-2 h-3 w-full rounded bg-gray-200" />
-                <div className="mt-2 h-3 w-3/4 rounded bg-gray-200" />
-              </div>
-            ))}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="h-40 bg-gray-200 rounded-lg mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              ))}
+            </div>
           </div>
         ) : filteredPaylinks.length === 0 ? (
-          <div className="rounded-lg border-2 border-dashed border-gray-300 py-12 text-center">
-            <FiLink2 className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-semibold text-gray-900">No payment links</h3>
-            <p className="mt-1 text-sm text-gray-500">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+            <FiLink2 className="mx-auto h-12 w-12 text-gray-400 mb-2" />
+            <h3 className="text-sm font-semibold text-gray-900">No payment links</h3>
+            <p className="mt-1 text-xs text-gray-500">
               {searchQuery
                 ? "No payment links match your search"
                 : "Get started by creating your first payment link"}
@@ -242,9 +245,9 @@ const PaymentLink = () => {
                   resetForm();
                   setShowCreateModal(true);
                 }}
-                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
               >
-                <FiPlus className="h-4 w-4" />
+                <FiPlus size={16} />
                 Create First Link
               </button>
             )}
@@ -254,13 +257,13 @@ const PaymentLink = () => {
             {filteredPaylinks.map((link) => (
               <div
                 key={link.id}
-                className="group rounded-lg border border-gray-200 bg-white transition-all hover:border-gray-300 hover:shadow-md"
+                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden transition-all hover:shadow-md hover:border-gray-200"
               >
                 {/* Image */}
                 <div className="relative aspect-video overflow-hidden rounded-t-lg bg-gradient-to-br from-gray-100 to-gray-50">
                   {link.imageBlobIds?.length > 0 ? (
                     <img
-                      src={`https://api.orafi.app/blobs/${link.imageBlobIds[0]}`}
+                      src={`${WALRUS_GATEWAY}/${link.imageBlobIds[0]}`}
                       alt={link.title}
                       className="h-full w-full object-cover"
                     />
@@ -302,8 +305,7 @@ const PaymentLink = () => {
                   {/* Copy Link Button */}
                   <div className="mt-4 flex gap-2">
                     <CopyButton
-                      text={`${window.location.origin}/payment/${link.id}`}
-                      label="Copy Link"
+                      text={`https://paylink.orafi.app/${link.id}`}
                       className="flex-1"
                     />
                   </div>
@@ -329,8 +331,8 @@ const PaymentLink = () => {
           </div>
         )}
       </div>
-
-      {/* Create Modal */}
+    </DashboardWrapper>
+  );
       <Modal
         isOpen={showCreateModal}
         onClose={() => {
