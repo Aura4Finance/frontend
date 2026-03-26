@@ -14,8 +14,10 @@ export default defineConfig({
       '@orafi/customers': path.resolve(__dirname, '../../packages/customers/src'), 
     },
   },
+    preview: {
+    allowedHosts: ["merchant.orafi.app"],
+  },
   server: {
-    host: "0.0.0.0",
-    port: 5173
+    host: true
   }
 })
