@@ -331,8 +331,8 @@ const PaymentLink = () => {
           </div>
         )}
       </div>
-    </DashboardWrapper>
-  );
+
+      {/* Create Modal */}
       <Modal
         isOpen={showCreateModal}
         onClose={() => {
