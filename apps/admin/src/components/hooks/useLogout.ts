@@ -1,11 +1,10 @@
 import { useMutation } from "@tanstack/react-query";
-import { client, tokenStore } from "../client/client";
+import { client } from "../client/client";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 
 export const useLogoutMutation = () => {
   const [, setLocation] = useLocation();
-  const clearToken = tokenStore((s) => s.clearToken);
 
   return useMutation({
     mutationFn: async () => {
@@ -14,14 +13,11 @@ export const useLogoutMutation = () => {
     },
 
     onSuccess: () => {
-      clearToken();
       toast.success("Logged out successfully");
       setLocation("/login");
     },
 
     onError: () => {
-      // Even if the API call fails, clear the token locally
-      clearToken();
       toast.info("Logged out");
       setLocation("/login");
     },
