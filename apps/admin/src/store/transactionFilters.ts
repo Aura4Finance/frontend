@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
 // Types matching backend API
 export type TransactionType = "PAYMENT" | "PAYOUT" | "REFUND";
@@ -92,8 +91,7 @@ const defaultFilters: TransactionFiltersState = {
 };
 
 export const useTransactionFilters = create<TransactionFiltersStore>()(
-  persist(
-    (set, get) => ({
+  (set, get) => ({
       ...defaultFilters,
 
       // Individual setters
@@ -193,22 +191,7 @@ export const useTransactionFilters = create<TransactionFiltersStore>()(
 
         set({ ...defaultFilters, ...filters });
       },
-    }),
-    {
-      name: "transaction-filters",
-      partialize: (state) => ({
-        // Only persist these fields
-        type: state.type,
-        status: state.status,
-        token: state.token,
-        currency: state.currency,
-        network: state.network,
-        date: state.date,
-        paymentMethod: state.paymentMethod,
-        limit: state.limit,
-      }),
-    }
-  )
+    })
 );
 
 // Helper to build API params from filter state

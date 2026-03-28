@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
 export interface MerchantFiltersState {
   // Primary filters
@@ -51,8 +50,7 @@ const defaultFilters: MerchantFiltersState = {
 };
 
 export const useMerchantFilters = create<MerchantFiltersStore>()(
-  persist(
-    (set) => ({
+  (set) => ({
       ...defaultFilters,
 
       // Individual setters
@@ -70,16 +68,7 @@ export const useMerchantFilters = create<MerchantFiltersStore>()(
       setFilters: (filters) => set({ ...filters, cursor: undefined }),
       resetFilters: () => set({ ...defaultFilters }),
       resetPagination: () => set({ cursor: undefined }),
-    }),
-    {
-      name: "merchant-filters",
-      partialize: (state) => ({
-        limit: state.limit,
-        sortBy: state.sortBy,
-        sortOrder: state.sortOrder,
-      }),
-    }
-  )
+    })
 );
 
 // Helper to build API params from filter state

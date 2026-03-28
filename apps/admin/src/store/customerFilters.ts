@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
 // Types matching backend validation
 export type AmountSpentRange =
@@ -38,8 +37,7 @@ const defaultFilters: CustomerFiltersState = {
 };
 
 export const useCustomerFilters = create<CustomerFiltersStore>()(
-  persist(
-    (set) => ({
+  (set) => ({
       ...defaultFilters,
 
       // Individual setters
@@ -52,15 +50,7 @@ export const useCustomerFilters = create<CustomerFiltersStore>()(
       setFilters: (filters) => set({ ...filters, cursor: undefined }),
       resetFilters: () => set({ ...defaultFilters }),
       resetPagination: () => set({ cursor: undefined }),
-    }),
-    {
-      name: "customer-filters",
-      partialize: (state) => ({
-        amountSpent: state.amountSpent,
-        limit: state.limit,
-      }),
-    }
-  )
+    })
 );
 
 // Helper to build API params from filter state
