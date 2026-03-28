@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import type { WebhookDeliveryQueryParams } from "../hooks/mutations/useWehbooks";
 
 export interface WebhookFiltersStore {
@@ -35,8 +34,7 @@ const defaultFilters: Omit<WebhookFiltersStore, keyof Required<Pick<WebhookFilte
 };
 
 export const useWebhookFilters = create<WebhookFiltersStore>()(
-  persist(
-    (set, get) => ({
+  (set, get) => ({
       ...defaultFilters,
 
       setStatus: (status) => set({ status, cursor: undefined }),
@@ -85,12 +83,7 @@ export const useWebhookFilters = create<WebhookFiltersStore>()(
           cursor: cursor || undefined,
         });
       },
-    }),
-    {
-      name: "webhook-filters",
-      version: 1,
-    }
-  )
+    })
 );
 
 export const buildWebhookParams = (

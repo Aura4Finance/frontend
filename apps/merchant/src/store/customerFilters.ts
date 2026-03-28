@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import {
   buildCustomerParams as buildSharedCustomerParams,
   defaultCustomerFilters,
@@ -20,8 +19,7 @@ export interface CustomerFiltersStore extends CustomerFiltersState {
 }
 
 export const useCustomerFilters = create<CustomerFiltersStore>()(
-  persist(
-    (set) => ({
+  (set) => ({
       ...defaultCustomerFilters,
 
       setAmountSpent: (amountSpent) => set({ amountSpent, cursor: undefined }),
@@ -30,15 +28,7 @@ export const useCustomerFilters = create<CustomerFiltersStore>()(
       setFilters: (filters) => set({ ...filters, cursor: undefined }),
       resetFilters: () => set({ ...defaultCustomerFilters }),
       resetPagination: () => set({ cursor: undefined }),
-    }),
-    {
-      name: "merchant-customer-filters",
-      partialize: (state) => ({
-        amountSpent: state.amountSpent,
-        limit: state.limit,
-      }),
-    }
-  )
+    })
 );
 
 // Helper to build API params from filter state

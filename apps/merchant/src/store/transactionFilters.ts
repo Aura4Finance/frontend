@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import {
   buildTransactionParams as buildSharedTransactionParams,
   defaultTransactionFilters,
@@ -36,8 +35,7 @@ export interface TransactionFiltersStore extends TransactionFiltersState {
 }
 
 export const useTransactionFilters = create<TransactionFiltersStore>()(
-  persist(
-    (set, get) => ({
+  (set, get) => ({
       ...defaultTransactionFilters,
 
       setType: (type) => set({ type, cursor: undefined }),
@@ -134,21 +132,7 @@ export const useTransactionFilters = create<TransactionFiltersStore>()(
 
         set({ ...defaultTransactionFilters, ...filters });
       },
-    }),
-    {
-      name: "merchant-transaction-filters",
-      partialize: (state) => ({
-        type: state.type,
-        status: state.status,
-        token: state.token,
-        currency: state.currency,
-        network: state.network,
-        date: state.date,
-        paymentMethod: state.paymentMethod,
-        limit: state.limit,
-      }),
-    }
-  )
+    })
 );
 
 export const buildTransactionParams = (
