@@ -15,13 +15,13 @@ import { useActiveTabStore } from "../store/activeTab";
 import { useGetSupoortedNetworks } from "../hooks/mutations/useTransactions";
 
 const navItems = [
-    { name: "Dashboard", icon: <MdDashboard size={22} />, color: "text-blue-600", route: "/dashboard" },
-    { name: "Transactions", icon: <RiExchangeDollarLine size={22} />, color: "text-emerald-600", route: "/dashboard/transactions" },
-    { name: "Customers", icon: <RiCustomerService2Line size={22} />, color: "text-purple-600", route: "/dashboard/customers" },
-    { name: "Settlements", icon: <RiWallet3Line size={22} />, color: "text-orange-600", route: "/dashboard/settlements" },
-    { name: "Payment Links", icon: <RiMoneyDollarCircleLine size={22} />, color: "text-teal-600", route: "/dashboard/payment-links" },
-    { name: "Webhook", icon: <RiBankLine size={22} />, color: "text-rose-600", route: "/dashboard/webhook" },
-    { name: "Settings", icon: <MdSettings size={22} />, color: "text-slate-600", route: "/dashboard/settings" },
+    { name: "Dashboard", icon: <MdDashboard size={22} />, color: "text-blue-600", route: "/" },
+    { name: "Transactions", icon: <RiExchangeDollarLine size={22} />, color: "text-emerald-600", route: "/transactions" },
+    { name: "Customers", icon: <RiCustomerService2Line size={22} />, color: "text-purple-600", route: "/customers" },
+    { name: "Settlements", icon: <RiWallet3Line size={22} />, color: "text-orange-600", route: "/settlements" },
+    { name: "Payment Links", icon: <RiMoneyDollarCircleLine size={22} />, color: "text-teal-600", route: "/payment-links" },
+    { name: "Webhook", icon: <RiBankLine size={22} />, color: "text-rose-600", route: "/webhook" },
+    { name: "Settings", icon: <MdSettings size={22} />, color: "text-slate-600", route: "/settings" },
 ];
 
 

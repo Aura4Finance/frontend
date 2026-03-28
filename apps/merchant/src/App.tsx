@@ -44,15 +44,14 @@ function App() {
               </>
             ) : (
               <Switch>
-                <Route path="/" component={Dashboard}/>
                 <Route path="/onboarding" component={Onboarding}/>
-                <Route path="/dashboard" component={Dashboard}/>
-                <Route path="/dashboard/settings" component={Settings}/>
-                <Route path="/dashboard/customers" component={Customers}/>
-                <Route path="/dashboard/settlements" component={Settlements}/>
-                <Route path="/dashboard/transactions" component={Transactions}/>
-                <Route path="/dashboard/webhook" component={Webhook}/>
-                <Route path="/dashboard/payment-links" component={PaymentLink}/>
+                <Route path="/" component={Dashboard}/>
+                <Route path="/settings" component={Settings}/>
+                <Route path="/customers" component={Customers}/>
+                <Route path="/settlements" component={Settlements}/>
+                <Route path="/transactions" component={Transactions}/>
+                <Route path="/webhook" component={Webhook}/>
+                <Route path="/payment-links" component={PaymentLink}/>
               </Switch>
             )
           }

@@ -3,7 +3,8 @@ import DashboardWrapper from "./layout/DashboardWrapper";
 import CustomerFilters from "./filters/CustomerFilters";
 import Modal from "./shared/Modal";
 import ErrorState from "./shared/ErrorState";
-import { useCustomers, useCustomer, type Customer } from "./hooks/useCustomers";
+import { useCustomers, useCustomer } from "./hooks/useCustomers";
+import type { Customer } from "@orafi/customers";
 import { useCustomerFilters, buildCustomerParams } from "../store/customerFilters";
 import { useActiveMode } from "../store/mode";
 import CopyButton from "./shared/CopyButton";
@@ -185,7 +186,7 @@ const Customers = () => {
                         <td className="px-4 py-2.5 text-xs text-gray-600">{customer.email}</td>
                         <td className="px-4 py-2.5">
                           <div className="flex flex-wrap gap-1">
-                            {customer.mode?.length > 0 ? customer.mode.map((m) => (
+                            {customer.mode?.length ? customer.mode.map((m) => (
                               <span key={m} className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${getModeColor(m)}`}>
                                 {m}
                               </span>
@@ -293,7 +294,7 @@ const Customers = () => {
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Mode</p>
                 <div className="flex flex-wrap gap-1 mt-1">
-                  {selectedCustomer.mode?.length > 0 ? selectedCustomer.mode.map((m) => (
+                  {selectedCustomer.mode?.length ? selectedCustomer.mode.map((m) => (
                     <span key={m} className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${getModeColor(m)}`}>
                       {m}
                     </span>

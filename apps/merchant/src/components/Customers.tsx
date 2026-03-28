@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
+import { useLocation } from "wouter";
 import { toast } from "sonner";
-import { FiTrash2, FiPlus } from "react-icons/fi";
+import { FiTrash2, FiPlus, FiArrowRight } from "react-icons/fi";
 import type { Customer } from "@orafi/customers";
 import DashboardWrapper from "./DashboardWrapper";
 import CustomerFilters from "./CustomerFilters";
@@ -13,6 +14,7 @@ import { useActiveTabStore } from "../store/activeTab";
 import { tokenStore } from "../store/client";
 
 const Customers = () => {
+  const [, setLocation] = useLocation();
   const [cursorHistory, setCursorHistory] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -395,6 +397,20 @@ const Customers = () => {
                     : "N/A"}
                 </p>
               </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="pt-4 border-t border-gray-100">
+              <button
+                onClick={() => {
+                  setLocation(`/transactions?customerId=${selectedCustomer.id}`);
+                  setSelectedCustomer(null);
+                }}
+                className="w-full px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg flex items-center justify-center gap-2 transition-all duration-200 active:scale-95"
+              >
+                <FiArrowRight size={16} />
+                View All Transactions
+              </button>
             </div>
           </div>
         )}

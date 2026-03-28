@@ -27,7 +27,7 @@ export const useExchangeCodeForToken = () => {
 
             toast.success(message || "User logged in successfully!")
             const isOnboarded = Boolean((profile as UserProfile | undefined)?.businessProfile?.onboarded);
-            setLocation(isOnboarded ? '/dashboard' : '/onboarding')
+            setLocation(isOnboarded ? '/' : '/onboarding')
         },
         onError: (error: any) => {
             toast.error(error.response?.data?.message || "Unable to validate login request")

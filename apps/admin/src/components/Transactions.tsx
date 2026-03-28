@@ -25,8 +25,8 @@ import {
   useTransactionStats,
   useTransactionCountData,
   useRefundTransaction,
-  type Transaction,
 } from "./hooks/useTransactions";
+import type { Transaction } from "@orafi/transactions";
 import { useActiveMode } from "../store/mode";
 import { toast } from "sonner";
 import CopyButton from "./shared/CopyButton";

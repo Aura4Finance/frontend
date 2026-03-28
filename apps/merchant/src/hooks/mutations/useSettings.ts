@@ -160,6 +160,24 @@ export const toggleNotification = () => {
     })
 }
 
+type Currencies = {
+    id: string;
+    name:  string;
+    symbol: string;
+    sign: string;
+    isActive: boolean
+}
+
+export const getSupportedCurrencies = () => {
+    return useQuery({
+        queryKey: ["supported-currencies"],
+        queryFn: async () => {
+            const response = await client.get("/currencies");
+            return response.data.data.fiats as Currencies[];
+        }
+    })
+}
+
 
 
 

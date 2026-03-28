@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import client from "../../store/client";
 import { toast } from "sonner";
 
-type WebhookDelivery = {
+export type WebhookDelivery = {
     id: string;
     event: Event;
     transactionId: string;
@@ -20,6 +20,16 @@ type WebhookDelivery = {
     nextRetryAt: string;
     createdAt: string;
     lastAttemptAt: string;
+}
+
+export type WebhookDeliveryQueryParams = {
+    status: string;
+    transactionId: string;
+    event: Event;
+    date: {
+        startDate: string;
+        endDate: string;
+    }
 }
 
 type WebhookDetails = {
@@ -81,11 +91,11 @@ export const useSubcribeToWebhookEvent = () => {
     })
 }
 
-export const useRetrieveWebhookDeliveries = () => {
+export const useRetrieveWebhookDeliveries = (params?: WebhookDeliveryQueryParams) => {
     return useQuery({
-        queryKey: ["webhook-deliveries"],
+        queryKey: ["webhook-deliveries", params],
         queryFn: async () => {
-            const { data } = await client.get(`/user/webhook/deliveries`);
+            const { data } = await client.get(`/user/webhook/deliveries`, { params });
             return data.data  as WebhookDelivery[];
         }
     })
