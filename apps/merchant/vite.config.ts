@@ -15,7 +15,7 @@ export default defineConfig({
     },
   },
     preview: {
-    allowedHosts: ["merchant.orafi.app"],
+    allowedHosts: ["dashboard.orafi.app"],
   },
   server: {
     host: true
