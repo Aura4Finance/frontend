@@ -9,6 +9,7 @@ import {
   FiTrendingUp,
   FiArrowUp,
   FiArrowDown,
+  FiDollarSign,
 } from "react-icons/fi";
 import {
   AreaChart,
@@ -81,6 +82,7 @@ const Dashboard = () => {
   const transactionCount = data?.transactionCount;
   const customerCount = data?.customerCount;
   const transactionVolume = data?.transactionVolume;
+  const earnings = data?.earnings;
 
   const dashboardKpis = [
     {
@@ -113,6 +115,18 @@ const Dashboard = () => {
         : "—",
       icon: FiTrendingUp,
       iconClassName: "bg-blue-50 text-blue-600",
+      trend: undefined as "up" | "down" | undefined,
+    },
+    {
+      label: "Net Earnings",
+      value: earnings?.earningsUSDC
+        ? `$${earnings.earningsUSDC.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC`
+        : "—",
+      helper: earnings?.grossEarningsUSDC
+        ? `Gross: $${earnings.grossEarningsUSDC.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC`
+        : "—",
+      icon: FiDollarSign,
+      iconClassName: "bg-green-50 text-green-600",
       trend: undefined as "up" | "down" | undefined,
     },
   ];
@@ -183,9 +197,9 @@ const Dashboard = () => {
         </div>
 
         {/* KPI Summary */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
           {isLoading
-            ? Array.from({ length: 3 }).map((_, i) => <KpiSkeleton key={i} />)
+            ? Array.from({ length: 4 }).map((_, i) => <KpiSkeleton key={i} />)
             : dashboardKpis.map(({ label, value, helper, icon: Icon, iconClassName, trend }) => (
                 <div
                   key={label}
@@ -224,6 +238,51 @@ const Dashboard = () => {
                 </div>
               ))}
         </div>
+
+        {/* Earnings Breakdown Card */}
+        {!isLoading && earnings && (
+          <div className="rounded-2xl border border-gray-100 bg-gradient-to-br from-green-50 to-emerald-50 p-6 shadow-sm">
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-600">
+                  Earnings Breakdown
+                </p>
+                <p className="mt-2 text-3xl font-bold text-gray-900">
+                  ${(earnings.earningsUSDC ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC
+                </p>
+              </div>
+              <div className="rounded-full bg-green-600 p-4 text-white">
+                <FiDollarSign size={28} />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-xl bg-white p-4 shadow-xs">
+                <p className="text-xs font-medium text-gray-600">Total Payments</p>
+                <p className="mt-2 text-lg font-semibold text-gray-900">
+                  ${(earnings.totalPaymentsUSDC ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              </div>
+              <div className="rounded-xl bg-white p-4 shadow-xs">
+                <p className="text-xs font-medium text-gray-600">Gross Earnings</p>
+                <p className="mt-2 text-lg font-semibold text-emerald-600">
+                  ${(earnings.grossEarningsUSDC ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              </div>
+              <div className="rounded-xl bg-white p-4 shadow-xs">
+                <p className="text-xs font-medium text-gray-600">Platform Fee</p>
+                <p className="mt-2 text-lg font-semibold text-red-600">
+                  -${(earnings.platformFeeUSDC ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              </div>
+              <div className="rounded-xl bg-white p-4 shadow-xs">
+                <p className="text-xs font-medium text-gray-600">Total Refunds</p>
+                <p className="mt-2 text-lg font-semibold text-orange-600">
+                  -${(earnings.totalRefundsUSDC ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Charts */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

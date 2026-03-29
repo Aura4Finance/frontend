@@ -97,9 +97,12 @@ const Transactions = () => {
     setActiveTab("Transactions");
   }, [setActiveTab]);
 
+  const [hasInitializedFromUrl, setHasInitializedFromUrl] = useState(false);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setFromQueryParams(params);
+    setHasInitializedFromUrl(true);
   }, [setFromQueryParams]);
 
   const syncUrlWithFilters = useCallback(() => {
@@ -129,6 +132,21 @@ const Transactions = () => {
     setCurrentPage(1);
     syncUrlWithFilters();
   }, [filters, mode, syncUrlWithFilters]);
+
+  // Auto-apply filters when navigating from customer or payment link page with query params
+  useEffect(() => {
+    if (!hasInitializedFromUrl) return;
+    
+    const params = new URLSearchParams(window.location.search);
+    const customerId = params.get("customerId");
+    const paymentLinkId = params.get("paymentLinkId");
+    const type = params.get("type");
+    
+    // If we have relevant filter params from navigation, apply filters automatically
+    if (customerId || paymentLinkId || type) {
+      handleApplyFilters();
+    }
+  }, [hasInitializedFromUrl, handleApplyFilters]);
 
   const {
     data: transactionsData,

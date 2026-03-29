@@ -12,6 +12,13 @@ type DashboardMetrics = {
         percentageChange: number;
         trend: "up" | "down"
     },
+    earnings: {
+        earningsUSDC: number;
+        grossEarningsUSDC: number;
+        totalPaymentsUSDC: number;
+        totalRefundsUSDC: number;
+        platformFeeUSDC: number;
+    },
     transactionVolume: {
         totalVolume: number;
         totalVolumeInUSDC: number;
