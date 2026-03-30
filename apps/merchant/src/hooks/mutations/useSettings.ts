@@ -178,6 +178,39 @@ export const getSupportedCurrencies = () => {
     })
 }
 
+export const setupTwoFactorAuthentication = () =>{
+    return useMutation({
+        mutationFn: async () => {
+            const response = await client.post("/onboarding/2fa/setup");
+            return response.data.data as {
+                otpauth_url: string;
+                manualCode: string;
+            }
+        },
+        onSuccess: (data) => {
+            toast.success("Two-factor authentication setup initiated! Please scan the QR code with your authenticator app or enter the manual code.");
+            return data;
+        },
+        onError: (error: any) => {
+            toast.error(error.response.data.message || "Unable to setup two-factor authentication");
+        }
+    })
+}
+
+export const verifyTwoFactorAuthentication = () => {
+    return useMutation({
+        mutationFn: async ({ token }: { token: string }) => {
+           await client.post("/onboarding/2fa/verify", { token });
+        },
+        onSuccess: () => {
+            toast.success("Two-factor authentication setup successful! Your account is now more secure.");  
+        },
+        onError: () => {
+            toast.error("Unable to verify two-factor authentication token. Please ensure you entered the correct code from your authenticator app.");
+        }
+    })
+}
+
 
 
 

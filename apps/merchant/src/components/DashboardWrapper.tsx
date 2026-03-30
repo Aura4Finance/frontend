@@ -58,10 +58,12 @@ const DashboardWrapper = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen flex-col md:flex-row">
       <LeftBar />
       <main
-        className={`w-full bg-gray-50 transition-all duration-300 ${collapsed ? "ml-20" : "ml-55"}`}
+        className={`w-full bg-gray-50 transition-all duration-300 pb-20 md:pb-0 ${
+          collapsed ? "md:ml-20" : "md:ml-55"
+        }`}
       >
         {!profile?.businessProfile?.onboarded && (
           <div className="flex items-center justify-between gap-4 bg-yellow-400 px-4 py-2.5 sm:px-6">
