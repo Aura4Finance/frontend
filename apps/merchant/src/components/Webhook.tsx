@@ -12,7 +12,7 @@ import {
 import Modal from "./transactions/Modal";
 import CopyButton from "./transactions/CopyButton";
 import WebhookFilters from "./webhooks/WebhookFilters";
-import { FiCopy, FiCheck, FiAlertTriangle, FiEye, FiEyeOff, FiLink2, FiLock, FiFileText } from "react-icons/fi";
+import { FiCopy, FiCheck, FiAlertTriangle, FiEye, FiEyeOff } from "react-icons/fi";
 import type { WebhookDelivery, WebhookDeliveryQueryParams } from "../hooks/mutations/useWehbooks";
 import { buildWebhookParams, useWebhookFilters } from "../store/webhookFilters";
 
@@ -361,31 +361,20 @@ const Webhook = () => {
         isOpen={activeModal === "register"}
         onClose={() => setActiveModal(null)}
         title="Register Webhook"
-        description="Add a new webhook endpoint to receive event notifications"
-        icon={<FiLink2 className="h-6 w-6 text-blue-600" />}
-        variant="info"
       >
-        <form onSubmit={handleRegisterWebhook} className="space-y-5">
+        <form onSubmit={handleRegisterWebhook} className="space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-3">Webhook URL</label>
+            <label className="block text-sm font-medium text-gray-900 mb-2">Webhook URL</label>
             <input
               type="url"
               value={webhookUrl}
               onChange={(e) => setWebhookUrl(e.target.value)}
               placeholder="https://example.com/webhook"
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 text-sm font-medium placeholder-gray-400"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent text-sm"
               required
             />
-            <p className="text-xs text-gray-500 mt-2.5 flex items-center gap-1.5">
-              <span className="inline-block w-1 h-1 bg-blue-500 rounded-full"></span>
-              Must be a valid HTTPS URL where we'll send webhook events
-            </p>
-          </div>
-
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-            <p className="text-xs text-blue-800 leading-relaxed">
-              <span className="font-semibold block mb-1">💡 Tip:</span>
-              Make sure your endpoint can handle POST requests and returns a 2xx status code within 30 seconds.
+            <p className="text-xs text-gray-500 mt-1.5">
+              Must be a valid HTTPS URL
             </p>
           </div>
 
@@ -393,19 +382,19 @@ const Webhook = () => {
             <button
               type="submit"
               disabled={registerWebhookMutation.isPending}
-              className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 shadow-md hover:shadow-lg"
+              className="flex-1 px-4 py-2 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >
               {registerWebhookMutation.isPending ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                   Registering...
                 </span>
-              ) : "Register Webhook"}
+              ) : "Register"}
             </button>
             <button
               type="button"
               onClick={() => setActiveModal(null)}
-              className="flex-1 px-4 py-3 border-2 border-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 active:scale-95"
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 text-sm"
             >
               Cancel
             </button>
@@ -422,116 +411,47 @@ const Webhook = () => {
           setCurrentSecret("");
         }}
         title="Save Your Webhook Secret"
-        description="This secret is required to verify webhook signatures"
-        icon={<FiLock className="h-6 w-6 text-amber-600" />}
-        variant="warning"
-        size="wide"
       >
-        <div className="space-y-6">
-          {/* Critical Warning */}
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-4 flex gap-3">
-            <div className="flex-shrink-0 mt-0.5">
-              <FiAlertTriangle className="text-amber-700 h-5 w-5" />
-            </div>
-            <div className="flex-1">
-              <p className="font-bold text-amber-900 text-sm mb-1">
-                ⚠️ Save this secret now - it will never be shown again
-              </p>
-              <p className="text-xs text-amber-800 leading-relaxed">
-                Store this in a secure location. You'll need it to verify webhook signatures and validate the authenticity of webhook requests.
-              </p>
-            </div>
-          </div>
-
+        <div className="space-y-4">
           {/* Secret Display */}
           <div>
-            <label className="block text-sm font-semibold text-gray-900 mb-3">Your Webhook Secret</label>
-            <div className="flex items-center gap-2 bg-gradient-to-r from-gray-50 to-gray-100 border-2 border-gray-200 rounded-xl p-4 backdrop-blur-sm hover:border-gray-300 transition-all">
+            <label className="block text-sm font-medium text-gray-900 mb-2">Your Webhook Secret</label>
+            <div className="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-lg p-3">
               <input
                 type={secretShown ? "text" : "password"}
                 value={currentSecret}
                 readOnly
-                className="flex-1 bg-transparent text-gray-900 outline-none font-mono text-sm font-bold tracking-wide"
+                className="flex-1 bg-transparent text-gray-900 outline-none font-mono text-sm"
               />
               <div className="flex gap-1 flex-shrink-0">
                 <button
                   onClick={() => setSecretShown(!secretShown)}
-                  className="p-2.5 text-gray-600 hover:text-gray-900 hover:bg-white rounded-lg transition-all duration-200 active:scale-95"
+                  className="p-2 text-gray-600 hover:text-gray-900 rounded transition-colors"
                   type="button"
                   title={secretShown ? "Hide secret" : "Show secret"}
                 >
-                  {secretShown ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                  {secretShown ? <FiEyeOff size={16} /> : <FiEye size={16} />}
                 </button>
                 <button
                   onClick={handleCopySecret}
-                  className={`p-2.5 rounded-lg transition-all duration-200 active:scale-95 ${
+                  className={`p-2 rounded transition-colors ${
                     secretCopied
-                      ? "bg-emerald-100 text-emerald-600"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-white"
+                      ? "bg-gray-200 text-gray-700"
+                      : "text-gray-600 hover:text-gray-900"
                   }`}
                   type="button"
                   title="Copy to clipboard"
                 >
-                  {secretCopied ? <FiCheck size={18} /> : <FiCopy size={18} />}
+                  {secretCopied ? <FiCheck size={16} /> : <FiCopy size={16} />}
                 </button>
               </div>
             </div>
             {secretCopied && (
-              <p className="text-xs text-emerald-600 mt-2 flex items-center gap-1.5 font-medium">
-                <span className="inline-block w-1 h-1 bg-emerald-600 rounded-full"></span>
+              <p className="text-xs text-gray-600 mt-2">
                 Copied to clipboard
               </p>
             )}
-          </div>
-
-          {/* Example Code */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <FiFileText className="w-4 h-4 text-gray-600" />
-              <label className="block text-sm font-semibold text-gray-900">Example: Verify Webhook Signature</label>
-            </div>
-            <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 overflow-x-auto">
-              <pre className="text-xs text-slate-300 font-mono leading-relaxed">{`const crypto = require('crypto');
-
-function verifyWebhook(secret, payload, signature) {
-  const computed = crypto
-    .createHmac('sha256', secret)
-    .update(payload)
-    .digest('hex');
-  
-  return crypto.timingSafeEqual(
-    Buffer.from(computed),
-    Buffer.from(signature)
-  );
-}`}</pre>
-            </div>
-          </div>
-
-          {/* Steps to implement */}
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-            <h4 className="font-semibold text-blue-900 text-sm mb-3">How to use this secret:</h4>
-            <ol className="space-y-2 text-xs text-blue-800">
-              <li className="flex gap-2">
-                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
-                <span>Include the secret in a secure environment variable</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
-                <span>Extract the <code className="bg-white px-1.5 py-0.5 rounded text-blue-900 font-mono text-xs">X-Webhook-Signature</code> header from the request</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
-                <span>Calculate HMAC-SHA256 hash using the secret and raw request body</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">4</span>
-                <span>Use timing-safe comparison to verify the signature</span>
-              </li>
-              <li className="flex gap-2">
-                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">5</span>
-                <span>Reject requests with invalid or missing signatures</span>
-              </li>
-            </ol>
+            <p className="text-xs text-gray-500 mt-2">Save this secret in a secure location. It will never be shown again.</p>
           </div>
 
           <button
@@ -540,9 +460,9 @@ function verifyWebhook(secret, payload, signature) {
               setSecretShown(false);
               setCurrentSecret("");
             }}
-            className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-xl transition-all duration-200 active:scale-95 shadow-md hover:shadow-lg"
+            className="w-full px-4 py-2 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 text-sm"
           >
-            ✓ I've Saved the Secret
+            Done
           </button>
         </div>
       </Modal>
@@ -555,136 +475,68 @@ function verifyWebhook(secret, payload, signature) {
           setSelectedDelivery(null);
         }}
         title="Webhook Delivery Details"
-        description="View detailed information about this webhook delivery attempt"
-        icon={<FiFileText className="h-6 w-6 text-blue-600" />}
-        variant="info"
-        size="wide"
       >
         {selectedDelivery && (
-          <div className="space-y-6">
-            {/* Status Overview Card */}
-            <div className="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-xl p-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="flex flex-col">
-                  <span className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Event</span>
-                  <p className="text-lg font-bold text-slate-900">{selectedDelivery.event}</p>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Status</span>
-                  <span
-                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold w-fit ${getStatusColor(
-                      selectedDelivery.status
-                    )}`}
-                  >
-                    <span className="w-2 h-2 rounded-full bg-current"></span>
-                    {selectedDelivery.status.toUpperCase()}
-                  </span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Attempts</span>
-                  <p className="text-lg font-bold text-slate-900">{selectedDelivery.attemptCount}</p>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Response Code</span>
-                  <p className="text-lg font-bold text-slate-900">{selectedDelivery.responseStatus || "—"}</p>
-                </div>
+          <div className="space-y-4">
+            {/* Status Overview */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Event</label>
+                <p className="text-sm font-semibold text-gray-900">{selectedDelivery.event}</p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Status</label>
+                <span
+                  className={`inline-flex items-center gap-2 px-2 py-1 rounded text-xs font-medium ${getStatusColor(
+                    selectedDelivery.status
+                  )}`}
+                >
+                  {selectedDelivery.status}
+                </span>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Attempts</label>
+                <p className="text-sm font-semibold text-gray-900">{selectedDelivery.attemptCount}</p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Response Code</label>
+                <p className="text-sm font-semibold text-gray-900">{selectedDelivery.responseStatus || "—"}</p>
               </div>
             </div>
 
             {/* IDs Section */}
             <div>
-              <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-                <span className="w-1 h-4 bg-blue-600 rounded-full"></span>
-                Identifiers
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Transaction ID</label>
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 text-xs text-gray-900 font-mono font-bold bg-white px-2 py-1.5 rounded border border-gray-100 break-all">{selectedDelivery.transactionId}</code>
-                    <CopyButton text={selectedDelivery.transactionId} />
-                  </div>
-                </div>
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Delivery ID</label>
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 text-xs text-gray-900 font-mono font-bold bg-white px-2 py-1.5 rounded border border-gray-100 break-all">{selectedDelivery.id}</code>
-                    <CopyButton text={selectedDelivery.id} />
-                  </div>
-                </div>
+              <label className="block text-xs font-medium text-gray-600 mb-2">Transaction ID</label>
+              <div className="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-lg p-2">
+                <code className="flex-1 text-xs text-gray-900 font-mono break-all">{selectedDelivery.transactionId}</code>
+                <CopyButton text={selectedDelivery.transactionId} />
               </div>
             </div>
 
             {/* Timestamps Section */}
-            <div>
-              <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-                <span className="w-1 h-4 bg-blue-600 rounded-full"></span>
-                Timeline
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <label className="block text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1.5">Created At</label>
-                  <p className="text-sm font-bold text-blue-900">{formatDate(selectedDelivery.createdAt)}</p>
-                </div>
-                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                  <label className="block text-xs font-semibold text-purple-600 uppercase tracking-wider mb-1.5">Last Attempt</label>
-                  <p className="text-sm font-bold text-purple-900">{formatDate(selectedDelivery.lastAttemptAt)}</p>
-                </div>
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                  <label className="block text-xs font-semibold text-orange-600 uppercase tracking-wider mb-1.5">Next Retry</label>
-                  <p className="text-sm font-bold text-orange-900">{formatDate(selectedDelivery.nextRetryAt)}</p>
-                </div>
+            <div className="grid grid-cols-1 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Created At</label>
+                <p className="text-sm text-gray-900">{formatDate(selectedDelivery.createdAt)}</p>
               </div>
-            </div>
-
-            {/* Payload Information */}
-            <div>
-              <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-                <span className="w-1 h-4 bg-blue-600 rounded-full"></span>
-                Payload Summary
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
-                  <label className="block text-xs font-semibold text-emerald-600 uppercase tracking-wider mb-1.5">Amount</label>
-                  <p className="text-sm font-bold text-emerald-900">
-                    {selectedDelivery.payload.data.amount}
-                  </p>
-                </div>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <label className="block text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1.5">Currency</label>
-                  <p className="text-sm font-bold text-blue-900">
-                    {selectedDelivery.payload.data.currency}
-                  </p>
-                </div>
-                <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-                  <label className="block text-xs font-semibold text-purple-600 uppercase tracking-wider mb-1.5">Status</label>
-                  <p className="text-sm font-bold text-purple-900">
-                    {selectedDelivery.payload.data.status}
-                  </p>
-                </div>
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Occurred At</label>
-                  <p className="text-xs font-bold text-slate-900 truncate">
-                    {formatDate(selectedDelivery.payload.data.occuredAt)}
-                  </p>
-                </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Last Attempt</label>
+                <p className="text-sm text-gray-900">{formatDate(selectedDelivery.lastAttemptAt)}</p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Next Retry</label>
+                <p className="text-sm text-gray-900">{formatDate(selectedDelivery.nextRetryAt)}</p>
               </div>
             </div>
 
             {/* Full JSON Payload */}
             <div>
-              <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-                <span className="w-1 h-4 bg-blue-600 rounded-full"></span>
-                Complete Payload (JSON)
-              </h3>
-              <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 max-h-80 overflow-y-auto">
-                <pre className="text-xs text-slate-300 whitespace-pre-wrap break-words font-mono leading-relaxed">
+              <label className="block text-xs font-medium text-gray-600 mb-2">Payload</label>
+              <div className="bg-gray-50 border border-gray-300 rounded-lg p-3 max-h-64 overflow-y-auto">
+                <pre className="text-xs text-gray-700 whitespace-pre-wrap break-words font-mono leading-relaxed">
                   {JSON.stringify(selectedDelivery.payload, null, 2)}
                 </pre>
               </div>
-              <p className="text-xs text-gray-500 mt-2">
-                💡 Tip: Use this payload to debug and test your webhook handler implementation
-              </p>
             </div>
 
             {/* Close Button */}
@@ -693,9 +545,9 @@ function verifyWebhook(secret, payload, signature) {
                 setShowDeliveryModal(false);
                 setSelectedDelivery(null);
               }}
-              className="w-full px-6 py-3 bg-gradient-to-r from-gray-200 to-gray-300 hover:from-gray-300 hover:to-gray-400 text-gray-900 font-semibold rounded-xl transition-all duration-200 active:scale-95"
+              className="w-full px-4 py-2 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 text-sm"
             >
-              Close Details
+              Close
             </button>
           </div>
         )}
