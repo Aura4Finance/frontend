@@ -448,15 +448,12 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.90.5
         version: 5.90.18(react@19.2.3)
-      '@types/qrcode.react':
-        specifier: ^3.0.0
-        version: 3.0.0(react@19.2.3)
       axios:
         specifier: ^1.13.0
         version: 1.13.2
       qrcode.react:
-        specifier: ^1.0.1
-        version: 1.0.1(react@19.2.3)
+        specifier: ^4.2.0
+        version: 4.2.0(react@19.2.3)
       react:
         specifier: ^19.1.1
         version: 19.2.3
@@ -488,6 +485,9 @@ importers:
       '@types/node':
         specifier: ^24.6.0
         version: 24.10.9
+      '@types/qrcode.react':
+        specifier: ^3.0.0
+        version: 3.0.0(react@19.2.3)
       '@types/react':
         specifier: ^19.1.16
         version: 19.2.8
@@ -3605,14 +3605,6 @@ packages:
   punycode@2.3.1:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
-
-  qr.js@0.0.0:
-    resolution: {integrity: sha512-c4iYnWb+k2E+vYpRimHqSu575b1/wKl4XFeJGpFmrJQz5I88v9aY2czh7s0w36srfCM1sXgC/xpoJz5dJfq+OQ==}
-
-  qrcode.react@1.0.1:
-    resolution: {integrity: sha512-8d3Tackk8IRLXTo67Y+c1rpaiXjoz/Dd2HpcMdW//62/x8J1Nbho14Kh8x974t9prsLHN6XqVgcnRiBGFptQmg==}
-    peerDependencies:
-      react: ^15.5.3 || ^16.0.0 || ^17.0.0
 
   qrcode.react@4.2.0:
     resolution: {integrity: sha512-QpgqWi8rD9DsS9EP3z7BT+5lY5SFhsqGjpgW5DY/i3mK4M9DTBNz3ErMi8BWYEfI3L0d8GIbGmcdFAS1uIRGjA==}
@@ -7402,15 +7394,6 @@ snapshots:
   proxy-from-env@1.1.0: {}
 
   punycode@2.3.1: {}
-
-  qr.js@0.0.0: {}
-
-  qrcode.react@1.0.1(react@19.2.3):
-    dependencies:
-      loose-envify: 1.4.0
-      prop-types: 15.8.1
-      qr.js: 0.0.0
-      react: 19.2.3
 
   qrcode.react@4.2.0(react@19.2.3):
     dependencies:
