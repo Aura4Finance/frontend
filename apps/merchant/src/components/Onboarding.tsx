@@ -35,7 +35,7 @@ const Onboarding = () => {
 
   useEffect(() => {
     if (profile?.businessProfile?.onboarded) {
-      setLocation("/dashboard");
+      setLocation("/");
     }
   }, [profile?.businessProfile?.onboarded, setLocation]);
 
@@ -55,26 +55,32 @@ const Onboarding = () => {
       },
       {
         onSuccess: async () => {
-          // Refetch profile to get updated user data
-          const updatedProfile = await refetchProfile();
+          // Refetch profile to update the store
+          await refetchProfile();
           
-          // Check if 2FA is NOT enabled
-          const twoFAEnabled = updatedProfile?.data?.twoFactorEnabled;
-          
-          if (!twoFAEnabled) {
-            // Go to 2FA setup step
-            setCurrentStep("twofa");
+          // Give a small delay to ensure store is updated
+          setTimeout(() => {
+            // Get the fresh profile from Zustand store
+            const freshProfile = tokenStore.getState().profile;
+            const twoFAEnabled = freshProfile?.twoFactorEnabled;
             
-            // Auto-trigger 2FA setup
-            setupTwoFAMutation.mutate(undefined, {
-              onSuccess: (data) => {
-                setTwoFAData(data);
-              }
-            });
-          } else {
-            // 2FA already enabled, go to dashboard
-            setLocation("/dashboard");
-          }
+            console.log("2FA Enabled:", twoFAEnabled, "Profile:", freshProfile);
+            
+            if (!twoFAEnabled) {
+              // Go to 2FA setup step
+              setCurrentStep("twofa");
+              
+              // Auto-trigger 2FA setup
+              setupTwoFAMutation.mutate(undefined, {
+                onSuccess: (data) => {
+                  setTwoFAData(data);
+                }
+              });
+            } else {
+              // 2FA already enabled, go to dashboard
+              setLocation("/dashboard");
+            }
+          }, 100);
         },
       }
     );
@@ -94,7 +100,7 @@ const Onboarding = () => {
         onSuccess: async () => {
           // Refetch profile to confirm 2FA is enabled
           await refetchProfile();
-          setLocation("/dashboard");
+          setLocation("/");
         }
       }
     );
@@ -184,7 +190,7 @@ const Onboarding = () => {
                 {isTestMode && (
                   <button
                     type="button"
-                    onClick={() => setLocation("/dashboard")}
+                    onClick={() => setLocation("/")}
                     className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100"
                   >
                     Continue later
