@@ -63,8 +63,7 @@ const Onboarding = () => {
             // Get the fresh profile from Zustand store
             const freshProfile = tokenStore.getState().profile;
             const twoFAEnabled = freshProfile?.twoFactorEnabled;
-            
-            console.log("2FA Enabled:", twoFAEnabled, "Profile:", freshProfile);
+          
             
             if (!twoFAEnabled) {
               // Go to 2FA setup step
@@ -78,7 +77,7 @@ const Onboarding = () => {
               });
             } else {
               // 2FA already enabled, go to dashboard
-              setLocation("/dashboard");
+              setLocation("/");
             }
           }, 100);
         },
