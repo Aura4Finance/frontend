@@ -150,7 +150,7 @@ const LeftBar = () => {
                                     <Link to={item.route} className="block">
                                         <button
                                             onClick={() => setActiveTab(item.name as any)}
-                                            className={`relative p-3 rounded-xl transition-all duration-200 ${
+                                            className={`relative p-2 rounded-lg transition-all duration-200 ${
                                                 isActive
                                                     ? "bg-blue-100 text-indigo-600"
                                                     : "text-slate-400 hover:text-slate-200 hover:bg-blue-900/50"
