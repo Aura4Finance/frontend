@@ -216,7 +216,7 @@ const Onboarding = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-10 sm:px-6 flex items-center justify-center">
       <div className="w-full max-w-md">
@@ -300,7 +300,6 @@ const Onboarding = () => {
                     value={verificationToken}
                     onChange={(event) => setVerificationToken(event.target.value)}
                     placeholder="Enter 6-digit code"
-                    maxLength="6"
                     className="mt-1 text-center font-mono"
                   />
                 </div>
