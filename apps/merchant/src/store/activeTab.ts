@@ -7,7 +7,7 @@ export interface ActiveTabState {
   | "Transactions"
   | "Customers"
   | "Settlements"
-  | "Payment Link"
+  | "Payment Links"
   | "Webhook"
   | "Settings";
   collapsed: boolean;

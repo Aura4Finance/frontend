@@ -50,7 +50,7 @@ const PaymentLink = () => {
 
   // Set active tab
   useEffect(() => {
-    setActiveTab("Payment Link");
+    setActiveTab("Payment Links");
   }, [setActiveTab]);
 
   // Handle image selection
