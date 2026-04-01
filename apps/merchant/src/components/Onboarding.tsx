@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { FiArrowRight } from "react-icons/fi";
-import { FaShieldHalved, FaCopy, FaCheck } from "react-icons/fa6";
+import { FaShieldHalved, FaCopy, FaCheck, FaLock } from "react-icons/fa6";
 import { Input } from "@orafi/ui";
 import { useCompleteOnboarding } from "../hooks/mutations/useOnboarding";
 import { setupTwoFactorAuthentication, verifyTwoFactorAuthentication } from "../hooks/mutations/useSettings";
@@ -32,12 +32,23 @@ const Onboarding = () => {
   const [copied, setCopied] = useState(false);
 
   const isTestMode = profile?.businessProfile?.isLive === false;
+  const triggerTwoFA = () =>  {
+      setupTwoFAMutation.mutate(undefined, {
+          onSuccess: (data) => {
+            setTwoFAData(data);
+          }
+        });
+  }
 
   useEffect(() => {
-    if (profile?.businessProfile?.onboarded) {
+    if (profile?.businessProfile?.onboarded && profile?.twoFactorEnabled) {
       setLocation("/");
     }
-  }, [profile?.businessProfile?.onboarded, setLocation]);
+    if(!(profile?.twoFactorEnabled) && profile?.businessProfile?.onboarded) {
+      triggerTwoFA();
+      setCurrentStep("twofa")
+    }
+  }, [profile?.businessProfile?.onboarded, profile?.twoFactorEnabled, setLocation]);
 
   const handleBusinessSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -55,7 +66,7 @@ const Onboarding = () => {
       },
       {
         onSuccess: async () => {
-          // Refetch profile to update the store
+          toast.success("Onboarding completed successfully! Your business profile has been updated.");
           await refetchProfile();
           
           // Give a small delay to ensure store is updated
@@ -63,20 +74,11 @@ const Onboarding = () => {
             // Get the fresh profile from Zustand store
             const freshProfile = tokenStore.getState().profile;
             const twoFAEnabled = freshProfile?.twoFactorEnabled;
-          
             
             if (!twoFAEnabled) {
-              // Go to 2FA setup step
               setCurrentStep("twofa");
-              
-              // Auto-trigger 2FA setup
-              setupTwoFAMutation.mutate(undefined, {
-                onSuccess: (data) => {
-                  setTwoFAData(data);
-                }
-              });
+              triggerTwoFA();
             } else {
-              // 2FA already enabled, go to dashboard
               setLocation("/");
             }
           }, 100);
@@ -115,20 +117,70 @@ const Onboarding = () => {
   };
 
 
+  // Step tracking
+  const isStep1Complete = profile?.businessProfile?.onboarded || false;
+  const isStep2Complete = profile?.twoFactorEnabled || false;
+
   if (currentStep === "business") {
     return (
       <div className="min-h-screen bg-gray-50 px-4 py-10 sm:px-6">
         <div className="mx-auto w-full max-w-3xl">
+          {/* Step Indicator */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              {/* Step 1 */}
+              <div className="flex flex-col items-center flex-1">
+                <div className={`flex h-12 w-12 items-center justify-center rounded-full border-2 transition-all ${
+                  isStep1Complete 
+                    ? "border-green-500 bg-green-50" 
+                    : "border-blue-900 bg-blue-50"
+                }`}>
+                  {isStep1Complete ? (
+                    <FaCheck className="h-6 w-6 text-green-500" />
+                  ) : (
+                    <span className="text-lg font-semibold text-blue-900">1</span>
+                  )}
+                </div>
+                <p className="mt-2 text-sm font-medium text-gray-700 text-center">
+                  Filing Information
+                </p>
+              </div>
+
+              {/* Connector Line */}
+              <div className={`mx-4 mb-6 flex-1 h-1 rounded transition-all ${
+                isStep1Complete ? "bg-green-500" : "bg-gray-300"
+              }`}></div>
+
+              {/* Step 2 */}
+              <div className="flex flex-col items-center flex-1">
+                <div className={`flex h-12 w-12 items-center justify-center rounded-full border-2 transition-all ${
+                  isStep2Complete 
+                    ? "border-green-500 bg-green-50" 
+                    : "border-gray-300 bg-gray-50"
+                }`}>
+                  {isStep2Complete ? (
+                    <FaCheck className="h-6 w-6 text-green-500" />
+                  ) : (
+                    <span className="text-lg font-semibold text-gray-400">2</span>
+                  )}
+                </div>
+                <p className="mt-2 text-sm font-medium text-gray-700 text-center">
+                  2FA Setup
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
             <div className="mb-6">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-900">
                 OraFi Merchant
               </p>
               <h1 className="mt-2 text-2xl font-semibold text-gray-900 sm:text-3xl">
-                Complete your onboarding
+                Step 1: Filing Information
               </h1>
               <p className="mt-2 text-sm text-gray-500">
-                Add your business details to finish setup and continue to your dashboard.
+                Add your business details to get started. You'll then set up two-factor authentication (2FA) for account security.
               </p>
             </div>
 
@@ -223,18 +275,93 @@ const Onboarding = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-10 sm:px-6 flex items-center justify-center">
-      <div className="w-full max-w-md">
-        <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-6 sm:p-8">
+    <div className="min-h-screen bg-gray-50 px-4 py-10 sm:px-6">
+      <div className="mx-auto w-full max-w-3xl">
+        {/* Step Indicator */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            {/* Step 1 */}
+            <div className="flex flex-col items-center flex-1">
+              <div className={`flex h-12 w-12 items-center justify-center rounded-full border-2 transition-all ${
+                isStep1Complete 
+                  ? "border-green-500 bg-green-50" 
+                  : "border-gray-300 bg-gray-50"
+              }`}>
+                {isStep1Complete ? (
+                  <FaCheck className="h-6 w-6 text-green-500" />
+                ) : (
+                  <span className="text-lg font-semibold text-gray-400">1</span>
+                )}
+              </div>
+              <p className="mt-2 text-sm font-medium text-gray-700 text-center">
+                Filing Information
+              </p>
+            </div>
+
+            {/* Connector Line */}
+            <div className={`mx-4 mb-6 flex-1 h-1 rounded transition-all ${
+              isStep1Complete ? "bg-green-500" : "bg-gray-300"
+            }`}></div>
+
+            {/* Step 2 */}
+            <div className="flex flex-col items-center flex-1">
+              <div className={`flex h-12 w-12 items-center justify-center rounded-full border-2 transition-all ${
+                isStep2Complete 
+                  ? "border-green-500 bg-green-50" 
+                  : "border-blue-900 bg-blue-50"
+              }`}>
+                {isStep2Complete ? (
+                  <FaCheck className="h-6 w-6 text-green-500" />
+                ) : (
+                  <span className="text-lg font-semibold text-blue-900">2</span>
+                )}
+              </div>
+              <p className="mt-2 text-sm font-medium text-gray-700 text-center">
+                2FA Setup
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
+          <div className="mb-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-900">
+              Step 2 of 2
+            </p>
+            <h1 className="mt-2 text-2xl font-semibold text-gray-900 sm:text-3xl">
+              Set Up Two-Factor Authentication
+            </h1>
+            <p className="mt-2 text-sm text-gray-500">
+              Complete this step to secure your account and enable high-risk actions like payouts, refunds, and API key creation.
+            </p>
+          </div>
+
+          {/* High-Risk Actions Warning */}
+          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
+            <div className="flex gap-3">
+              <FaLock className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-semibold text-amber-900 text-sm">2FA Required for High-Risk Actions</p>
+                <p className="text-xs text-amber-800 mt-1 leading-relaxed">
+                  Two-factor authentication is required to perform sensitive operations: 
+                  <span className="font-semibold"> Payouts</span>,
+                  <span className="font-semibold"> Refunds</span>, and 
+                  <span className="font-semibold"> API Key Creation</span>. 
+                  These are protected actions that require an additional level of authentication.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="text-center pb-6">
             <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-blue-950/10">
               <FaShieldHalved className="h-7 w-7 text-blue-950" />
             </div>
-            <h1 className="text-xl font-semibold text-gray-900">
-              Set Up Two-Factor Authentication
-            </h1>
+            <h2 className="text-lg font-semibold text-gray-900 mt-2">
+              Scan the QR code
+            </h2>
             <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-              Scan the QR code below with an authenticator app (e.g. Google Authenticator, Authy) to enable 2FA on your account.
+              Use an authenticator app (Google Authenticator, Authy, Microsoft Authenticator, etc.) to scan the QR code below.
             </p>
           </div>
 

@@ -181,7 +181,7 @@ export const getSupportedCurrencies = () => {
 export const setupTwoFactorAuthentication = () =>{
     return useMutation({
         mutationFn: async () => {
-            const response = await client.post("/onboarding/2fa/setup");
+            const response = await client.post("/user/onboarding/2fa/setup");
             return response.data.data as {
                 otpauth_url: string;
                 manualCode: string;
@@ -200,7 +200,7 @@ export const setupTwoFactorAuthentication = () =>{
 export const verifyTwoFactorAuthentication = () => {
     return useMutation({
         mutationFn: async ({ token }: { token: string }) => {
-           await client.post("/onboarding/2fa/verify", { token });
+           await client.post("/user/onboarding/2fa/verify", { token });
         },
         onSuccess: () => {
             toast.success("Two-factor authentication setup successful! Your account is now more secure.");  

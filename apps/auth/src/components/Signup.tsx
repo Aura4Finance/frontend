@@ -70,7 +70,7 @@ const Signup = () => {
 
   const handleGoogleSignIn = (e: any) => {
     e.preventDefault();
-    const redirectUri = "http://localhost:3200/auth/callback";
+    const redirectUri = import.meta.env.VITE_REDIRECT_URL;
     const clientId = import.meta.env.VITE_CLIENT_ID;
 
     const url =

@@ -14,9 +14,6 @@ export const useCompleteOnboarding = () => {
         mutationFn: async (data: OnboardingData) => {
             await client.post("/user/onboarding", data);
         },
-        onSuccess: () => {
-            toast.success("Onboarding completed successfully! Your business profile has been updated.")
-        },
         onError: (error: any) => {
             toast.error(error.response.data.message || "Unable to complete onboarding process")
         }

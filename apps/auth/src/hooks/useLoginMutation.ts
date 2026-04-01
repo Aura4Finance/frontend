@@ -8,21 +8,24 @@ export interface LoginSchema {
 }
 
 export interface SignUpSchema {
-  firstname: string;
+  firstname: string; 
   lastname: string;
   email: string;
   password: string;
 }
 
+
 export const useLoginMutation = () => {
   return useMutation({
     mutationFn: async (data: LoginSchema) => {
       const response = await client.post("/auth/login", data);
-      const userId = response.data.data.userId;
-      return userId;
+      if(response.data.data.twoFANeeded){
+        return response.data.data.userId
+      }
+    window.location.href = `https://dashboard.orafi.app/auth/callback?code=${response.data.data.otpSecret}`;
     },
     onSuccess: () => {
-      toast.success("Continue to 2FA verification");
+      toast.success(`${twoFANeeded ? "Continue with 2FA" : "Login Successful"}`);
     },
     onError: (error: any) => {
       toast.error(error.response.data.message || "Invalid Login Credentials");

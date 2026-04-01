@@ -56,7 +56,7 @@ const DashboardWrapper = ({ children }: { children: React.ReactNode }) => {
       setCopied(false);
     }
   };
-
+ 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
       <LeftBar />
@@ -65,7 +65,7 @@ const DashboardWrapper = ({ children }: { children: React.ReactNode }) => {
           collapsed ? "md:ml-20" : "md:ml-55"
         }`}
       >
-        {!profile?.businessProfile?.onboarded && (
+        {(!profile?.businessProfile?.onboarded || !profile?.twoFactorEnabled)  && (
           <div className="flex items-center justify-between gap-4 bg-yellow-400 px-4 py-2.5 sm:px-6">
             <div className="flex items-center gap-2 text-yellow-900">
               <FiAlertTriangle size={16} className="shrink-0" />
