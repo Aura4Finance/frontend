@@ -276,7 +276,7 @@ const Checkout = () => {
                             <div className="w-full space-y-3">
                                 <div className="flex justify-between items-center pb-3 border-b border-gray-100">
                                     <span className="text-sm text-gray-600">Amount (USD)</span>
-                                    <span className="font-bold text-gray-900">${paymentQueryResult?.data.amountInUSDC.toFixed(2)}</span>
+                                    <span className="font-bold text-gray-900">${(Math.ceil(paymentQueryResult?.data.amountInUSDC * 100) / 100).toFixed(2)}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-sm text-gray-600">Equivalent ({paymentQueryResult.data.currency})</span>
