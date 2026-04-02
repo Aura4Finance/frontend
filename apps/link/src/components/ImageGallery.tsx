@@ -63,7 +63,7 @@ const ImageGallery = ({ images }: ImageGalleryProps) => {
       {/* Thumbnails */}
       {hasMultipleImages && (
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {images.map((_, index) => (
+          {images.map((image, index) => (
             <button
               key={index}
               onClick={() => setCurrentIndex(index)}
@@ -75,7 +75,15 @@ const ImageGallery = ({ images }: ImageGalleryProps) => {
               )}
             >
               <div className="w-full h-full bg-gray-50 flex items-center justify-center">
-                <FiShoppingBag className="w-6 h-6 text-gray-300" />
+                <img
+                  src={`${WALRUS_GATEWAY}/${image}`}
+                  alt={`Thumbnail ${index + 1}`}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
               </div>
             </button>
           ))}
