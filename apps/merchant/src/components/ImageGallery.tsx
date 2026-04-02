@@ -1,9 +1,16 @@
 import { useState } from "react";
-import { FiChevronLeft, FiChevronRight, FiShoppingBag } from "react-icons/fi";
+import { FiChevronLeft, FiChevronRight, FiShoppingBag, FiTrash2 } from "react-icons/fi";
 import { cn } from "@orafi/ui";
+import { deleteImageFromPaylink } from "../hooks/mutations/usePaylinks";
+
+interface ImageObject {
+  id: string;
+  blobId: string;
+  blobObjectId: string;
+}
 
 interface ImageGalleryProps {
-  images: string[];
+  images: ImageObject[];
 }
 
 const WALRUS_GATEWAY =
@@ -11,6 +18,7 @@ const WALRUS_GATEWAY =
 
 const ImageGallery = ({ images }: ImageGalleryProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const { mutate: deleteImage, isPending: isDeleting } = deleteImageFromPaylink();
 
   const nextImage = () => {
     setCurrentIndex((prev) => (prev + 1) % images.length);
@@ -18,6 +26,10 @@ const ImageGallery = ({ images }: ImageGalleryProps) => {
 
   const prevImage = () => {
     setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  const handleDeleteImage = (imageId: string) => {
+    deleteImage({ imageId });
   };
 
   const hasMultipleImages = images.length > 1;
@@ -29,7 +41,7 @@ const ImageGallery = ({ images }: ImageGalleryProps) => {
         {images.length > 0 ? (
           <div className="w-full h-full relative bg-gray-50 overflow-hidden">
             <img
-              src={`${WALRUS_GATEWAY}/${images[currentIndex]}`}
+              src={`${WALRUS_GATEWAY}/${images[currentIndex].blobId}`}
               alt={`Payment link image ${currentIndex + 1}`}
               className="w-full h-full object-cover"
               loading="lazy"
@@ -59,12 +71,26 @@ const ImageGallery = ({ images }: ImageGalleryProps) => {
             </button>
           </>
         )}
+
+        {/* Delete Button */}
+        {images.length > 0 && (
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              handleDeleteImage(images[currentIndex].id);
+            }}
+            disabled={isDeleting}
+            className="absolute top-2 right-2 bg-red-500/80 hover:bg-red-600 disabled:bg-red-400 text-white p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <FiTrash2 className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       {/* Thumbnails */}
       {hasMultipleImages && (
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {images.map((_, index) => (
+          {images.map((image, index) => (
             <button
               key={index}
               onClick={() => setCurrentIndex(index)}
@@ -77,7 +103,7 @@ const ImageGallery = ({ images }: ImageGalleryProps) => {
             >
               <div className="w-full h-full bg-gray-50 flex items-center justify-center">
                 <img
-                  src={`${WALRUS_GATEWAY}/${images[index]}`}
+                  src={`${WALRUS_GATEWAY}/${image.blobId}`}
                   alt={`Thumbnail ${index + 1}`}
                   className="w-full h-full object-cover"
                   loading="lazy"

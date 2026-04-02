@@ -14,6 +14,7 @@ import {
   useDeletePaylink, 
   type Paylink 
 } from "../hooks/mutations/usePaylinks";
+import { tokenStore } from "../store/client"
 import { getSupportedCurrencies } from "../hooks/mutations/useSettings";
 import { useActiveTabStore } from "../store/activeTab";
 
@@ -22,7 +23,7 @@ const PaymentLink = () => {
   const { setActiveTab } = useActiveTabStore();
   const WALRUS_GATEWAY =
   "https://aggregator.walrus-testnet.walrus.space/v1/blobs";
-  //const mode = profile?.businessProfile?.isLive ? "live" : "test";
+  const mode = tokenStore.getState().profile?.businessProfile?.isLive ? "live" : "test"
 
   // Modals state
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -43,7 +44,7 @@ const PaymentLink = () => {
   const [imagePreview, setImagePreview] = useState<string[]>([]);
 
   // API hooks
-  const { data: paylinks = [], isLoading, error } = useGetPaylinks();
+  const { data: paylinks = [], isLoading, error } = useGetPaylinks(mode);
   const { data: supportedCurrencies = [] } = getSupportedCurrencies();
   const { mutate: createPaylink, isPending: isCreating } = useCreatePaylink();
   const { mutate: editPaylink, isPending: isEditing } = useEditPaylink();
@@ -672,17 +673,17 @@ const PaymentLink = () => {
           setSelectedPaylink(null);
         }}
         title="Payment Link Details"
-        size="wide"
+        size="fullscreen"
       >
         {selectedPaylink && (
-          <div className="flex flex-col lg:flex-row gap-6">
-            {/* Left Column: Image Gallery */}
-            <div className="w-full lg:w-1/2 flex-shrink-0">
-              <ImageGallery images={selectedPaylink.images?.map((img) => img.blobId) || []} />
+          <div className="flex flex-col lg:flex-row gap-6 h-full">
+            {/* Left Column: Image Gallery - 65% width */}
+            <div className="w-full lg:w-[65%] flex-shrink-0">
+              <ImageGallery images={selectedPaylink.images || []} />
             </div>
 
-            {/* Right Column: Details */}
-            <div className="w-full lg:w-1/2 space-y-4">
+            {/* Right Column: Details - 35% width */}
+            <div className="w-full lg:w-[35%] space-y-4 overflow-y-auto">
               {/* Header */}
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
                 <h3 className="text-base font-semibold text-gray-900">{selectedPaylink.title}</h3>

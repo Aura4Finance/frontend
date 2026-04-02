@@ -45,9 +45,9 @@ export interface EditPaylinkPayload {
 }
 
 // Get all paylinks
-export const useGetPaylinks = () => {
+export const useGetPaylinks = (mode: string) => {
   return useQuery({
-    queryKey: ["paylinks"],
+    queryKey: ["paylinks", mode],
     queryFn: async () => {
       const response = await client.get("/user/paylink");
       return response.data.data as Paylink[];
@@ -173,3 +173,22 @@ export const useDeletePaylink = () => {
     },
   });
 };
+
+export const deleteImageFromPaylink = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ imageId }: { imageId: string }) => {
+      const response = await client.delete(`/user/paylink/images/${imageId}`);
+      return response.data.data;
+    },
+    onSuccess: (_, paylinkId) => {
+      queryClient.removeQueries({ queryKey: ["paylink", paylinkId] });
+      toast.success("Image removed from payment link successfully");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error?.response?.data?.message || "Failed to delete image from payment link."
+      );
+    },
+  })
+}

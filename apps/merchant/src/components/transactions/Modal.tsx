@@ -8,7 +8,7 @@ interface ModalProps {
   description?: string;
   icon?: ReactNode;
   children: ReactNode;
-  size?: "default" | "wide" | "xl";
+  size?: "default" | "wide" | "xl" | "fullscreen";
   variant?: "default" | "info" | "success" | "warning" | "danger";
 }
 
@@ -16,6 +16,7 @@ const sizeClasses = {
   default: "max-w-lg",
   wide: "max-w-2xl",
   xl: "max-w-3xl",
+  fullscreen: "w-[95vw] h-[95vh]",
 };
 
 const variantClasses = {
@@ -69,7 +70,9 @@ const Modal = ({
         onClick={onClose} 
       />
       <div
-        className={`relative mx-auto max-h-[90vh] w-full overflow-hidden rounded-xl bg-white shadow-lg ${sizeClasses[size]}`}
+        className={`relative mx-auto w-full overflow-hidden rounded-xl bg-white shadow-lg ${sizeClasses[size]} ${
+          size === "fullscreen" ? "h-full" : "max-h-[90vh]"
+        }`}
       >
         {/* Header with gradient background */}
         <div className={`bg-gradient-to-r ${variantClasses[variant]} border-b ${variantBorders[variant]} px-6 py-5`}>
@@ -102,7 +105,7 @@ const Modal = ({
         </div>
         
         {/* Content area with smooth scrolling */}
-        <div className="max-h-[calc(90vh-80px)] overflow-y-auto">
+        <div className={`${size === "fullscreen" ? "h-[calc(100%-80px)]" : "max-h-[calc(90vh-80px)]"} overflow-y-auto`}>
           <div className="px-6 py-6">
             {children}
           </div>

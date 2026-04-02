@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { FiCopy, FiLogOut, FiRefreshCcw } from "react-icons/fi";
+import { FiCopy, FiLogOut, FiRefreshCcw, FiCheck } from "react-icons/fi";
 import { Input } from "@orafi/ui";
 import { useLocation } from "wouter";
 import DashboardWrapper from "./DashboardWrapper";
+import Modal from "./transactions/Modal";
 import { useActiveTabStore } from "../store/activeTab";
 import { tokenStore } from "../store/client";
 import {
@@ -63,6 +64,9 @@ const Settings = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [twoFAKey, setTwoFAKey] = useState("");
   const [copiedItem, setCopiedItem] = useState<"live" | "test" | "wallet" | null>(null);
+  const [showApiKeysModal, setShowApiKeysModal] = useState(false);
+  const [displayedApiKeys, setDisplayedApiKeys] = useState<{ liveKey?: string; testKey?: string } | null>(null);
+  const [copiedApiKey, setCopiedApiKey] = useState<"live" | "test" | null>(null);
 
   const profile = queriedProfile ?? storedProfile;
   const apiKey = Array.isArray(apiKeys) && apiKeys.length > 0 ? apiKeys[0] : undefined;
@@ -128,6 +132,20 @@ const Settings = () => {
     }
   };
 
+  const copyApiKey = async (value: string, type: "live" | "test") => {
+    if (!value) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedApiKey(type);
+      window.setTimeout(() => setCopiedApiKey(null), 1500);
+    } catch {
+      setCopiedApiKey(null);
+    }
+  };
+
   const handleRequestEmailChange = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -180,8 +198,18 @@ const Settings = () => {
     generateApiKeyMutation.mutate(
       { twoFAKey: twoFAKey.trim() },
       {
-        onSuccess: () => {
-          refetchApiKeys();
+        onSuccess: async () => {
+          const result = await refetchApiKeys();
+          if (result.data && Array.isArray(result.data) && result.data.length > 0) {
+            const newKey = result.data[0];
+            setDisplayedApiKeys({
+              liveKey: newKey.liveKey,
+              testKey: newKey.testKey,
+            });
+            setShowApiKeysModal(true);
+          }
+          // Clear the form
+          setTwoFAKey("");
         },
       }
     );
@@ -531,6 +559,86 @@ const Settings = () => {
           </button>
         </div>
       </div>
+
+      {/* API Keys Display Modal */}
+      <Modal
+        isOpen={showApiKeysModal}
+        onClose={() => {
+          setShowApiKeysModal(false);
+          setDisplayedApiKeys(null);
+          setCopiedApiKey(null);
+        }}
+        title="API Keys Generated Successfully"
+      >
+        <div className="space-y-4">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+            <p className="text-xs text-amber-800">
+              ⚠️ Save your API keys in a secure location. They will never be shown again.
+            </p>
+          </div>
+
+          {/* Live Key */}
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-2">Live Key</label>
+            <div className="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-lg p-3">
+              <code className="flex-1 bg-transparent text-gray-900 outline-none font-mono text-xs break-all">
+                {displayedApiKeys?.liveKey}
+              </code>
+              <button
+                onClick={() => copyApiKey(displayedApiKeys?.liveKey || "", "live")}
+                className={`p-2 rounded transition-colors flex-shrink-0 ${
+                  copiedApiKey === "live"
+                    ? "bg-green-100 text-green-700"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+                type="button"
+                title="Copy to clipboard"
+              >
+                {copiedApiKey === "live" ? <FiCheck size={16} /> : <FiCopy size={16} />}
+              </button>
+            </div>
+            {copiedApiKey === "live" && (
+              <p className="text-xs text-green-600 mt-2">Copied to clipboard</p>
+            )}
+          </div>
+
+          {/* Test Key */}
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-2">Test Key</label>
+            <div className="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-lg p-3">
+              <code className="flex-1 bg-transparent text-gray-900 outline-none font-mono text-xs break-all">
+                {displayedApiKeys?.testKey}
+              </code>
+              <button
+                onClick={() => copyApiKey(displayedApiKeys?.testKey || "", "test")}
+                className={`p-2 rounded transition-colors flex-shrink-0 ${
+                  copiedApiKey === "test"
+                    ? "bg-green-100 text-green-700"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+                type="button"
+                title="Copy to clipboard"
+              >
+                {copiedApiKey === "test" ? <FiCheck size={16} /> : <FiCopy size={16} />}
+              </button>
+            </div>
+            {copiedApiKey === "test" && (
+              <p className="text-xs text-green-600 mt-2">Copied to clipboard</p>
+            )}
+          </div>
+
+          <button
+            onClick={() => {
+              setShowApiKeysModal(false);
+              setDisplayedApiKeys(null);
+              setCopiedApiKey(null);
+            }}
+            className="w-full px-4 py-2 bg-blue-950 text-white font-medium rounded-lg hover:bg-blue-900 text-sm"
+          >
+            Done
+          </button>
+        </div>
+      </Modal>
     </DashboardWrapper>
   );
 };
