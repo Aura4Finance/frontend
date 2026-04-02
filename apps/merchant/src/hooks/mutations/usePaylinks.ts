@@ -12,7 +12,11 @@ export interface Paylink {
   amount: number;
   currency: string;
   mode: PaylinkMode;
-  imageBlobIds: string[];
+  images: {
+    id: string;
+    blobId: string;
+    blobObjectId: string;
+  }[];
   profileId: string;
 }
 

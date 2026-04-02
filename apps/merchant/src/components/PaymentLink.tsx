@@ -6,6 +6,7 @@ import DashboardWrapper from "./DashboardWrapper";
 import Modal from "./transactions/Modal";
 import CopyButton from "./transactions/CopyButton";
 import ErrorState from "./transactions/ErrorState";
+import ImageGallery from "./ImageGallery";
 import { 
   useGetPaylinks, 
   useCreatePaylink, 
@@ -275,9 +276,9 @@ const PaymentLink = () => {
               >
                 {/* Image */}
                 <div className="relative aspect-video overflow-hidden rounded-t-lg bg-gradient-to-br from-gray-100 to-gray-50">
-                  {link.imageBlobIds?.length > 0 ? (
+                  {link.images?.length > 0 ? (
                     <img
-                      src={`${WALRUS_GATEWAY}/${link.imageBlobIds[0]}`}
+                      src={`${WALRUS_GATEWAY}/${link.images[0].blobId}`}
                       alt={link.title}
                       className="h-full w-full object-cover"
                     />
@@ -671,81 +672,90 @@ const PaymentLink = () => {
           setSelectedPaylink(null);
         }}
         title="Payment Link Details"
+        size="wide"
       >
         {selectedPaylink && (
-          <div className="space-y-4">
-            {/* Header */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
-              <h3 className="text-base font-semibold text-gray-900">{selectedPaylink.title}</h3>
-              <p className="text-xs text-gray-600 mt-1">{selectedPaylink.description}</p>
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Left Column: Image Gallery */}
+            <div className="w-full lg:w-1/2 flex-shrink-0">
+              <ImageGallery images={selectedPaylink.images?.map((img) => img.blobId) || []} />
             </div>
 
-            {/* Details Grid */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold">Amount</p>
-                <p className="font-semibold text-sm text-gray-900 mt-1">
-                  {selectedPaylink.currency} {selectedPaylink.amount.toFixed(2)}
-                </p>
+            {/* Right Column: Details */}
+            <div className="w-full lg:w-1/2 space-y-4">
+              {/* Header */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
+                <h3 className="text-base font-semibold text-gray-900">{selectedPaylink.title}</h3>
+                <p className="text-xs text-gray-600 mt-1">{selectedPaylink.description}</p>
               </div>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold">Mode</p>
-                <p className="font-semibold text-sm mt-1">
-                  <span
-                    className={`rounded-full px-2.5 py-1 text-xs font-semibold uppercase inline-flex ${
-                      selectedPaylink.mode === "live"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-yellow-100 text-yellow-700"
-                    }`}
-                  >
-                    {selectedPaylink.mode}
-                  </span>
-                </p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-3 col-span-2">
-                <p className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold mb-2">Payment Link ID</p>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 text-xs text-gray-900 font-mono font-bold bg-white px-2 py-1.5 rounded border border-gray-100 break-all">
-                    {selectedPaylink.id}
-                  </code>
-                  <CopyButton text={selectedPaylink.id} />
+
+              {/* Details Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold">Amount</p>
+                  <p className="font-semibold text-sm text-gray-900 mt-1">
+                    {selectedPaylink.currency} {selectedPaylink.amount.toFixed(2)}
+                  </p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold">Mode</p>
+                  <p className="font-semibold text-sm mt-1">
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs font-semibold uppercase inline-flex ${
+                        selectedPaylink.mode === "live"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}
+                    >
+                      {selectedPaylink.mode}
+                    </span>
+                  </p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3 col-span-2">
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold mb-2">Payment Link ID</p>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 text-xs text-gray-900 font-mono font-bold bg-white px-2 py-1.5 rounded border border-gray-100 break-all">
+                      {selectedPaylink.id}
+                    </code>
+                    <CopyButton text={selectedPaylink.id} />
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Public Link */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-[11px] text-blue-600 uppercase tracking-wider font-semibold mb-2">Public Link</p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 text-xs text-blue-900 font-mono bg-white px-2 py-1.5 rounded border border-blue-100 break-all">
-                  https://paylink.orafi.app/{selectedPaylink.id}
-                </code>
-                <CopyButton text={`https://paylink.orafi.app/${selectedPaylink.id}`} />
+              {/* Public Link */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-[11px] text-blue-600 uppercase tracking-wider font-semibold mb-2">Public Link</p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 text-xs text-blue-900 font-mono bg-white px-2 py-1.5 rounded border border-blue-100 break-all">
+                    https://paylink.orafi.app/{selectedPaylink.id}
+                  </code>
+                  <CopyButton text={`https://paylink.orafi.app/${selectedPaylink.id}`} />
+                </div>
               </div>
-            </div>
 
-            {/* Action Buttons */}
-            <div className="pt-4 border-t border-gray-100 flex gap-3">
-              <button
-                onClick={() => {
-                  setLocation(`/transactions?type=PAYMENT&paymentLinkId=${selectedPaylink.id}`);
-                  setShowDetailsModal(false);
-                  setSelectedPaylink(null);
-                }}
-                className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg flex items-center justify-center gap-2 transition-all duration-200 active:scale-95"
-              >
-                <FiArrowRight size={16} />
-                View Transactions
-              </button>
-              <button
-                onClick={() => {
-                  setShowDetailsModal(false);
-                  setSelectedPaylink(null);
-                }}
-                className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Close
-              </button>
+              {/* Action Buttons */}
+              <div className="pt-4 border-t border-gray-100 flex gap-3">
+                <button
+                  onClick={() => {
+                    setLocation(`/transactions?type=PAYMENT&paymentLinkId=${selectedPaylink.id}`);
+                    setShowDetailsModal(false);
+                    setSelectedPaylink(null);
+                  }}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg flex items-center justify-center gap-2 transition-all duration-200 active:scale-95"
+                >
+                  <FiArrowRight size={16} />
+                  View Transactions
+                </button>
+                <button
+                  onClick={() => {
+                    setShowDetailsModal(false);
+                    setSelectedPaylink(null);
+                  }}
+                  className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         )}

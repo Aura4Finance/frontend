@@ -8,7 +8,10 @@ type PayLinkData = {
   mode: string;
   currency: string;
   amount: number;
-  imageBlobIds: string[];
+  images: {
+    blobId: string;
+    blobObjectId: string;
+  }[];
   profile: {
     businessName: string;
     businessSector: string;

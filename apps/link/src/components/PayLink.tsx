@@ -92,7 +92,7 @@ const PayLink = () => {
             {/* Left Column: Image Gallery */}
             <div className="lg:w-1/2 bg-gray-50 p-6 md:p-10 flex items-center justify-center border-b lg:border-b-0 lg:border-r border-gray-100">
               <div className="w-full max-w-md">
-                <ImageGallery images={paylinkData.data?.imageBlobIds || []} />
+                <ImageGallery images={paylinkData.data?.images?.map((img) => img.blobId) || []} />
               </div>
             </div>
 
