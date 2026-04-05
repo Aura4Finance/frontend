@@ -273,6 +273,7 @@ const Checkout = () => {
                             <p className="text-xs text-gray-500 font-medium mb-1">Paying to</p>
                             <h3 className="text-lg font-bold text-gray-900 mb-6">{paymentQueryResult.data.businessName}</h3>
 
+
                             <div className="w-full space-y-3">
                                 <div className="flex justify-between items-center pb-3 border-b border-gray-100">
                                     <span className="text-sm text-gray-600">Amount (USD)</span>
