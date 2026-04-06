@@ -124,7 +124,7 @@ export const TransferPayment = ({
                         Amount to Transfer
                     </p>
                     <p className="text-2xl font-bold text-blue-900 font-mono">
-                        {(Math.ceil(amountInUSDC * 100) / 100).toFixed(2)} USDC
+                        {amountInUSDC} USDC
                     </p>
                 </div>
             </div>

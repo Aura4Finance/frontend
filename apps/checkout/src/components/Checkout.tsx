@@ -301,7 +301,7 @@ const Checkout = () => {
 
                             <div className="flex flex-col items-center">
                                 <span className="text-4xl font-extrabold text-blue-950 font-mono tracking-tighter">
-                                    ${paymentQueryResult?.data.amountInUSDC.toFixed(2)}
+                                    ${(Math.ceil(paymentQueryResult?.data.amountInUSDC * 100) / 100).toFixed(2)}
                                 </span>
                                 <span className="text-sm text-gray-500 font-medium mt-1">
                                     ≈ {paymentQueryResult.data.currency}{paymentQueryResult.data.amount.toLocaleString()}
@@ -427,7 +427,7 @@ const Checkout = () => {
                                                     Processing...
                                                 </div>
                                             ) : (
-                                                `Pay $${paymentQueryResult.data.amountInUSDC.toFixed(2)}`
+                                                `Pay $${(Math.ceil(paymentQueryResult?.data.amountInUSDC * 100) / 100).toFixed(2)}`
                                             )}
                                         </Button>
                                     </div>
@@ -452,7 +452,7 @@ const Checkout = () => {
                                 {/* Transfer Payment Method */}
                                 <TransferPayment
                                     transferAddress={paymentQueryResult.data.transferAddress}
-                                    amountInUSDC={paymentQueryResult.data.amountInUSDC}
+                                    amountInUSDC={(Math.ceil(paymentQueryResult?.data.amountInUSDC * 100) / 100).toFixed(2)}
                                     redirectUrl={!hasNoRedirect ? redirect as string : undefined}
                                     transactionId={params?.txId as string}
                                 />
