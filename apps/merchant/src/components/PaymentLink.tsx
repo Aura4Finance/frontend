@@ -91,21 +91,20 @@ const PaymentLink = () => {
       toast.error("Please fill in all required fields");
       return;
     }
-
     const payload = {
       title: formData.title,
       description: formData.description,
       amount: parseFloat(formData.amount),
       currency: formData.currency,
     };
-
+    toast.info("processing, this might take a moment...");
+    setShowCreateModal(false);
     createPaylink(
       { payload, images },
       {
         onSuccess: () => {
           resetForm();
           setShowCreateModal(false);
-          toast.success("Payment link created successfully");
         },
       }
     );
