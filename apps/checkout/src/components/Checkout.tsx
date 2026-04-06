@@ -281,7 +281,7 @@ const Checkout = () => {
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-sm text-gray-600">Equivalent ({paymentQueryResult.data.currency})</span>
-                                    <span className="font-semibold text-gray-700">₦{paymentQueryResult.data.amount.toLocaleString()}</span>
+                                    <span className="font-semibold text-gray-700">{paymentQueryResult.data.amount.toLocaleString()}</span>
                                 </div>
                             </div>
                         </div>

@@ -97,8 +97,10 @@ const PaymentLink = () => {
       amount: parseFloat(formData.amount),
       currency: formData.currency,
     };
-    toast.info("processing, this might take a moment...");
-    setShowCreateModal(false);
+    setTimeout(() => {
+      setShowCreateModal(false)
+      toast.info("processing, this might take a moment...");
+    }, 2000);
     createPaylink(
       { payload, images },
       {
@@ -144,6 +146,11 @@ const PaymentLink = () => {
       amount: parseFloat(formData.amount),
       currency: formData.currency,
     };
+
+    setTimeout(() => {
+      setShowEditModal(false)
+      toast.info("processing, this might take a moment...");
+    }, 2000);
 
     editPaylink(
       {
