@@ -198,16 +198,13 @@ const Settings = () => {
     generateApiKeyMutation.mutate(
       { twoFAKey: twoFAKey.trim() },
       {
-        onSuccess: async () => {
-          const result = await refetchApiKeys();
-          if (result.data && Array.isArray(result.data) && result.data.length > 0) {
-            const newKey = result.data[0];
-            setDisplayedApiKeys({
-              liveKey: newKey.liveKey,
-              testKey: newKey.testKey,
-            });
-            setShowApiKeysModal(true);
-          }
+        onSuccess: async (newKey) => {
+          setDisplayedApiKeys({
+            liveKey: newKey.liveKey,
+            testKey: newKey.testKey,
+          });
+          setShowApiKeysModal(true);
+          await refetchApiKeys();
           // Clear the form
           setTwoFAKey("");
         },
@@ -223,8 +220,15 @@ const Settings = () => {
     regenerateApiKeysMutation.mutate(
       { twoFAKey: twoFAKey.trim(), keyId: apiKey.id },
       {
-        onSuccess: () => {
-          refetchApiKeys();
+        onSuccess: async (newKey) => {
+          setDisplayedApiKeys({
+            liveKey: newKey.liveKey,
+            testKey: newKey.testKey,
+          });
+          setShowApiKeysModal(true);
+          await refetchApiKeys();
+          // Clear the form
+          setTwoFAKey("");
         },
       }
     );
