@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { client } from "../client/client";
 import { toast } from "sonner";
 import type { Customer, CustomersParams, CustomersResponse } from "@orafi/customers";
+import type { Mode } from "src/store/mode";
 
 // Hooks
 export const useCustomers = (params: CustomersParams = {}) => {
@@ -16,11 +17,11 @@ export const useCustomers = (params: CustomersParams = {}) => {
   });
 };
 
-export const useCustomer = (customerId: string, enabled: boolean = true) => {
+export const useCustomer = (customerId: string, mode: Mode["mode"], enabled: boolean = true) => {
   return useQuery<Customer>({
     queryKey: ["customer", customerId],
     queryFn: async () => {
-      const response = await client.get(`/admin/customers/${customerId}`);
+      const response = await client.get(`/admin/customers/${customerId}`, { params: mode });
       return response.data.data.customer;
     },
     enabled: enabled && !!customerId,

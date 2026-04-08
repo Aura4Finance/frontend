@@ -21,7 +21,7 @@ const Customers = () => {
   const [appliedParams, setAppliedParams] = useState(() => buildCustomerParams(filters, mode as "test" | "live"));
 
   // Search by customer ID or email
-  const { data: searchedCustomer, isFetching: searchFetching } = useCustomer(searchId, !!searchId);
+  const { data: searchedCustomer, isFetching: searchFetching } = useCustomer(searchId, mode, !!searchId);
 
   // Handle search input
   const handleSearch = useCallback((query: string) => {

@@ -41,7 +41,7 @@ const Transactions = () => {
   const { mode } = useActiveMode();
 
   // Search by transaction ID
-  const { data: searchedTransaction, isFetching: searchFetching } = useTransaction(searchId, !!searchId);
+  const { data: searchedTransaction, isFetching: searchFetching } = useTransaction(searchId, mode, !!searchId);
 
   // Open modal when search finds a transaction
   const handleSearch = useCallback((id: string) => {

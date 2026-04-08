@@ -8,6 +8,7 @@ import type {
   TransactionCountData,
   TransactionMetricsData
 } from "@orafi/transactions"
+import type { Mode } from "src/store/mode";
 
 // Hooks
 export const useTransactions = (params: TransactionsParams = {}) => {
@@ -22,11 +23,11 @@ export const useTransactions = (params: TransactionsParams = {}) => {
   });
 };
 
-export const useTransaction = (transactionId: string, enabled: boolean = true) => {
+export const useTransaction = (transactionId: string, mode: Mode["mode"], enabled: boolean = true) => {
   return useQuery<Transaction>({
     queryKey: ["transaction", transactionId],
     queryFn: async () => {
-      const response = await client.get(`/admin/transactions/${transactionId}`);
+      const response = await client.get(`/admin/transactions/${transactionId}`, { params: { mode } });
       return response.data.data;
     },
     enabled: enabled && !!transactionId,
