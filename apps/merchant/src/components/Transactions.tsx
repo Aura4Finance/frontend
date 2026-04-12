@@ -16,9 +16,10 @@ import {
   usePayout,
   useTransaction,
   useTransactions,
+  useCreateFiatPayout,
 } from "../hooks/mutations/useTransactions";
 import { useBalance } from "../hooks/mutations/useDashboard";
-import { useGetCryptoSettlements } from "../hooks/mutations/useSettlements";
+import { useGetCryptoSettlements, useGetALLFiatSettlements, useListFiatBanks, useResolveFiatAccount } from "../hooks/mutations/useSettlements";
 
 const Transactions = () => {
   const [cursorHistory, setCursorHistory] = useState<string[]>([]);
@@ -53,6 +54,24 @@ const Transactions = () => {
     twoFAKey: "",
     cryptoSettlementAccountId: "",
   });
+
+  // Fiat payout modal state
+  const [fiatPayoutUsingAccount, setFiatPayoutUsingAccount] = useState(true);
+  const [fiatPayoutData, setFiatPayoutData] = useState({
+    amount: "",
+    accountId: "",
+    bankCode: "",
+    accountIdentifier: "",
+    alias: "",
+    save: false,
+    twoFAKey: "",
+  });
+
+  // Fiat payout form UI state
+  const [payoutBankNameInput, setPayoutBankNameInput] = useState("");
+  const [showPayoutBankDropdown, setShowPayoutBankDropdown] = useState(false);
+  const [resolvedPayoutAccountName, setResolvedPayoutAccountName] = useState<string | null>(null);
+  const [payoutResolutionError, setPayoutResolutionError] = useState<string | null>(null);
   
   // Success/Failure modal state
   const [resultModalOpen, setResultModalOpen] = useState(false);
@@ -159,8 +178,18 @@ const Transactions = () => {
   const { mutate: retryRefundTransaction, isPending: isRetryingRefund } = useRetryRefund();
   const { mutate: retryPayoutTransaction, isPending: isRetryingPayout } = useRetryPayout();
   const { mutate: initiatePayoutTransaction, isPending: isInitiatingPayout } = usePayout();
+  const { mutate: initiateFiatPayoutTransaction, isPending: isInitiatingFiatPayout } = useCreateFiatPayout();
   const { data: balances = [] } = useBalance();
   const { data: cryptoSettlements = [] } = useGetCryptoSettlements();
+  const { data: fiatSettlements = [] } = useGetALLFiatSettlements();
+  
+  // Bank list and account resolution for fiat payouts
+  const { data: banksList = [], isLoading: banksLoading } = useListFiatBanks();
+  const { data: resolvedPayoutAccount, isFetching: isRefetchingPayoutResolve } = useResolveFiatAccount(
+    fiatPayoutData.bankCode && fiatPayoutData.accountIdentifier.length === 10
+      ? { accountNumber: fiatPayoutData.accountIdentifier, bankCode: fiatPayoutData.bankCode }
+      : null
+  );
 
   const handleNextPage = useCallback(() => {
     if (transactionsData?.hasNextPage && transactionsData.nextCursor) {
@@ -388,6 +417,115 @@ const Transactions = () => {
     });
   };
 
+  const handleInitiateFiatPayout = () => {
+    if (!fiatPayoutData.amount || !fiatPayoutData.twoFAKey) {
+      toast.error("Please provide amount and 2FA key");
+      return;
+    }
+
+    if (fiatPayoutUsingAccount && !fiatPayoutData.accountId) {
+      toast.error("Please select a bank account");
+      return;
+    }
+
+    if (!fiatPayoutUsingAccount && (!resolvedPayoutAccountName || !fiatPayoutData.bankCode || fiatPayoutData.accountIdentifier.length !== 10)) {
+      toast.error("Please verify account details before proceeding");
+      return;
+    }
+
+    const fiatPayoutParams: any = {
+      amount: parseFloat(fiatPayoutData.amount),
+      twoFAKey: fiatPayoutData.twoFAKey,
+    };
+
+    if (fiatPayoutUsingAccount) {
+      fiatPayoutParams.accountId = fiatPayoutData.accountId;
+    } else {
+      fiatPayoutParams.bankCode = fiatPayoutData.bankCode;
+      fiatPayoutParams.accountIdentifier = fiatPayoutData.accountIdentifier;
+      
+      if (fiatPayoutData.save && fiatPayoutData.alias) {
+        fiatPayoutParams.save = true;
+        fiatPayoutParams.alias = fiatPayoutData.alias;
+      }
+    }
+
+    initiateFiatPayoutTransaction(fiatPayoutParams, {
+      onSuccess: () => {
+        setResultData({
+          type: "success",
+          title: "Fiat Payout Initiated",
+          message: `Successfully initiated fiat payout of ${fiatPayoutData.amount}`,
+        });
+        setResultModalOpen(true);
+        setPayoutModalOpen(false);
+        setFiatPayoutData({
+          amount: "",
+          accountId: "",
+          bankCode: "",
+          accountIdentifier: "",
+          alias: "",
+          save: false,
+          twoFAKey: "",
+        });
+        setFiatPayoutUsingAccount(true);
+        setPayoutBankNameInput("");
+        setResolvedPayoutAccountName(null);
+        setPayoutResolutionError(null);
+      },
+      onError: (error: any) => {
+        setResultData({
+          type: "error",
+          title: "Fiat Payout Failed",
+          message: error?.response?.data?.message || "Failed to initiate fiat payout",
+        });
+        setResultModalOpen(true);
+      },
+    });
+  };
+
+  const handlePayoutBankNameChange = (value: string) => {
+    setPayoutBankNameInput(value);
+    setShowPayoutBankDropdown(true);
+  };
+
+  const handlePayoutBankSelect = (bank: { name: string; bankCode: string }) => {
+    setPayoutBankNameInput(bank.name);
+    setFiatPayoutData((prev) => ({
+      ...prev,
+      bankCode: bank.bankCode,
+    }));
+    setShowPayoutBankDropdown(false);
+  };
+
+  const handlePayoutAccountNumberChange = (value: string) => {
+    const numericValue = value.replace(/\D/g, "").slice(0, 10);
+    setFiatPayoutData((prev) => ({
+      ...prev,
+      accountIdentifier: numericValue,
+    }));
+  };
+
+  // Auto-resolve account when both bank and 10-digit account number are entered
+  useEffect(() => {
+    if (fiatPayoutData.bankCode && fiatPayoutData.accountIdentifier.length === 10 && resolvedPayoutAccount?.accountName) {
+      setResolvedPayoutAccountName(resolvedPayoutAccount.accountName);
+      setPayoutResolutionError(null);
+    }
+  }, [resolvedPayoutAccount, fiatPayoutData.bankCode, fiatPayoutData.accountIdentifier]);
+
+  // Handle resolution errors
+  useEffect(() => {
+    if (fiatPayoutData.bankCode && fiatPayoutData.accountIdentifier.length === 10 && isRefetchingPayoutResolve === false && !resolvedPayoutAccount?.accountName) {
+      setPayoutResolutionError("Unable to resolve account. Please check the details.");
+    }
+  }, [isRefetchingPayoutResolve, resolvedPayoutAccount, fiatPayoutData.bankCode, fiatPayoutData.accountIdentifier]);
+
+  // Filter banks based on input
+  const filteredPayoutBanks = (Array.isArray(banksList) ? banksList : []).filter((bank: any) =>
+    bank.name.toLowerCase().includes(payoutBankNameInput.toLowerCase())
+  );
+
   const totalPayoutableBalance = balances.find((b) => b.coinType === "USDC")?.balance || 0;
 
   const truncateAddress = (address: string, start = 6, end = 4) => {
@@ -430,7 +568,7 @@ const Transactions = () => {
                     className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors rounded-b-lg"
                   >
                     <div className="font-medium text-gray-900">Fiat Payout</div>
-                    <div className="text-xs text-gray-500 line-through decoration-gray-400">Coming soon</div>
+                    <div className="text-xs text-gray-500">Send to bank account</div>
                   </button>
                 </div>
               )}
@@ -539,9 +677,9 @@ const Transactions = () => {
                         <td className="px-4 py-2.5">
                           <span
                             className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                              tx.type === "payment"
+                              tx.type === "PAYMENT"
                                 ? "bg-blue-100 text-blue-700"
-                                : tx.type === "payout"
+                                : tx.type === "PAYOUT"
                                   ? "bg-purple-100 text-purple-700"
                                   : "bg-orange-100 text-orange-700"
                             }`}
@@ -674,9 +812,9 @@ const Transactions = () => {
                 <p className="text-[11px] text-gray-500">Type</p>
                 <span
                   className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                    selectedTransaction.type === "PAYMENT"
+                    selectedTransaction.type == "PAYMENT"
                       ? "bg-blue-100 text-blue-700"
-                      : selectedTransaction.type === "PAYOUT"
+                      : selectedTransaction.type == "PAYOUT"
                         ? "bg-purple-100 text-purple-700"
                         : "bg-orange-100 text-orange-700"
                   }`}
@@ -1064,23 +1202,224 @@ const Transactions = () => {
         size="default"
       >
         {payoutType === "fiat" ? (
-          <div className="space-y-4 text-center py-8">
-            <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-yellow-100">
-              <svg className="h-8 w-8 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+          <div className="space-y-4">
+            <div className="rounded-lg bg-blue-50 p-3">
+              <p className="text-[11px] text-blue-600">Available Balance</p>
+              <p className="text-lg font-semibold text-gray-900">{totalPayoutableBalance.toLocaleString()} USDC</p>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900">Fiat Payout Coming Soon</h3>
-            <p className="text-sm text-gray-500">Fiat payout functionality will be available soon. Please use Crypto Payout for now.</p>
-            <button
-              onClick={() => {
-                setPayoutModalOpen(false);
-                setPayoutType("crypto");
-              }}
-              className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
-            >
-              Back to Crypto Payout
-            </button>
+
+            <div className="rounded-lg bg-blue-50 p-3">
+              <p className="text-[11px] text-blue-600">Note</p>
+              <p className="text-sm text-blue-700">If you don't select a saved account or provide bank details, your primary account will be used.</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Payout Method</label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setFiatPayoutUsingAccount(true)}
+                  disabled={fiatSettlements.length === 0}
+                  className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors ${
+                    fiatSettlements.length === 0
+                      ? "cursor-not-allowed bg-gray-100 text-gray-400"
+                      : fiatPayoutUsingAccount
+                        ? "bg-blue-600 text-white"
+                        : "border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  Saved Account
+                </button>
+                <button
+                  onClick={() => setFiatPayoutUsingAccount(false)}
+                  className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors ${
+                    !fiatPayoutUsingAccount
+                      ? "bg-blue-600 text-white"
+                      : "border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  New Bank Account
+                </button>
+              </div>
+            </div>
+
+            {fiatPayoutUsingAccount && (
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-2">Select Bank Account</label>
+                {fiatSettlements.length === 0 ? (
+                  <div className="rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2 text-xs text-yellow-700">
+                    No saved bank accounts. Go to <span className="font-semibold">Settlements</span> to add one first.
+                  </div>
+                ) : (
+                  <select
+                    value={fiatPayoutData.accountId}
+                    onChange={(e) => setFiatPayoutData({ ...fiatPayoutData, accountId: e.target.value })}
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  >
+                    <option value="">Select an account...{fiatSettlements.find(s => s.isPrimary) ? " (primary)" : ""}</option>
+                    {fiatSettlements.map((settlement) => (
+                      <option key={settlement.id} value={settlement.id}>
+                        {settlement.bankName} • {settlement.accountNumber} {settlement.isPrimary ? "(Primary)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            )}
+
+            {!fiatPayoutUsingAccount && (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Bank Name</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={payoutBankNameInput}
+                      onChange={(e) => handlePayoutBankNameChange(e.target.value)}
+                      onFocus={() => setShowPayoutBankDropdown(true)}
+                      placeholder="Type bank name..."
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    
+                    {showPayoutBankDropdown && !fiatPayoutData.bankCode && banksList.length > 0 && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-32 overflow-y-auto">
+                        {banksLoading ? (
+                          <div className="px-3 py-2 text-xs text-gray-500">Loading banks...</div>
+                        ) : filteredPayoutBanks.length > 0 ? (
+                          filteredPayoutBanks.map((bank: any) => (
+                            <button
+                              key={bank.bankCode}
+                              type="button"
+                              onClick={() => handlePayoutBankSelect(bank)}
+                              className="w-full text-left px-3 py-2 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors text-xs"
+                            >
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs font-medium text-gray-900">{bank.name}</span>
+                                <span className="text-[11px] text-gray-500">({bank.bankCode})</span>
+                              </div>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="px-3 py-2 text-xs text-gray-500">No matching banks</div>
+                        )}
+                      </div>
+                    )}
+
+
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Account Number (10 digits)</label>
+                  <input
+                    type="text"
+                    value={fiatPayoutData.accountIdentifier}
+                    onChange={(e) => handlePayoutAccountNumberChange(e.target.value)}
+                    placeholder="Enter 10-digit account number"
+                    maxLength={10}
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <div className="mt-1 flex items-center justify-between">
+                    <span className="text-[11px] text-gray-500">{fiatPayoutData.accountIdentifier.length}/10 digits</span>
+                    {fiatPayoutData.accountIdentifier.length === 10 && !fiatPayoutData.bankCode && (
+                      <span className="text-[11px] text-yellow-600">⚠ Please select a bank first</span>
+                    )}
+                  </div>
+                </div>
+
+                {isRefetchingPayoutResolve && fiatPayoutData.accountIdentifier.length === 10 && fiatPayoutData.bankCode && (
+                  <div className="rounded-lg bg-blue-50 border border-blue-200 p-2">
+                    <p className="text-xs text-blue-700">🔍 Verifying account details...</p>
+                  </div>
+                )}
+
+                {resolvedPayoutAccountName && fiatPayoutData.accountIdentifier.length === 10 && (
+                  <div className="rounded-lg bg-green-50 border border-green-200 p-2">
+                    <p className="text-[11px] text-green-600 mb-0.5">✓ Account Verified</p>
+                    <p className="text-xs font-semibold text-green-900">{resolvedPayoutAccountName}</p>
+                    <p className="text-[11px] text-green-700 mt-1">Account: {fiatPayoutData.accountIdentifier}</p>
+                  </div>
+                )}
+
+                {payoutResolutionError && fiatPayoutData.accountIdentifier.length === 10 && fiatPayoutData.bankCode && !isRefetchingPayoutResolve && (
+                  <div className="rounded-lg bg-red-50 border border-red-200 p-2">
+                    <p className="text-xs text-red-700">✗ {payoutResolutionError}</p>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="save-fiat-payout-account"
+                    checked={fiatPayoutData.save}
+                    onChange={(e) => setFiatPayoutData({ ...fiatPayoutData, save: e.target.checked })}
+                    className="w-4 h-4 rounded border-gray-300"
+                  />
+                  <label htmlFor="save-fiat-payout-account" className="text-xs text-gray-600">
+                    Save this account for future payouts
+                  </label>
+                </div>
+
+
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Amount</label>
+              <input
+                type="number"
+                value={fiatPayoutData.amount}
+                onChange={(e) => setFiatPayoutData({ ...fiatPayoutData, amount: e.target.value })}
+                placeholder="Enter amount"
+                min="0"
+                step="0.01"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">2FA Key</label>
+              <input
+                type="password"
+                value={fiatPayoutData.twoFAKey}
+                onChange={(e) => setFiatPayoutData({ ...fiatPayoutData, twoFAKey: e.target.value })}
+                placeholder="Enter your 2FA key"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleInitiateFiatPayout}
+                disabled={isInitiatingFiatPayout || !fiatPayoutData.amount || !fiatPayoutData.twoFAKey || (
+                  !fiatPayoutUsingAccount && (!resolvedPayoutAccountName || fiatPayoutData.accountIdentifier.length !== 10)
+                )}
+                className="flex-1 rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              >
+                {isInitiatingFiatPayout ? "Processing..." : "Initiate Fiat Payout"}
+              </button>
+              <button
+                onClick={() => {
+                  setPayoutModalOpen(false);
+                  setFiatPayoutData({
+                    amount: "",
+                    accountId: "",
+                    bankCode: "",
+                    accountIdentifier: "",
+                    alias: "",
+                    save: false,
+                    twoFAKey: "",
+                  });
+                  setFiatPayoutUsingAccount(true);
+                  setPayoutBankNameInput("");
+                  setResolvedPayoutAccountName(null);
+                  setPayoutResolutionError(null);
+                  setPayoutType("crypto");
+                }}
+                className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">

@@ -44,7 +44,7 @@ export const tokenStore = create<AccessToken>()(
 );
 
 const client = axios.create({
-  baseURL: import.meta.env.VITE_BASE_URL || "http://localhost:3000/v1",
+  baseURL: import.meta.env.VITE_BASE_URL,
   withCredentials: true,
 });
 

@@ -52,12 +52,110 @@ export const useDeleteCryptoSettlementAccount = () => {
 
 //fiat settlements
 
+export const useGetALLFiatSettlements = () => {
+    return useQuery({
+        queryKey: ["fiat-settlements"],
+        queryFn: async () => {
+            const { data } = await client.get("/user/settlements/fiat");
+            return data.data as {
+                id: string;
+                bankName: string;
+                bankCode: string;
+                accountNumber: string;
+                accountName: string;
+                isPrimary: boolean
+            }[]
+        }
+    })
+}
+
+export const useAddFiatSettlement = () => {
+    return useMutation({
+        mutationFn: async ({ bankCode, accountNumber, isPrimary }: { bankCode: string, accountNumber: string, isPrimary: boolean }) => {
+            const { data } = await client.post("/user/settlements/fiat", { bankCode, accountNumber, isPrimary });
+            return data.data as {
+                id: string;
+                bankName: string;
+                bankCode: string;
+                accountNumber: string;
+                accountName: string;
+                isPrimary: boolean
+            };
+        }
+    });
+}
+
+export const useDeleteFiatSettlementAccount = () => {
+    return useMutation({
+        mutationFn: async (id: string) => { 
+            await client.delete(`/user/settlements/fiat/${id}`);
+        }
+    });
+}
+
+export const useUpdatePrimaryFiatSettlementAccount = () => {
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const { data } = await client.patch(`/user/settlements/fiat/${id}`, { isPrimary: true });
+            return data.data as {
+                id: string;
+                bankName: string;
+                bankCode: string;
+                accountNumber: string;
+                accountName: string;
+                isPrimary: boolean
+            };
+        }
+    });
+}
+
+
+//extras
 export const useListFiatBanks = () => {
     return useQuery({
         queryKey: ["fiat-banks"],
         queryFn: async () => {
             const { data } = await client.get("/banks");
-            return data.data;
+            return data.data as {
+                name: string;
+                bankCode: string
+            }
         }
     })
+}
+
+export const useResolveFiatAccount = (params: { accountNumber: string; bankCode: string } | null) => {
+    return useQuery({
+        queryKey: ["resolve-acount", params?.accountNumber, params?.bankCode],
+        queryFn: async () => {
+            if (!params || !params.accountNumber || !params.bankCode) {
+                return null;
+            }
+            const { data } = await client.get("/resolve-account", {
+                params: {
+                    accountNumber: params.accountNumber,
+                    bankCode: params.bankCode
+                }
+            });
+            return data.data as {
+                accountName: string;
+            }
+        },
+        enabled: !!params && !!params.accountNumber && !!params.bankCode
+    })
+}
+
+export const useGetRates = (currency: string) => {
+    return useQuery({
+        queryKey: ["exchange-rates"],
+        queryFn: async () => {
+            const { data } = await client.get(`/rates?currency=${currency}`);
+            return data.data as {
+                rate: number;
+                timestamp: number;
+                rateDescription: string;
+            }
+        }
+    })
+
 }

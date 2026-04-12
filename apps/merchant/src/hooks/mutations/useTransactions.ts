@@ -173,6 +173,59 @@ export const useRetryPayout = () => {
   })
 }
 
+export const useCreateFiatPayout = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ 
+      amount, 
+      accountId,
+      bankCode,
+      accountIdentifier,
+      twoFAKey,
+      save,
+    }: { 
+      amount: number;
+      twoFAKey: string;
+      accountId?: string;
+      bankCode?: string;
+      accountIdentifier?: string;
+      save?: boolean;
+    }) => {
+      client.defaults.headers.common["2-fa-key"] = twoFAKey;
+
+      const payload: any = { amount };
+
+      // Scenario 1: Using saved account by ID
+      if (accountId) {
+        payload.accountId = accountId;
+      } 
+      // Scenario 2: Using bank code and account identifier
+      else if (bankCode && accountIdentifier) {
+        payload.bankCode = bankCode;
+        payload.accountIdentifier = accountIdentifier;
+        
+        // Optionally save the account for future use
+        if (save) {
+          payload.save = true;
+        }
+      }
+      // Scenario 3: No account specified, use primary account
+      // (backend will use the merchant's primary saved account)
+
+      const response = await client.post(`/user/transactions/payout/fiat`, payload);
+      return response.data.data as PayoutSuccessful;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      toast.success("Fiat payout created successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Failed to create fiat payout");
+    }
+  });
+};
+
 export const useGetSupoortedNetworks = () => {
 
   type Networks = {
