@@ -555,21 +555,28 @@ const Transactions = () => {
                       setPayoutModalOpen(true);
                       setPayoutDropdownOpen(false);
                     }}
-                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors border-b border-gray-100 first:rounded-t-lg"
+                    className={`w-full px-4 py-2 text-left text-sm transition-colors border-b border-gray-100 first:rounded-t-lg $ hover:bg-gray-50`}
                   >
-                    <div className="font-medium text-gray-900">Crypto Payout</div>
+                    <div className={mode === "test" ? "text-gray-600" : "font-medium text-gray-900"}>Crypto Payout</div>
                     <div className="text-xs text-gray-500">Send to wallet address</div>
                   </button>
                   <button
                     onClick={() => {
+                      if (mode === "test") return;
                       setPayoutType("fiat");
                       setPayoutModalOpen(true);
                       setPayoutDropdownOpen(false);
                     }}
-                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors rounded-b-lg"
+                    disabled={mode === "test"}
+                    title={mode === "test" ? "Fiat payout is only available in live mode" : ""}
+                    className={`w-full px-4 py-2 text-left text-sm transition-colors rounded-b-lg ${
+                      mode === "test"
+                        ? "bg-gray-50 text-gray-500 cursor-not-allowed opacity-60"
+                        : "hover:bg-gray-50"
+                    }`}
                   >
-                    <div className="font-medium text-gray-900">Fiat Payout</div>
-                    <div className="text-xs text-gray-500">Send to bank account</div>
+                    <div className={mode === "test" ? "text-gray-600" : "font-medium text-gray-900"}>Fiat Payout</div>
+                    <div className="text-xs text-gray-500">{mode === "test" ? "Available in live mode only" : "Send to bank account"}</div>
                   </button>
                 </div>
               )}
@@ -1373,6 +1380,11 @@ const Transactions = () => {
                 step="0.01"
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              {fiatPayoutData.amount && parseFloat(fiatPayoutData.amount) > totalPayoutableBalance && (
+                <div className="mt-2 rounded-lg bg-red-50 border border-red-200 p-2">
+                  <p className="text-xs text-red-700">✗ Insufficient balance. Available: {totalPayoutableBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC</p>
+                </div>
+              )}
             </div>
 
             <div>
@@ -1391,8 +1403,8 @@ const Transactions = () => {
                 onClick={handleInitiateFiatPayout}
                 disabled={isInitiatingFiatPayout || !fiatPayoutData.amount || !fiatPayoutData.twoFAKey || (
                   !fiatPayoutUsingAccount && (!resolvedPayoutAccountName || fiatPayoutData.accountIdentifier.length !== 10)
-                )}
-                className="flex-1 rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                ) || (fiatPayoutData.amount && parseFloat(fiatPayoutData.amount) > totalPayoutableBalance)}
+                className="flex-1 rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isInitiatingFiatPayout ? "Processing..." : "Initiate Fiat Payout"}
               </button>
@@ -1532,6 +1544,11 @@ const Transactions = () => {
                 step="0.01"
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              {payoutData.amount && parseFloat(payoutData.amount) > totalPayoutableBalance && (
+                <div className="mt-2 rounded-lg bg-red-50 border border-red-200 p-2">
+                  <p className="text-xs text-red-700">✗ Insufficient balance. Available: {totalPayoutableBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC</p>
+                </div>
+              )}
             </div>
 
             <div>
@@ -1548,8 +1565,10 @@ const Transactions = () => {
             <div className="flex gap-2">
               <button
                 onClick={handleInitiatePayout}
-                disabled={isInitiatingPayout}
-                className="flex-1 rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                disabled={isInitiatingPayout || !payoutData.twoFAKey || !payoutData.amount || (
+                  !payoutUsingAccount && !payoutData.walletAddress
+                ) || (payoutData.amount && parseFloat(payoutData.amount) > totalPayoutableBalance)}
+                className="flex-1 rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isInitiatingPayout ? "Processing..." : "Initiate Payout"}
               </button>
