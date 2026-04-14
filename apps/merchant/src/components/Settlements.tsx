@@ -521,9 +521,9 @@ const Settlements = () => {
                     {banksLoading ? (
                       <div className="px-3 py-2 text-sm text-gray-500">Loading banks...</div>
                     ) : filteredBanks.length > 0 ? (
-                      filteredBanks.map((bank: any) => (
+                      filteredBanks.map((bank: any, index: number) => (
                         <button
-                          key={bank.bankCode}
+                          key={`bank-${bank.bankCode}-${index}`}
                           type="button"
                           onClick={() => handleBankSelect(bank)}
                           className="w-full text-left px-4 py-2 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors flex items-center gap-3"

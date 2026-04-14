@@ -1286,9 +1286,9 @@ const Transactions = () => {
                         {banksLoading ? (
                           <div className="px-3 py-2 text-xs text-gray-500">Loading banks...</div>
                         ) : filteredPayoutBanks.length > 0 ? (
-                          filteredPayoutBanks.map((bank: any) => (
+                          filteredPayoutBanks.map((bank: any, index: number) => (
                             <button
-                              key={bank.bankCode}
+                              key={`payout-bank-${bank.bankCode}-${index}`}
                               type="button"
                               onClick={() => handlePayoutBankSelect(bank)}
                               className="w-full text-left px-3 py-2 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors flex items-center gap-2"

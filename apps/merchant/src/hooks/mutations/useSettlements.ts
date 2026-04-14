@@ -131,7 +131,7 @@ export const useListFiatBanks = () => {
             return data.data as {
                 name: string;
                 bankCode: string
-            }
+            }[]
         }
     })
 }
