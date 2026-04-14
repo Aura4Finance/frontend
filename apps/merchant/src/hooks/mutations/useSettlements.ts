@@ -81,6 +81,12 @@ export const useAddFiatSettlement = () => {
                 accountName: string;
                 isPrimary: boolean
             };
+        },
+        onSuccess: () => {
+            toast.success("Fiat account added successfully!");
+        },
+        onError:  (err: any) => {
+            toast.error(err.response.data.message || "Unable to add fiat account.");
         }
     });
 }
@@ -89,6 +95,12 @@ export const useDeleteFiatSettlementAccount = () => {
     return useMutation({
         mutationFn: async (id: string) => { 
             await client.delete(`/user/settlements/fiat/${id}`);
+        },
+                onSuccess: () => {
+            toast.success("Fiat account deleted successfully!");
+        },
+        onError: (error: any) => {
+            toast.error(error.response.data.message || "Unable to delete fiat account");
         }
     });
 }
