@@ -14,7 +14,7 @@ import {
 } from "../hooks/mutations/useSettlements";
 import { useGetSupoortedNetworks } from "../hooks/mutations/useTransactions";
 import Modal from "./transactions/Modal";
-import { FiTrash2, FiCopy, FiCheck, FiStar } from "react-icons/fi";
+import { FiTrash2, FiCopy, FiCheck, FiStar, FiBriefcase } from "react-icons/fi";
 
 const Settlements = () => {
   const { setActiveTab } = useActiveTabStore();
@@ -516,7 +516,7 @@ const Settlements = () => {
                   className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 
-                {showBankDropdown && !fiatFormData.bankCode && banksList.length > 0 && (
+                {showBankDropdown && !fiatFormData.bankCode && (Array.isArray(banksList) && banksList.length > 0 || banksLoading) && (
                   <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
                     {banksLoading ? (
                       <div className="px-3 py-2 text-sm text-gray-500">Loading banks...</div>
@@ -526,12 +526,10 @@ const Settlements = () => {
                           key={bank.bankCode}
                           type="button"
                           onClick={() => handleBankSelect(bank)}
-                          className="w-full text-left px-4 py-2 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                          className="w-full text-left px-4 py-2 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors flex items-center gap-3"
                         >
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium text-gray-900">{bank.name}</span>
-                            <span className="text-xs text-gray-500">({bank.bankCode})</span>
-                          </div>
+                          <FiBriefcase size={18} className="text-gray-600 flex-shrink-0" />
+                          <span className="text-sm font-medium text-gray-900">{bank.name}</span>
                         </button>
                       ))
                     ) : (

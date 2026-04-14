@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+import { FiBriefcase } from "react-icons/fi";
 import { toast } from "sonner";
 import type { Transaction } from "@orafi/transactions";
 import DashboardWrapper from "./DashboardWrapper";
@@ -1280,7 +1281,7 @@ const Transactions = () => {
                       className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     
-                    {showPayoutBankDropdown && !fiatPayoutData.bankCode && banksList.length > 0 && (
+                    {showPayoutBankDropdown && !fiatPayoutData.bankCode && (Array.isArray(banksList) && banksList.length > 0 || banksLoading) && (
                       <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-32 overflow-y-auto">
                         {banksLoading ? (
                           <div className="px-3 py-2 text-xs text-gray-500">Loading banks...</div>
@@ -1290,12 +1291,10 @@ const Transactions = () => {
                               key={bank.bankCode}
                               type="button"
                               onClick={() => handlePayoutBankSelect(bank)}
-                              className="w-full text-left px-3 py-2 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors text-xs"
+                              className="w-full text-left px-3 py-2 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors flex items-center gap-2"
                             >
-                              <div className="flex justify-between items-center">
-                                <span className="text-xs font-medium text-gray-900">{bank.name}</span>
-                                <span className="text-[11px] text-gray-500">({bank.bankCode})</span>
-                              </div>
+                              <FiBriefcase size={16} className="text-gray-600 flex-shrink-0" />
+                              <span className="text-xs font-medium text-gray-900">{bank.name}</span>
                             </button>
                           ))
                         ) : (
