@@ -37,8 +37,8 @@ const Signup = () => {
   const { setEmail } = useAuth()
 
   const signUpSchema = z.object({
-    firstname: z.string("Enter your username"),
-    lastname: z.string("Enter your lastname"),
+    firstname: z.string("Enter your username").trim().min(1),
+    lastname: z.string("Enter your lastname").trim().min(1),
     email: z.email('Please enter a valid email address'),
     password: z.string().min(8, 'Password must be at least 8 characters'),
     confirmPassword: z.string(),
