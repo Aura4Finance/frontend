@@ -1570,21 +1570,21 @@ const Transactions = () => {
               <div className="mt-2 flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setPayoutData({ ...payoutData, amount: (totalPayoutableBalance * 0.25).toString() })}
+                  onClick={() => setPayoutData({ ...payoutData, amount: (Math.ceil(totalPayoutableBalance * 0.25 * 100) / 100).toString() })}
                   className="flex-1 rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 transition-colors border border-gray-300"
                 >
                   25%
                 </button>
                 <button
                   type="button"
-                  onClick={() => setPayoutData({ ...payoutData, amount: (totalPayoutableBalance * 0.5).toString() })}
+                  onClick={() => setPayoutData({ ...payoutData, amount: (Math.ceil(totalPayoutableBalance * 0.5 * 100) / 100).toString() })}
                   className="flex-1 rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 transition-colors border border-gray-300"
                 >
                   50%
                 </button>
                 <button
                   type="button"
-                  onClick={() => setPayoutData({ ...payoutData, amount: totalPayoutableBalance.toString() })}
+                  onClick={() => setPayoutData({ ...payoutData, amount: (Math.ceil(totalPayoutableBalance * 100) / 100).toString() })}
                   className="flex-1 rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 transition-colors border border-gray-300"
                 >
                   100%
