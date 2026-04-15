@@ -1380,6 +1380,29 @@ const Transactions = () => {
                 step="0.01"
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              <div className="mt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFiatPayoutData({ ...fiatPayoutData, amount: (totalPayoutableBalance * 0.25).toString() })}
+                  className="flex-1 rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 transition-colors border border-gray-300"
+                >
+                  25%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFiatPayoutData({ ...fiatPayoutData, amount: (totalPayoutableBalance * 0.5).toString() })}
+                  className="flex-1 rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 transition-colors border border-gray-300"
+                >
+                  50%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFiatPayoutData({ ...fiatPayoutData, amount: totalPayoutableBalance.toString() })}
+                  className="flex-1 rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 transition-colors border border-gray-300"
+                >
+                  100%
+                </button>
+              </div>
               {fiatPayoutData.amount && parseFloat(fiatPayoutData.amount) > totalPayoutableBalance && (
                 <div className="mt-2 rounded-lg bg-red-50 border border-red-200 p-2">
                   <p className="text-xs text-red-700">✗ Insufficient balance. Available: {totalPayoutableBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC</p>
@@ -1401,7 +1424,7 @@ const Transactions = () => {
             <div className="flex gap-2">
               <button
                 onClick={handleInitiateFiatPayout}
-                disabled={isInitiatingFiatPayout || !fiatPayoutData.amount.trim() || !fiatPayoutData.twoFAKey || (
+                disabled={isInitiatingFiatPayout || fiatPayoutData.amount.trim() === "" || !fiatPayoutData.twoFAKey || (
                   !fiatPayoutUsingAccount && (!resolvedPayoutAccountName || fiatPayoutData.accountIdentifier.length !== 10)
                 ) || (fiatPayoutData.amount && parseFloat(fiatPayoutData.amount) > totalPayoutableBalance)}
                 className="flex-1 rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -1544,6 +1567,29 @@ const Transactions = () => {
                 step="0.01"
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              <div className="mt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPayoutData({ ...payoutData, amount: (totalPayoutableBalance * 0.25).toString() })}
+                  className="flex-1 rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 transition-colors border border-gray-300"
+                >
+                  25%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPayoutData({ ...payoutData, amount: (totalPayoutableBalance * 0.5).toString() })}
+                  className="flex-1 rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 transition-colors border border-gray-300"
+                >
+                  50%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPayoutData({ ...payoutData, amount: totalPayoutableBalance.toString() })}
+                  className="flex-1 rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 transition-colors border border-gray-300"
+                >
+                  100%
+                </button>
+              </div>
               {payoutData.amount && parseFloat(payoutData.amount) > totalPayoutableBalance && (
                 <div className="mt-2 rounded-lg bg-red-50 border border-red-200 p-2">
                   <p className="text-xs text-red-700">✗ Insufficient balance. Available: {totalPayoutableBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC</p>
@@ -1565,7 +1611,7 @@ const Transactions = () => {
             <div className="flex gap-2">
               <button
                 onClick={handleInitiatePayout}
-                disabled={isInitiatingPayout || !payoutData.twoFAKey || !payoutData.amount.trim() || (
+                disabled={isInitiatingPayout || !payoutData.twoFAKey || payoutData.amount.trim() === "" || (
                   !payoutUsingAccount && !payoutData.walletAddress
                 ) || (payoutData.amount && parseFloat(payoutData.amount) > totalPayoutableBalance)}
                 className="flex-1 rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
