@@ -1422,15 +1422,25 @@ const Transactions = () => {
             </div>
 
             <div className="flex gap-2">
-              <button
-                onClick={handleInitiateFiatPayout}
-                disabled={isInitiatingFiatPayout || fiatPayoutData.amount.trim() === "" || !fiatPayoutData.twoFAKey || (
-                  !fiatPayoutUsingAccount && (!resolvedPayoutAccountName || fiatPayoutData.accountIdentifier.length !== 10)
-                ) || (fiatPayoutData.amount && parseFloat(fiatPayoutData.amount) > totalPayoutableBalance)}
-                className="flex-1 rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isInitiatingFiatPayout ? "Processing..." : "Initiate Fiat Payout"}
-              </button>
+<button
+  onClick={handleInitiateFiatPayout}
+  disabled={
+    isInitiatingFiatPayout ||
+    fiatPayoutData.amount.trim() === "" ||
+    !fiatPayoutData.twoFAKey ||
+    (
+      !fiatPayoutUsingAccount &&
+      (!resolvedPayoutAccountName || fiatPayoutData.accountIdentifier.length !== 10)
+    ) ||
+    (
+      !!fiatPayoutData.amount &&
+      parseFloat(fiatPayoutData.amount) > totalPayoutableBalance
+    )
+  }
+  className="flex-1 rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+>
+  {isInitiatingFiatPayout ? "Processing..." : "Initiate Fiat Payout"}
+</button>
               <button
                 onClick={() => {
                   setPayoutModalOpen(false);
@@ -1609,15 +1619,24 @@ const Transactions = () => {
             </div>
 
             <div className="flex gap-2">
-              <button
-                onClick={handleInitiatePayout}
-                disabled={isInitiatingPayout || !payoutData.twoFAKey || payoutData.amount.trim() === "" || (
-                  !payoutUsingAccount && !payoutData.walletAddress
-                ) || (payoutData.amount && parseFloat(payoutData.amount) > totalPayoutableBalance)}
-                className="flex-1 rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isInitiatingPayout ? "Processing..." : "Initiate Payout"}
-              </button>
+<button
+  onClick={handleInitiatePayout}
+  disabled={
+    isInitiatingPayout ||
+    !payoutData.twoFAKey ||
+    payoutData.amount.trim() === "" ||
+    (
+      !payoutUsingAccount && !payoutData.walletAddress
+    ) ||
+    (
+      !!payoutData.amount &&
+      parseFloat(payoutData.amount) > totalPayoutableBalance
+    )
+  }
+  className="flex-1 rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+>
+  {isInitiatingPayout ? "Processing..." : "Initiate Payout"}
+</button>
               <button
                 onClick={() => {
                   setPayoutModalOpen(false);
