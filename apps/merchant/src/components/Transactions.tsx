@@ -27,23 +27,23 @@ const Transactions = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [searchId, setSearchId] = useState("");
-  
+
   // Payout dropdown state
   const [payoutDropdownOpen, setPayoutDropdownOpen] = useState(false);
   const [payoutType, setPayoutType] = useState<"crypto" | "fiat">("crypto");
-  
+
   // Refund modal state
   const [refundModalOpen, setRefundModalOpen] = useState(false);
   const [refundData, setRefundData] = useState({ walletAddress: "", twoFAKey: "" });
-  
+
   // Retry refund modal state
   const [retryRefundModalOpen, setRetryRefundModalOpen] = useState(false);
   const [retryRefundData, setRetryRefundData] = useState({ twoFAKey: "" });
-  
+
   // Retry payout modal state
   const [retryPayoutModalOpen, setRetryPayoutModalOpen] = useState(false);
   const [retryPayoutData, setRetryPayoutData] = useState({ twoFAKey: "" });
-  
+
   // Payout modal state
   const [payoutModalOpen, setPayoutModalOpen] = useState(false);
   const [payoutUsingAccount, setPayoutUsingAccount] = useState(true);
@@ -73,7 +73,7 @@ const Transactions = () => {
   const [showPayoutBankDropdown, setShowPayoutBankDropdown] = useState(false);
   const [resolvedPayoutAccountName, setResolvedPayoutAccountName] = useState<string | null>(null);
   const [payoutResolutionError, setPayoutResolutionError] = useState<string | null>(null);
-  
+
   // Success/Failure modal state
   const [resultModalOpen, setResultModalOpen] = useState(false);
   const [resultData, setResultData] = useState<{
@@ -91,7 +91,7 @@ const Transactions = () => {
   const { profile } = tokenStore();
   const { setActiveTab } = useActiveTabStore();
   const mode = profile?.businessProfile?.isLive ? "live" : "test";
-  
+
   // Dropdown ref for click outside handling
   const payoutDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -156,12 +156,12 @@ const Transactions = () => {
   // Auto-apply filters when navigating from customer or payment link page with query params
   useEffect(() => {
     if (!hasInitializedFromUrl) return;
-    
+
     const params = new URLSearchParams(window.location.search);
     const customerId = params.get("customerId");
     const paymentLinkId = params.get("paymentLinkId");
     const type = params.get("type");
-    
+
     // If we have relevant filter params from navigation, apply filters automatically
     if (customerId || paymentLinkId || type) {
       handleApplyFilters();
@@ -183,7 +183,7 @@ const Transactions = () => {
   const { data: balances = [] } = useBalance();
   const { data: cryptoSettlements = [] } = useGetCryptoSettlements();
   const { data: fiatSettlements = [] } = useGetALLFiatSettlements();
-  
+
   // Bank list and account resolution for fiat payouts
   const { data: banksList = [], isLoading: banksLoading } = useListFiatBanks();
   const { data: resolvedPayoutAccount, isFetching: isRefetchingPayoutResolve } = useResolveFiatAccount(
@@ -374,18 +374,18 @@ const Transactions = () => {
 
     const payoutParams = payoutUsingAccount
       ? {
-          amount: parseFloat(payoutData.amount),
-          cryptoSettlementAccountId: payoutData.cryptoSettlementAccountId,
-          twoFAKey: payoutData.twoFAKey,
-        }
+        amount: parseFloat(payoutData.amount),
+        cryptoSettlementAccountId: payoutData.cryptoSettlementAccountId,
+        twoFAKey: payoutData.twoFAKey,
+      }
       : {
-          amount: parseFloat(payoutData.amount),
-          walletAddress: payoutData.walletAddress,
-          network: "SUI", // For now, only SUI is supported
-          twoFAKey: payoutData.twoFAKey,
-          ...(payoutData.save && { alias: payoutData.alias }),
-          ...(payoutData.save && { save: true }),
-        };
+        amount: parseFloat(payoutData.amount),
+        walletAddress: payoutData.walletAddress,
+        network: "SUI", // For now, only SUI is supported
+        twoFAKey: payoutData.twoFAKey,
+        ...(payoutData.save && { alias: payoutData.alias }),
+        ...(payoutData.save && { save: true }),
+      };
 
     initiatePayoutTransaction(payoutParams as any, {
       onSuccess: () => {
@@ -444,7 +444,7 @@ const Transactions = () => {
     } else {
       fiatPayoutParams.bankCode = fiatPayoutData.bankCode;
       fiatPayoutParams.accountIdentifier = fiatPayoutData.accountIdentifier;
-      
+
       if (fiatPayoutData.save && fiatPayoutData.alias) {
         fiatPayoutParams.save = true;
         fiatPayoutParams.alias = fiatPayoutData.alias;
@@ -538,49 +538,48 @@ const Transactions = () => {
     <DashboardWrapper>
       <div className="border-b border-gray-100 bg-white px-4 py-3">
         <div className="flex items-center justify-between">
-            <p className="text-xs text-gray-500">Total Transactions: {totalCount.toLocaleString()}</p>
-            <div className="relative" ref={payoutDropdownRef}>
-              <button
-                onClick={() => setPayoutDropdownOpen(!payoutDropdownOpen)}
-                className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition-colors"
-              >
-                + Initiate Payout
-              </button>
-              
-              {payoutDropdownOpen && (
-                <div className="absolute right-0 mt-1 w-48 rounded-lg border border-gray-200 bg-white shadow-lg z-50">
-                  <button
-                    onClick={() => {
-                      setPayoutType("crypto");
-                      setPayoutModalOpen(true);
-                      setPayoutDropdownOpen(false);
-                    }}
-                    className={`w-full px-4 py-2 text-left text-sm transition-colors border-b border-gray-100 first:rounded-t-lg $ hover:bg-gray-50`}
-                  >
-                    <div className={mode === "test" ? "text-gray-600" : "font-medium text-gray-900"}>Crypto Payout</div>
-                    <div className="text-xs text-gray-500">Send to wallet address</div>
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (mode === "test") return;
-                      setPayoutType("fiat");
-                      setPayoutModalOpen(true);
-                      setPayoutDropdownOpen(false);
-                    }}
-                    disabled={mode === "test"}
-                    title={mode === "test" ? "Fiat payout is only available in live mode" : ""}
-                    className={`w-full px-4 py-2 text-left text-sm transition-colors rounded-b-lg ${
-                      mode === "test"
-                        ? "bg-gray-50 text-gray-500 cursor-not-allowed opacity-60"
-                        : "hover:bg-gray-50"
+          <p className="text-xs text-gray-500">Total Transactions: {totalCount.toLocaleString()}</p>
+          <div className="relative" ref={payoutDropdownRef}>
+            <button
+              onClick={() => setPayoutDropdownOpen(!payoutDropdownOpen)}
+              className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition-colors"
+            >
+              + Initiate Payout
+            </button>
+
+            {payoutDropdownOpen && (
+              <div className="absolute right-0 mt-1 w-48 rounded-lg border border-gray-200 bg-white shadow-lg z-50">
+                <button
+                  onClick={() => {
+                    setPayoutType("crypto");
+                    setPayoutModalOpen(true);
+                    setPayoutDropdownOpen(false);
+                  }}
+                  className={`w-full px-4 py-2 text-left text-sm transition-colors border-b border-gray-100 first:rounded-t-lg $ hover:bg-gray-50`}
+                >
+                  <div className={mode === "test" ? "text-gray-600" : "font-medium text-gray-900"}>Crypto Payout</div>
+                  <div className="text-xs text-gray-500">Send to wallet address</div>
+                </button>
+                <button
+                  onClick={() => {
+                    if (mode === "test") return;
+                    setPayoutType("fiat");
+                    setPayoutModalOpen(true);
+                    setPayoutDropdownOpen(false);
+                  }}
+                  disabled={mode === "test"}
+                  title={mode === "test" ? "Fiat payout is only available in live mode" : ""}
+                  className={`w-full px-4 py-2 text-left text-sm transition-colors rounded-b-lg ${mode === "test"
+                      ? "bg-gray-50 text-gray-500 cursor-not-allowed opacity-60"
+                      : "hover:bg-gray-50"
                     }`}
-                  >
-                    <div className={mode === "test" ? "text-gray-600" : "font-medium text-gray-900"}>Fiat Payout</div>
-                    <div className="text-xs text-gray-500">{mode === "test" ? "Available in live mode only" : "Send to bank account"}</div>
-                  </button>
-                </div>
-              )}
-            </div>
+                >
+                  <div className={mode === "test" ? "text-gray-600" : "font-medium text-gray-900"}>Fiat Payout</div>
+                  <div className="text-xs text-gray-500">{mode === "test" ? "Available in live mode only" : "Send to bank account"}</div>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -652,58 +651,57 @@ const Transactions = () => {
                         }
                       };
                       return (
-                      <tr
-                        key={tx.id}
-                        className={`cursor-pointer transition-colors ${getRowBgColor(tx.type)}`}
-                        onClick={() => setSelectedTransaction(tx)}
-                      >
-                        <td className="px-4 py-2.5 text-xs font-medium text-blue-600">{tx.id.slice(0, 8)}...</td>
-                        <td className="px-4 py-2.5">
-                          <div className="text-xs font-medium text-gray-900">
-                            {tx.customer
-                              ? `${tx.customer.firstname || ""} ${tx.customer.lastname || ""}`.trim() || "N/A"
-                              : "N/A"}
-                          </div>
-                          <div className="text-[11px] text-gray-500">{tx.customer?.email || "N/A"}</div>
-                        </td>
-                        <td className="px-4 py-2.5 text-xs font-medium text-gray-900">
-                          {tx.amount?.toLocaleString() || 0}
-                        </td>
-                        <td className="px-4 py-2.5 text-xs text-gray-600">{tx.currency || "N/A"}</td>
-                        <td className="px-4 py-2.5">
-                          {tx.network ? (
-                            <span className="inline-flex items-center gap-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-medium text-indigo-700">
-                              {tx.network.logo && (
-                                <img src={tx.network.logo} alt={tx.network.symbol} className="w-3 h-3 rounded-full" />
-                              )}
-                              {tx.network.symbol}
+                        <tr
+                          key={tx.id}
+                          className={`cursor-pointer transition-colors ${getRowBgColor(tx.type)}`}
+                          onClick={() => setSelectedTransaction(tx)}
+                        >
+                          <td className="px-4 py-2.5 text-xs font-medium text-blue-600">{tx.id.slice(0, 8)}...</td>
+                          <td className="px-4 py-2.5">
+                            <div className="text-xs font-medium text-gray-900">
+                              {tx.customer
+                                ? `${tx.customer.firstname || ""} ${tx.customer.lastname || ""}`.trim() || "N/A"
+                                : "N/A"}
+                            </div>
+                            <div className="text-[11px] text-gray-500">{tx.customer?.email || "N/A"}</div>
+                          </td>
+                          <td className="px-4 py-2.5 text-xs font-medium text-gray-900">
+                            {tx.amount?.toLocaleString() || 0}
+                          </td>
+                          <td className="px-4 py-2.5 text-xs text-gray-600">{tx.currency || "N/A"}</td>
+                          <td className="px-4 py-2.5">
+                            {tx.network ? (
+                              <span className="inline-flex items-center gap-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-medium text-indigo-700">
+                                {tx.network.logo && (
+                                  <img src={tx.network.logo} alt={tx.network.symbol} className="w-3 h-3 rounded-full" />
+                                )}
+                                {tx.network.symbol}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-gray-400">N/A</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2.5">
+                            <span
+                              className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${tx.type === "PAYMENT"
+                                  ? "bg-blue-100 text-blue-700"
+                                  : tx.type === "PAYOUT"
+                                    ? "bg-purple-100 text-purple-700"
+                                    : "bg-orange-100 text-orange-700"
+                                }`}
+                            >
+                              {tx.type}
                             </span>
-                          ) : (
-                            <span className="text-xs text-gray-400">N/A</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-2.5">
-                          <span
-                            className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                              tx.type === "PAYMENT"
-                                ? "bg-blue-100 text-blue-700"
-                                : tx.type === "PAYOUT"
-                                  ? "bg-purple-100 text-purple-700"
-                                  : "bg-orange-100 text-orange-700"
-                            }`}
-                          >
-                            {tx.type}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2.5">
-                          <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${getStatusColor(tx.status)}`}>
-                            {tx.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2.5 text-xs text-gray-600">
-                          {tx.createdAt ? new Date(tx.createdAt).toLocaleString() : "N/A"}
-                        </td>
-                      </tr>
+                          </td>
+                          <td className="px-4 py-2.5">
+                            <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${getStatusColor(tx.status)}`}>
+                              {tx.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5 text-xs text-gray-600">
+                            {tx.createdAt ? new Date(tx.createdAt).toLocaleString() : "N/A"}
+                          </td>
+                        </tr>
                       );
                     })}
                   </tbody>
@@ -720,11 +718,10 @@ const Transactions = () => {
                 <button
                   onClick={handlePreviousPage}
                   disabled={!hasPreviousPage || isFetching}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                    hasPreviousPage && !isFetching
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${hasPreviousPage && !isFetching
                       ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
                       : "cursor-not-allowed bg-gray-50 text-gray-300"
-                  }`}
+                    }`}
                 >
                   ← Previous
                 </button>
@@ -734,11 +731,10 @@ const Transactions = () => {
                 <button
                   onClick={handleNextPage}
                   disabled={!hasNextPage || isFetching}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                    hasNextPage && !isFetching
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${hasNextPage && !isFetching
                       ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
                       : "cursor-not-allowed bg-gray-50 text-gray-300"
-                  }`}
+                    }`}
                 >
                   Next →
                 </button>
@@ -819,13 +815,12 @@ const Transactions = () => {
               <div className="rounded-lg bg-gray-50 p-3">
                 <p className="text-[11px] text-gray-500">Type</p>
                 <span
-                  className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                    selectedTransaction.type == "PAYMENT"
+                  className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${selectedTransaction.type == "PAYMENT"
                       ? "bg-blue-100 text-blue-700"
                       : selectedTransaction.type == "PAYOUT"
                         ? "bg-purple-100 text-purple-700"
                         : "bg-orange-100 text-orange-700"
-                  }`}
+                    }`}
                 >
                   {selectedTransaction.type}
                 </span>
@@ -850,9 +845,8 @@ const Transactions = () => {
               <div className="rounded-lg bg-gray-50 p-3">
                 <p className="text-[11px] text-gray-500">Mode</p>
                 <span
-                  className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                    selectedTransaction.mode === "live" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
-                  }`}
+                  className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${selectedTransaction.mode === "live" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                    }`}
                 >
                   {selectedTransaction.mode}
                 </span>
@@ -1071,7 +1065,7 @@ const Transactions = () => {
             )}
             {selectedTransaction.status.toLowerCase() === "completed" &&
               selectedTransaction.type === "payment" &&
-              !selectedTransaction.payment?.refunded  && (
+              !selectedTransaction.payment?.refunded && (
                 <div className="rounded-lg bg-blue-50 p-3 text-xs text-blue-600">
                   Click the "Refund Payment" button above to initiate a refund for this transaction.
                 </div>
@@ -1200,13 +1194,13 @@ const Transactions = () => {
       </Modal>
 
       {/* Payout Modal */}
-      <Modal 
-        isOpen={payoutModalOpen} 
+      <Modal
+        isOpen={payoutModalOpen}
         onClose={() => {
           setPayoutModalOpen(false);
           setPayoutType("crypto");
-        }} 
-        title={`Initiate ${payoutType === "crypto" ? "Crypto" : "Fiat"} Payout`} 
+        }}
+        title={`Initiate ${payoutType === "crypto" ? "Crypto" : "Fiat"} Payout`}
         size="default"
       >
         {payoutType === "fiat" ? (
@@ -1227,23 +1221,21 @@ const Transactions = () => {
                 <button
                   onClick={() => setFiatPayoutUsingAccount(true)}
                   disabled={fiatSettlements.length === 0}
-                  className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors ${
-                    fiatSettlements.length === 0
+                  className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors ${fiatSettlements.length === 0
                       ? "cursor-not-allowed bg-gray-100 text-gray-400"
                       : fiatPayoutUsingAccount
                         ? "bg-blue-600 text-white"
                         : "border border-gray-300 text-gray-700 hover:bg-gray-50"
-                  }`}
+                    }`}
                 >
                   Saved Account
                 </button>
                 <button
                   onClick={() => setFiatPayoutUsingAccount(false)}
-                  className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors ${
-                    !fiatPayoutUsingAccount
+                  className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors ${!fiatPayoutUsingAccount
                       ? "bg-blue-600 text-white"
                       : "border border-gray-300 text-gray-700 hover:bg-gray-50"
-                  }`}
+                    }`}
                 >
                   New Bank Account
                 </button>
@@ -1287,7 +1279,7 @@ const Transactions = () => {
                       placeholder="Type bank name..."
                       className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                    
+
                     {showPayoutBankDropdown && !fiatPayoutData.bankCode && (Array.isArray(banksList) && banksList.length > 0 || banksLoading) && (
                       <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-32 overflow-y-auto">
                         {banksLoading ? (
@@ -1422,25 +1414,25 @@ const Transactions = () => {
             </div>
 
             <div className="flex gap-2">
-<button
-  onClick={handleInitiateFiatPayout}
-  disabled={
-    isInitiatingFiatPayout ||
-    fiatPayoutData.amount.trim() === "" ||
-    !fiatPayoutData.twoFAKey ||
-    (
-      !fiatPayoutUsingAccount &&
-      (!resolvedPayoutAccountName || fiatPayoutData.accountIdentifier.length !== 10)
-    ) ||
-    (
-      !!fiatPayoutData.amount &&
-      parseFloat(fiatPayoutData.amount) > totalPayoutableBalance
-    )
-  }
-  className="flex-1 rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
->
-  {isInitiatingFiatPayout ? "Processing..." : "Initiate Fiat Payout"}
-</button>
+              <button
+                onClick={handleInitiateFiatPayout}
+                disabled={
+                  isInitiatingFiatPayout ||
+                  fiatPayoutData.amount.trim() === "" ||
+                  !fiatPayoutData.twoFAKey ||
+                  (
+                    !fiatPayoutUsingAccount &&
+                    (!resolvedPayoutAccountName || fiatPayoutData.accountIdentifier.length !== 10)
+                  ) ||
+                  (
+                    !!fiatPayoutData.amount &&
+                    parseFloat(fiatPayoutData.amount) > totalPayoutableBalance
+                  )
+                }
+                className="flex-1 rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {isInitiatingFiatPayout ? "Processing..." : "Initiate Fiat Payout"}
+              </button>
               <button
                 onClick={() => {
                   setPayoutModalOpen(false);
@@ -1478,23 +1470,21 @@ const Transactions = () => {
                 <button
                   onClick={() => setPayoutUsingAccount(true)}
                   disabled={cryptoSettlements.length === 0}
-                  className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors ${
-                    cryptoSettlements.length === 0
+                  className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors ${cryptoSettlements.length === 0
                       ? "cursor-not-allowed bg-gray-100 text-gray-400"
                       : payoutUsingAccount
                         ? "bg-blue-600 text-white"
                         : "border border-gray-300 text-gray-700 hover:bg-gray-50"
-                  }`}
+                    }`}
                 >
                   Saved Account
                 </button>
                 <button
                   onClick={() => setPayoutUsingAccount(false)}
-                  className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors ${
-                    !payoutUsingAccount
+                  className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition-colors ${!payoutUsingAccount
                       ? "bg-blue-600 text-white"
                       : "border border-gray-300 text-gray-700 hover:bg-gray-50"
-                  }`}
+                    }`}
                 >
                   New Address
                 </button>
@@ -1619,24 +1609,24 @@ const Transactions = () => {
             </div>
 
             <div className="flex gap-2">
-<button
-  onClick={handleInitiatePayout}
-  disabled={
-    isInitiatingPayout ||
-    !payoutData.twoFAKey ||
-    payoutData.amount.trim() === "" ||
-    (
-      !payoutUsingAccount && !payoutData.walletAddress
-    ) ||
-    (
-      !!payoutData.amount &&
-      parseFloat(payoutData.amount) > totalPayoutableBalance
-    )
-  }
-  className="flex-1 rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
->
-  {isInitiatingPayout ? "Processing..." : "Initiate Payout"}
-</button>
+              <button
+                onClick={handleInitiatePayout}
+                disabled={
+                  isInitiatingPayout ||
+                  !payoutData.twoFAKey ||
+                  payoutData.amount.trim() === "" ||
+                  (
+                    !payoutUsingAccount && !payoutData.walletAddress
+                  ) ||
+                  (
+                    !!payoutData.amount &&
+                    parseFloat(payoutData.amount) > totalPayoutableBalance
+                  )
+                }
+                className="flex-1 rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {isInitiatingPayout ? "Processing..." : "Initiate Payout"}
+              </button>
               <button
                 onClick={() => {
                   setPayoutModalOpen(false);
@@ -1664,11 +1654,10 @@ const Transactions = () => {
       <Modal isOpen={resultModalOpen} onClose={() => setResultModalOpen(false)} title={resultData.title} size="default">
         <div className="space-y-4">
           <div
-            className={`rounded-lg p-4 ${
-              resultData.type === "success"
+            className={`rounded-lg p-4 ${resultData.type === "success"
                 ? "bg-green-50 text-green-800"
                 : "bg-red-50 text-red-800"
-            }`}
+              }`}
           >
             <p className="text-sm">{resultData.message}</p>
           </div>
