@@ -30,6 +30,7 @@ const Onboarding = () => {
   const [twoFAData, setTwoFAData] = useState<{ otpauth_url: string; manualCode: string } | null>(null);
   const [verificationToken, setVerificationToken] = useState("");
   const [copied, setCopied] = useState(false);
+  const [show2FAModal, setShow2FAModal] = useState(false);
 
   const isTestMode = profile?.businessProfile?.isLive === false;
   const triggerTwoFA = () =>  {
@@ -76,8 +77,8 @@ const Onboarding = () => {
             const twoFAEnabled = freshProfile?.twoFactorEnabled;
             
             if (!twoFAEnabled) {
-              setCurrentStep("twofa");
-              triggerTwoFA();
+              // Show the 2FA modal instead of automatically proceeding
+              setShow2FAModal(true);
             } else {
               setLocation("/");
             }
@@ -116,10 +117,72 @@ const Onboarding = () => {
     }
   };
 
+  const handle2FAYes = () => {
+    setShow2FAModal(false);
+    setCurrentStep("twofa");
+    triggerTwoFA();
+  };
+
+  const handle2FANo = () => {
+    setShow2FAModal(false);
+    setLocation("/");
+  };
+
 
   // Step tracking
   const isStep1Complete = profile?.businessProfile?.onboarded || false;
   const isStep2Complete = profile?.twoFactorEnabled || false;
+
+  // 2FA Modal Component
+  const TwoFAModal = () => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+      <div className="bg-white rounded-2xl shadow-lg max-w-md w-full p-6 sm:p-8">
+        <div className="flex justify-center mb-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-950/10">
+            <FaShieldHalved className="h-6 w-6 text-blue-950" />
+          </div>
+        </div>
+        
+        <h2 className="text-2xl font-semibold text-gray-900 text-center mb-2">
+          Set Up 2FA Now?
+        </h2>
+        
+        <p className="text-center text-gray-600 text-sm mb-6">
+          We recommend enabling two-factor authentication to secure your account and enable high-risk actions like payouts, refunds, and API key creation.
+        </p>
+
+        <div className="bg-blue-950/5 border border-blue-950/10 rounded-lg p-4 mb-6">
+          <p className="text-xs font-semibold text-blue-950 mb-2">Why 2FA is important:</p>
+          <ul className="text-xs text-gray-700 space-y-1">
+            <li>✓ Protects your account from unauthorized access</li>
+            <li>✓ Required for sensitive operations</li>
+            <li>✓ Takes less than 2 minutes to set up</li>
+          </ul>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={handle2FANo}
+            className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+          >
+            Skip for Now
+          </button>
+          <button
+            onClick={handle2FAYes}
+            className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-blue-950 hover:bg-blue-900 rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            Set Up Now
+            <FiArrowRight size={15} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (show2FAModal) {
+    return <TwoFAModal />;
+  }
+
 
   if (currentStep === "business") {
     return (
