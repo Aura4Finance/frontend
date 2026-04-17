@@ -12,7 +12,7 @@ import { MobileWalletPrompt } from "./MobileWalletPrompt";
 import { PaymentMethodSelector } from "./PaymentMethodSelector";
 import { TransferPayment } from "./TransferPayment";
 import { useGetPaymentInformationQuery } from "../hooks/useGetPaymentInformationQuery";
-import { PACKAGE_ID } from "../client/constant";
+import { PACKAGE_ID_TESTNET, PACKAGE_ID_MAINNET } from "../client/constant";
 import { toast } from "sonner";
 
 const Checkout = () => {
@@ -172,7 +172,7 @@ const Checkout = () => {
                8. Call Move contract
             ------------------------------------------------------------- */
             tx.moveCall({
-                target: `${PACKAGE_ID}::main::pay`,
+                target: `${paymentQueryResult.data.mode == "live" ? PACKAGE_ID_MAINNET : PACKAGE_ID_TESTNET}::main::pay`,
                 arguments: [
                     paymentCoin,
                     tx.object(paymentQueryResult.data.depositAddress),
