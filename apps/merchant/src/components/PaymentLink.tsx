@@ -687,7 +687,7 @@ const PaymentLink = () => {
           <div className="flex flex-col lg:flex-row gap-6 h-full">
             {/* Left Column: Image Gallery - 65% width */}
             <div className="w-full lg:w-[65%] flex-shrink-0">
-              <ImageGallery images={selectedPaylink.images || []} />
+              <ImageGallery images={selectedPaylink.images || []} mode={selectedPaylink.mode} />
             </div>
 
             {/* Right Column: Details - 35% width */}
