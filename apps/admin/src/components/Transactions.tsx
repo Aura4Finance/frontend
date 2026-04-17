@@ -384,8 +384,8 @@ const Transactions = () => {
                         </td>
                         <td className="px-4 py-2.5">
                           <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${
-                            tx.type === 'payment' ? 'bg-blue-100 text-blue-700' : 
-                            tx.type === 'payout' ? 'bg-purple-100 text-purple-700' : 
+                            tx.type === 'PAYMENT' ? 'bg-blue-100 text-blue-700' : 
+                            tx.type === 'PAYOUT' ? 'bg-purple-100 text-purple-700' : 
                             'bg-orange-100 text-orange-700'
                           }`}>{tx.type}</span>
                         </td>
@@ -481,8 +481,8 @@ const Transactions = () => {
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Type</p>
                 <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${
-                  selectedTransaction.type === 'payment' ? 'bg-blue-100 text-blue-700' : 
-                  selectedTransaction.type === 'payout' ? 'bg-purple-100 text-purple-700' : 
+                  selectedTransaction.type === 'PAYMENT' ? 'bg-blue-100 text-blue-700' : 
+                  selectedTransaction.type === 'PAYOUT' ? 'bg-purple-100 text-purple-700' : 
                   'bg-orange-100 text-orange-700'
                 }`}>{selectedTransaction.type}</span>
               </div>

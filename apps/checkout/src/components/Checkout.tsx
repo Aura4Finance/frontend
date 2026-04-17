@@ -168,9 +168,6 @@ const Checkout = () => {
                 [tx.pure.u64(amount)]
             );
 
-            /* ------------------------------------------------------------
-               8. Call Move contract
-            ------------------------------------------------------------- */
             tx.moveCall({
                 target: `${paymentQueryResult.data.mode == "live" ? PACKAGE_ID_MAINNET : PACKAGE_ID_TESTNET}::main::pay`,
                 arguments: [
@@ -179,16 +176,9 @@ const Checkout = () => {
                 ],
             });
 
-            /* ------------------------------------------------------------
-               9. Sign and Execute (wallet provides SUI gas)
-            ------------------------------------------------------------- */
             await wallet.signAndExecuteTransactionBlock({
                 transactionBlock: tx as any,
             });
-
-            /* ------------------------------------------------------------
-               10. Success handling
-            ------------------------------------------------------------- */
             toast.success("Payment successful");
 
             if (params?.txId) {
