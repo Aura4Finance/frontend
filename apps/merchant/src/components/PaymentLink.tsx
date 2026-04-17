@@ -18,11 +18,13 @@ import { tokenStore } from "../store/client"
 import { getSupportedCurrencies } from "../hooks/mutations/useSettings";
 import { useActiveTabStore } from "../store/activeTab";
 
+const WALRUS_GATEWAY_TESTNET ="https://aggregator.walrus-testnet.walrus.space/v1/blobs";
+const WALRUS_GATEWAY_MAINNET ="https://aggregator.walrus-mainnet.walrus.space/v1/blobs";
+
 const PaymentLink = () => {
   const [, setLocation] = useLocation();
   const { setActiveTab } = useActiveTabStore();
-  const WALRUS_GATEWAY =
-  "https://aggregator.walrus-testnet.walrus.space/v1/blobs";
+
   const mode = tokenStore.getState().profile?.businessProfile?.isLive ? "live" : "test"
 
   // Modals state
@@ -285,7 +287,7 @@ const PaymentLink = () => {
                 <div className="relative aspect-video overflow-hidden rounded-t-lg bg-gradient-to-br from-gray-100 to-gray-50">
                   {link.images?.length > 0 ? (
                     <img
-                      src={`${WALRUS_GATEWAY}/${link.images[0].blobId}`}
+                      src={`${link.mode == "live" ? WALRUS_GATEWAY_MAINNET : WALRUS_GATEWAY_TESTNET}/${link.images[0].blobId}`}
                       alt={link.title}
                       className="h-full w-full object-cover"
                     />
@@ -455,7 +457,7 @@ const PaymentLink = () => {
                 {imagePreview.map((preview, idx) => (
                   <div key={idx} className="relative">
                     <img
-                      src={`${WALRUS_GATEWAY}/${preview}`}
+                      src={`${mode == "live" ? WALRUS_GATEWAY_MAINNET : WALRUS_GATEWAY_TESTNET}/${preview}`}
                       alt={`Preview ${idx}`}
                       className="h-20 w-full rounded-lg object-cover"
                     />

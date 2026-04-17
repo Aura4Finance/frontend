@@ -4,11 +4,12 @@ import { cn } from "@orafi/ui";
 
 interface ImageGalleryProps {
   images: string[];
+  mode: "live" | "test";
 }
 
-const WALRUS_GATEWAY =
-  "https://aggregator.walrus-testnet.walrus.space/v1/blobs";
-const ImageGallery = ({ images }: ImageGalleryProps) => {
+const WALRUS_GATEWAY_TESTNET = "https://aggregator.walrus-testnet.walrus.space/v1/blobs";
+const WALRUS_GATEWAY_MAINNET = "https://aggregator.walrus-mainnet.walrus.space/v1/blobs";
+const ImageGallery = ({ images, mode }: ImageGalleryProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const nextImage = () => {
@@ -28,7 +29,7 @@ const ImageGallery = ({ images }: ImageGalleryProps) => {
         {images.length > 0 ? (
           <div className="w-full h-full relative bg-gray-50 overflow-hidden">
             <img
-              src={`${WALRUS_GATEWAY}/${images[currentIndex]}`}
+              src={`${mode == "live" ? WALRUS_GATEWAY_MAINNET : WALRUS_GATEWAY_TESTNET}/${images[currentIndex]}`}
               alt={`Paylink image ${currentIndex + 1}`}
               className="w-full h-full object-cover"
               loading="lazy"
@@ -76,7 +77,7 @@ const ImageGallery = ({ images }: ImageGalleryProps) => {
             >
               <div className="w-full h-full bg-gray-50 flex items-center justify-center">
                 <img
-                  src={`${WALRUS_GATEWAY}/${image}`}
+                  src={`${mode == "live" ? WALRUS_GATEWAY_MAINNET : WALRUS_GATEWAY_TESTNET}/${image}`}
                   alt={`Thumbnail ${index + 1}`}
                   className="w-full h-full object-cover"
                   loading="lazy"

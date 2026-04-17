@@ -5,7 +5,7 @@ type PayLinkData = {
   id: string;
   title: string;
   description: string;
-  mode: string;
+  mode: "live" | "test";
   currency: string;
   amount: number;
   images: {
