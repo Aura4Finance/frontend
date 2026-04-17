@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 interface TransferPaymentProps {
     transferAddress: string;
-    amountInUSDC: number;
+    amountInUSDC: string;
     transactionId: string;
     redirectUrl?: string;
 }
