@@ -154,13 +154,13 @@ export const usePayout = () => {
   })
 }
 
-export const useRetryPayout = () => {
+export const useRetryPayout = (payoutType: "crypto" | "fiat" = "crypto") => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ transactionId, twoFAKey }: { transactionId: string, twoFAKey: string }) => {
       client.defaults.headers.common["2-fa-key"] = twoFAKey;
-      const response = await client.post(`/user/transactions/payout/crypto/retry`, { transactionId });
+      const response = await client.post(`/user/transactions/payout/${payoutType}/retry`, { transactionId });
       return response.data.data as PayoutSuccessful;
     },
     onSuccess: () => {

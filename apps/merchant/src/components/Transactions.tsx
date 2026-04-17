@@ -177,7 +177,17 @@ const Transactions = () => {
 
   const { mutate: refundTransaction, isPending: isRefunding } = useRefund();
   const { mutate: retryRefundTransaction, isPending: isRetryingRefund } = useRetryRefund();
-  const { mutate: retryPayoutTransaction, isPending: isRetryingPayout } = useRetryPayout();
+  
+  // Determine payout type from selected transaction
+  const getPayoutTypeFromTransaction = (transaction: Transaction | null): "crypto" | "fiat" => {
+    if (!transaction || !transaction.payout) return "crypto";
+    // Check if payout method indicates fiat (e.g., contains 'bank', 'fiat', or no walletAddress)
+    const method = transaction.payout.method?.toLowerCase() || "";
+    return method.includes("fiat") || method.includes("bank") ? "fiat" : "crypto";
+  };
+
+  const payoutTypeForRetry = getPayoutTypeFromTransaction(selectedTransaction);
+  const { mutate: retryPayoutTransaction, isPending: isRetryingPayout } = useRetryPayout(payoutTypeForRetry);
   const { mutate: initiatePayoutTransaction, isPending: isInitiatingPayout } = usePayout();
   const { mutate: initiateFiatPayoutTransaction, isPending: isInitiatingFiatPayout } = useCreateFiatPayout();
   const { data: balances = [] } = useBalance();
