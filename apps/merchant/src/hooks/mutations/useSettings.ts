@@ -71,7 +71,7 @@ export const getUserProfile = (enabled = true) => {
 
 export const fetchUserProfile = async () => {
     const response = await client.get("/user/profile");
-    const profile = (response.data.data?.profile ?? response.data.profile ?? response.data.data) as UserProfile;
+    const profile = response.data.data as UserProfile;
     tokenStore.getState().setProfile(profile);
     return profile;
 }
