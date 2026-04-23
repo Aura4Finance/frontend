@@ -54,7 +54,7 @@ const PaymentLink = () => {
   const { mutate: deletePaylink, isPending: isDeleting } = useDeletePaylink();
 
   // Toast loading info (non-blocking)
-  const loadingToastId = useRef<any>(0);
+  const loadingToastId = useRef<any>();
   useEffect(() => {
     if (isLoading) {
       if (!loadingToastId.current) {
@@ -73,6 +73,9 @@ const PaymentLink = () => {
       }
     };
   }, [isLoading]);
+
+  // Progress bar with delay (from global store)
+  const { setCreatingPaylink, setEditingPaylink } = useLoadingStore();
 
   // Set active tab
   useEffect(() => {
