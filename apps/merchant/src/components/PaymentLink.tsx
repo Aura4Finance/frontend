@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { FiTrash2, FiPlus, FiEdit2, FiLink2, FiImage, FiX, FiSearch, FiArrowRight, FiEye } from "react-icons/fi";
@@ -17,12 +17,13 @@ import {
 import { tokenStore } from "../store/client"
 import { getSupportedCurrencies } from "../hooks/mutations/useSettings";
 import { useActiveTabStore } from "../store/activeTab";
+import { Button } from "@orafi/ui"
 
 const WALRUS_GATEWAY_TESTNET ="https://aggregator.walrus-testnet.walrus.space/v1/blobs";
 const WALRUS_GATEWAY_MAINNET ="https://aggregator.walrus-mainnet.walrus.space/v1/blobs";
 
 const PaymentLink = () => {
-  const [, setLocation] = useLocation();
+  const [, setLocation] = useLocation();z
   const { setActiveTab } = useActiveTabStore();
 
   const mode = tokenStore.getState().profile?.businessProfile?.isLive ? "live" : "test"
@@ -51,6 +52,28 @@ const PaymentLink = () => {
   const { mutate: createPaylink, isPending: isCreating } = useCreatePaylink();
   const { mutate: editPaylink, isPending: isEditing } = useEditPaylink();
   const { mutate: deletePaylink, isPending: isDeleting } = useDeletePaylink();
+
+  // Toast loading info (non-blocking)
+  const loadingToastId = useRef<string | number | undefined>();
+  useEffect(() => {
+    if (isLoading) {
+      if (!loadingToastId.current) {
+        loadingToastId.current = toast.info("Loading payment links...", { duration: 999999 });
+      }
+    } else {
+      if (loadingToastId.current) {
+        toast.dismiss(loadingToastId.current);
+        loadingToastId.current = undefined;
+      }
+    }
+    // Cleanup on unmount
+    return () => {
+      if (loadingToastId.current) {
+        toast.dismiss(loadingToastId.current);
+        loadingToastId.current = undefined;
+      }
+    };
+  }, [isLoading]);
 
   // Set active tab
   useEffect(() => {
@@ -323,12 +346,14 @@ const PaymentLink = () => {
                       <p className="text-lg font-bold text-gray-900">
                         {link.currency} {link.amount.toFixed(2)}
                       </p>
-                    </div>
+                    </div> 
                   </div>
 
                   {/* Actions */}
                   <div className="mt-3 flex gap-2">
-                    <button
+                    <Button
+                      title="View Details"
+                      type="button"
                       onClick={() => handleViewDetails(link)}
                       className="flex-1 rounded-md bg-blue-50 px-3 py-2 text-center text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 active:bg-blue-200"
                     >
