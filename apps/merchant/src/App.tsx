@@ -1,6 +1,8 @@
 import { Route, Switch, useLocation } from "wouter";
 import { Toaster } from "sonner";
+import { useEffect, useState } from "react";
 import { tokenStore } from "./store/client";
+import { useLoadingStore } from "./store/loading";
 import { getUserProfile } from "./hooks/mutations/useSettings";
 import Callback from "./components/Callback";
 import Dashboard from "./components/Dashboard";
@@ -11,6 +13,43 @@ import Onboarding from "./components/Onboarding";
 import Transactions from "./components/Transactions";
 import Webhook from "./components/Webhook";
 import PaymentLink from "./components/PaymentLink";
+
+// Global Progress Bar Component
+function GlobalProgressBar() {
+  const { isCreatingPaylink, isEditingPaylink } = useLoadingStore();
+  const [showProgressBar, setShowProgressBar] = useState(false);
+
+  useEffect(() => {
+    if (isCreatingPaylink || isEditingPaylink) {
+      const timer = setTimeout(() => setShowProgressBar(true), 300);
+      return () => clearTimeout(timer);
+    } else {
+      setShowProgressBar(false);
+    }
+  }, [isCreatingPaylink, isEditingPaylink]);
+
+  if (!showProgressBar) return null;
+
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', zIndex: 9999 }}>
+      <style>{`
+        @keyframes shimmer {
+          0%, 100% { width: 60%; opacity: 1; }
+          50% { width: 85%; opacity: 0.8; }
+        }
+      `}</style>
+      <div className="h-1.5 w-full bg-gradient-to-r from-blue-100 via-blue-200 to-blue-100">
+        <div 
+          className="h-1.5 bg-gradient-to-r from-blue-400 via-blue-600 to-blue-500 animate-pulse"
+          style={{ 
+            animation: 'shimmer 2s infinite',
+            boxShadow: '0 0 15px rgba(59, 130, 246, 0.9)'
+          }}
+        ></div>
+      </div>
+    </div>
+  );
+}
 
 function App() {
     const [location] = useLocation();
@@ -35,6 +74,7 @@ function App() {
   }
   return (  
     <>
+      <GlobalProgressBar />
       <Route>
         <Switch>
           {

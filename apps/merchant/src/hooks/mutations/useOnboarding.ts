@@ -6,7 +6,7 @@ type OnboardingData = {
     businessName: string;
     businessSector: string;
     country: string;
-    websiteLink: string;
+    websiteLink: string | undefined;
 }
 
 export const useCompleteOnboarding = () => {

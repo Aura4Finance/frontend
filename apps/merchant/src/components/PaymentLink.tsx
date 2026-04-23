@@ -17,13 +17,13 @@ import {
 import { tokenStore } from "../store/client"
 import { getSupportedCurrencies } from "../hooks/mutations/useSettings";
 import { useActiveTabStore } from "../store/activeTab";
-import { Button } from "@orafi/ui"
+import { useLoadingStore } from "../store/loading";
 
 const WALRUS_GATEWAY_TESTNET ="https://aggregator.walrus-testnet.walrus.space/v1/blobs";
 const WALRUS_GATEWAY_MAINNET ="https://aggregator.walrus-mainnet.walrus.space/v1/blobs";
 
 const PaymentLink = () => {
-  const [, setLocation] = useLocation();z
+  const [, setLocation] = useLocation();
   const { setActiveTab } = useActiveTabStore();
 
   const mode = tokenStore.getState().profile?.businessProfile?.isLive ? "live" : "test"
@@ -54,7 +54,7 @@ const PaymentLink = () => {
   const { mutate: deletePaylink, isPending: isDeleting } = useDeletePaylink();
 
   // Toast loading info (non-blocking)
-  const loadingToastId = useRef<string | number | undefined>();
+  const loadingToastId = useRef<any>();
   useEffect(() => {
     if (isLoading) {
       if (!loadingToastId.current) {
@@ -66,7 +66,6 @@ const PaymentLink = () => {
         loadingToastId.current = undefined;
       }
     }
-    // Cleanup on unmount
     return () => {
       if (loadingToastId.current) {
         toast.dismiss(loadingToastId.current);
@@ -74,6 +73,9 @@ const PaymentLink = () => {
       }
     };
   }, [isLoading]);
+
+  // Progress bar with delay (from global store)
+  const { isCreatingPaylink, isEditingPaylink, setCreatingPaylink, setEditingPaylink } = useLoadingStore();
 
   // Set active tab
   useEffect(() => {
@@ -122,16 +124,21 @@ const PaymentLink = () => {
       amount: parseFloat(formData.amount),
       currency: formData.currency,
     };
-    setTimeout(() => {
-      setShowCreateModal(false)
-      toast.info("processing, this might take a moment...");
-    }, 2000);
+    setCreatingPaylink(true);
+    setShowCreateModal(false);
     createPaylink(
       { payload, images },
       {
         onSuccess: () => {
           resetForm();
-          setShowCreateModal(false);
+          setCreatingPaylink(false);
+          toast.success("Payment link created successfully");
+          setTimeout(() => {
+            setShowCreateModal(false);
+          }, 2000);
+        },
+        onError: () => {
+          setCreatingPaylink(false);
         },
       }
     );
@@ -171,12 +178,8 @@ const PaymentLink = () => {
       amount: parseFloat(formData.amount),
       currency: formData.currency,
     };
-
-    setTimeout(() => {
-      setShowEditModal(false)
-      toast.info("processing, this might take a moment...");
-    }, 2000);
-
+    setEditingPaylink(true);
+    setShowEditModal(false)
     editPaylink(
       {
         paylinkId: selectedPaylink.id,
@@ -186,9 +189,15 @@ const PaymentLink = () => {
       {
         onSuccess: () => {
           resetForm();
-          setShowEditModal(false);
           setSelectedPaylink(null);
           toast.success("Payment link updated successfully");
+          setEditingPaylink(false);
+          setTimeout(() => {
+            setShowEditModal(false);
+          }, 2000);
+        },
+        onError: () => {
+          setEditingPaylink(false);
         },
       }
     );
@@ -351,7 +360,7 @@ const PaymentLink = () => {
 
                   {/* Actions */}
                   <div className="mt-3 flex gap-2">
-                    <Button
+                    <button
                       title="View Details"
                       type="button"
                       onClick={() => handleViewDetails(link)}
