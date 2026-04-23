@@ -156,7 +156,7 @@ const Signin = () => {
       "&response_type=code" +
       "&scope=openid%20email%20profile" +
       "&access_type=offline";
-    window.location.href = url;
+      window.location.assign(url);
   }
 
   const handleShowPasswordToggle = (e: any) => {

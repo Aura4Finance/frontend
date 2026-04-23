@@ -19,7 +19,8 @@ export const useExchangeCodeForToken = () => {
         onSuccess: async (data: {message: string, data: { businessProfile: { onboarded: boolean} } }) => {
             toast.success(data.message || "User logged in successfully!")
             const isOnboarded = Boolean((data.data?.businessProfile?.onboarded));
-            setLocation(isOnboarded ? '/' : '/onboarding')
+            setTimeout(() => setLocation(isOnboarded ? '/' : '/onboarding'), 2000);
+            
         },
         onError: (error: any) => {
             toast.error(error.response?.data?.message || "Unable to validate login request")
