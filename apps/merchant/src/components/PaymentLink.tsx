@@ -54,7 +54,7 @@ const PaymentLink = () => {
   const { mutate: deletePaylink, isPending: isDeleting } = useDeletePaylink();
 
   // Toast loading info (non-blocking)
-  const loadingToastId = useRef<any>();
+  const loadingToastId = useRef<any>(0);
   useEffect(() => {
     if (isLoading) {
       if (!loadingToastId.current) {
