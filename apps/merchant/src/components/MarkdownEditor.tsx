@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { LuBold, LuCode, LuHeading1, LuItalic, LuLink2, LuList, LuListOrdered, LuMinus, LuQuote } from "react-icons/lu";
+import { LuBold, LuCode, LuHeading1, LuItalic, LuLink2, LuList, LuListOrdered, LuMinus, LuQuote, LuSparkles } from "react-icons/lu";
 import { renderMarkdown } from "../lib/markdown";
+import MarkdownDraftAssistantModal from "./MarkdownDraftAssistantModal";
 
 type EditorTab = "write" | "preview";
 
@@ -25,16 +26,20 @@ const tabButtonBase =
 const toolbarButtonBase =
   "inline-flex h-6 w-6 items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 active:bg-blue-50 active:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1";
 
+const assistantButtonBase =
+  "inline-flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 active:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1";
+
 const MarkdownEditor = ({
   id,
   label,
   value,
   onChange,
-  placeholder = "Write a description… Markdown is supported.",
+  placeholder = "Write a description….",
 }: MarkdownEditorProps) => {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const selectionRef = useRef<SelectionRange>({ start: 0, end: 0 });
   const [activeTab, setActiveTab] = useState<EditorTab>("write");
+  const [assistantOpen, setAssistantOpen] = useState(false);
 
   const syncHeight = () => {
     const textarea = textareaRef.current;
@@ -121,6 +126,19 @@ const MarkdownEditor = ({
     commitValue(nextValue, {
       start: start + 1,
       end: start + 1 + labelText.length,
+    });
+  };
+
+  const applyGeneratedMarkdown = (nextValue: string) => {
+    onChange(nextValue);
+    selectionRef.current = {
+      start: nextValue.length,
+      end: nextValue.length,
+    };
+    setActiveTab("write");
+
+    window.requestAnimationFrame(() => {
+      syncHeight();
     });
   };
 
@@ -271,6 +289,20 @@ const MarkdownEditor = ({
               </button>
             </div>
 
+            <div className="flex items-center justify-between gap-3 border-b border-gray-100 bg-blue-50/60 px-3 py-2">
+              <p className="text-[11px] leading-4 text-blue-900/75">
+                Need a head start? Draft a structured markdown description with AI.
+              </p>
+              <button
+                type="button"
+                onClick={() => setAssistantOpen(true)}
+                className={assistantButtonBase}
+              >
+                <LuSparkles size={13} />
+                AI draft
+              </button>
+            </div>
+
             <textarea
               ref={textareaRef}
               id={id}
@@ -323,6 +355,13 @@ const MarkdownEditor = ({
           </div>
         )}
       </div>
+
+      <MarkdownDraftAssistantModal
+        isOpen={assistantOpen}
+        currentValue={value}
+        onClose={() => setAssistantOpen(false)}
+        onApply={applyGeneratedMarkdown}
+      />
     </div>
   );
 };

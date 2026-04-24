@@ -7,6 +7,7 @@ import logo from "@orafi/ui/assets/OraFi.png";
 import PaymentSuccess from "./PaymentSuccess";
 import PaymentFailed from "./PaymentFailed";
 import ImageGallery from "./ImageGallery";
+import { renderMarkdown } from "../lib/markdown";
 import { useGetPayLinkInformationQuery } from "../hooks/useGetPayinkInformationQuery";
 import { useVerifyPaymentMutation } from "../hooks/useVerifyPaymentMutation";
 import { useCreatePaymentMutation } from "../hooks/useCreatePaymentMutation";
@@ -20,6 +21,7 @@ const PayLink = () => {
   const createPaymentMutation = useCreatePaymentMutation();
   const [txId, setTxId] = useState<string | null>(null);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const description = paylinkData.data?.description?.trim() ?? "";
 
 
   useEffect(() => {
@@ -132,9 +134,17 @@ const PayLink = () => {
                   <h2 className="text-2xl font-bold text-blue-950 mt-2">₦ {paylinkData.data?.amount.toLocaleString()}</h2>
                 </div>
 
-                <div className="prose prose-sm prose-blue text-gray-600 mb-8 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-                  <p>{paylinkData.data?.description}</p>
-                </div>
+                {description ? (
+                  <div className="mb-8 rounded-2xl border border-gray-100 bg-gray-50/80 p-4 shadow-sm">
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">
+                      Description
+                    </p>
+                    <div
+                      className="markdown-content max-h-60 overflow-y-auto pr-2 text-sm text-gray-600"
+                      dangerouslySetInnerHTML={{ __html: renderMarkdown(description) }}
+                    />
+                  </div>
+                ) : null}
               </div>
 
               <div className="mt-auto pt-6 border-t border-gray-100">
