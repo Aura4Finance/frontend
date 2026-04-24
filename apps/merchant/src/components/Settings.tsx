@@ -374,7 +374,7 @@ const Settings = () => {
           {activeTabValue === "api-keys" && (
             <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
               <h2 className="text-base font-semibold text-gray-900">API keys</h2>
-              <p className="mt-1 text-sm text-gray-500">Generate or rotate keys using your 2FA key.</p>
+              <p className="mt-1 text-sm text-gray-500">Generate or rotate keys using your 2FA key. {!profile?.businessProfile?.isLive && <span className="text-amber-600 font-medium">(Available only in Live mode)</span>}</p>
 
               <form onSubmit={handleGenerateApiKey} className="mt-4 space-y-4">
                 <div className="max-w-md">
@@ -388,16 +388,18 @@ const Settings = () => {
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <button
-                    disabled={generateApiKeyMutation.isPending || !twoFAKey.trim()}
+                    disabled={!profile?.businessProfile?.isLive || generateApiKeyMutation.isPending || !twoFAKey.trim()}
                     className="rounded-md bg-blue-950 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-900 disabled:cursor-not-allowed disabled:opacity-60"
+                    title={!profile?.businessProfile?.isLive ? "Available only in Live mode" : ""}
                   >
                     {generateApiKeyMutation.isPending ? "Generating..." : "Generate API keys"}
                   </button>
                   <button
                     type="button"
                     onClick={handleRegenerateApiKey}
-                    disabled={regenerateApiKeysMutation.isPending || !twoFAKey.trim() || !apiKey?.id}
+                    disabled={!profile?.businessProfile?.isLive || regenerateApiKeysMutation.isPending || !twoFAKey.trim() || !apiKey?.id}
                     className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    title={!profile?.businessProfile?.isLive ? "Available only in Live mode" : ""}
                   >
                     <FiRefreshCcw size={14} />
                     {regenerateApiKeysMutation.isPending ? "Regenerating..." : "Regenerate API keys"}

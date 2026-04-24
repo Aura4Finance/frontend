@@ -259,15 +259,19 @@ const Transactions = () => {
 
   const handleRefund = () => {
     if (!selectedTransaction) return;
-    if (!refundData.walletAddress || !refundData.twoFAKey) {
-      toast.error("Please provide wallet address and 2FA key");
+    if (!refundData.walletAddress) {
+      toast.error("Please provide wallet address");
+      return;
+    }
+    if (mode === "live" && !refundData.twoFAKey) {
+      toast.error("Please provide 2FA key");
       return;
     }
     refundTransaction(
       {
         originalTxId: selectedTransaction.id,
         to: refundData.walletAddress,
-        twoFAKey: refundData.twoFAKey,
+        ...(mode === "live" && { twoFAKey: refundData.twoFAKey }),
       },
       {
         onSuccess: (data: any) => {
@@ -298,14 +302,14 @@ const Transactions = () => {
 
   const handleRetryRefund = () => {
     if (!selectedTransaction) return;
-    if (!retryRefundData.twoFAKey) {
+    if (mode === "live" && !retryRefundData.twoFAKey) {
       toast.error("Please provide 2FA key");
       return;
     }
     retryRefundTransaction(
       {
         transactionId: selectedTransaction.id,
-        twoFAKey: retryRefundData.twoFAKey,
+        ...(mode === "live" && { twoFAKey: retryRefundData.twoFAKey }),
       },
       {
         onSuccess: () => {
@@ -333,14 +337,14 @@ const Transactions = () => {
 
   const handleRetryPayout = () => {
     if (!selectedTransaction) return;
-    if (!retryPayoutData.twoFAKey) {
+    if (mode === "live" && !retryPayoutData.twoFAKey) {
       toast.error("Please provide 2FA key");
       return;
     }
     retryPayoutTransaction(
       {
         transactionId: selectedTransaction.id,
-        twoFAKey: retryPayoutData.twoFAKey,
+        ...(mode === "live" && { twoFAKey: retryPayoutData.twoFAKey }),
       },
       {
         onSuccess: () => {
@@ -367,8 +371,12 @@ const Transactions = () => {
   };
 
   const handleInitiatePayout = () => {
-    if (!payoutData.amount || !payoutData.twoFAKey) {
-      toast.error("Please provide amount and 2FA key");
+    if (!payoutData.amount) {
+      toast.error("Please provide amount");
+      return;
+    }
+    if (mode === "live" && !payoutData.twoFAKey) {
+      toast.error("Please provide 2FA key");
       return;
     }
 
@@ -386,13 +394,13 @@ const Transactions = () => {
       ? {
         amount: parseFloat(payoutData.amount),
         cryptoSettlementAccountId: payoutData.cryptoSettlementAccountId,
-        twoFAKey: payoutData.twoFAKey,
+        ...(mode === "live" && { twoFAKey: payoutData.twoFAKey }),
       }
       : {
         amount: parseFloat(payoutData.amount),
         walletAddress: payoutData.walletAddress,
         network: "SUI", // For now, only SUI is supported
-        twoFAKey: payoutData.twoFAKey,
+        ...(mode === "live" && { twoFAKey: payoutData.twoFAKey }),
         ...(payoutData.save && { alias: payoutData.alias }),
         ...(payoutData.save && { save: true }),
       };
@@ -429,8 +437,12 @@ const Transactions = () => {
   };
 
   const handleInitiateFiatPayout = () => {
-    if (!fiatPayoutData.amount || !fiatPayoutData.twoFAKey) {
-      toast.error("Please provide amount and 2FA key");
+    if (!fiatPayoutData.amount) {
+      toast.error("Please provide amount");
+      return;
+    }
+    if (mode === "live" && !fiatPayoutData.twoFAKey) {
+      toast.error("Please provide 2FA key");
       return;
     }
 
@@ -446,7 +458,7 @@ const Transactions = () => {
 
     const fiatPayoutParams: any = {
       amount: parseFloat(fiatPayoutData.amount),
-      twoFAKey: fiatPayoutData.twoFAKey,
+      ...(mode === "live" && { twoFAKey: fiatPayoutData.twoFAKey }),
     };
 
     if (fiatPayoutUsingAccount) {
@@ -1109,16 +1121,18 @@ const Transactions = () => {
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">2FA Key</label>
-              <input
-                type="password"
-                value={refundData.twoFAKey}
-                onChange={(e) => setRefundData({ ...refundData, twoFAKey: e.target.value })}
-                placeholder="Enter your 2FA key"
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            {mode === "live" && (
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">2FA Key</label>
+                <input
+                  type="password"
+                  value={refundData.twoFAKey}
+                  onChange={(e) => setRefundData({ ...refundData, twoFAKey: e.target.value })}
+                  placeholder="Enter your 2FA key"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            )}
 
             <div className="flex gap-2">
               <button
@@ -1142,16 +1156,18 @@ const Transactions = () => {
       {/* Retry Refund Modal */}
       <Modal isOpen={retryRefundModalOpen} onClose={() => setRetryRefundModalOpen(false)} title="Retry Refund" size="default">
         <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">2FA Key</label>
-            <input
-              type="password"
-              value={retryRefundData.twoFAKey}
-              onChange={(e) => setRetryRefundData({ ...retryRefundData, twoFAKey: e.target.value })}
-              placeholder="Enter your 2FA key"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+          {mode === "live" && (
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">2FA Key</label>
+              <input
+                type="password"
+                value={retryRefundData.twoFAKey}
+                onChange={(e) => setRetryRefundData({ ...retryRefundData, twoFAKey: e.target.value })}
+                placeholder="Enter your 2FA key"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          )}
 
           <div className="flex gap-2">
             <button
@@ -1174,16 +1190,18 @@ const Transactions = () => {
       {/* Retry Payout Modal */}
       <Modal isOpen={retryPayoutModalOpen} onClose={() => setRetryPayoutModalOpen(false)} title="Retry Payout" size="default">
         <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">2FA Key</label>
-            <input
-              type="password"
-              value={retryPayoutData.twoFAKey}
-              onChange={(e) => setRetryPayoutData({ ...retryPayoutData, twoFAKey: e.target.value })}
-              placeholder="Enter your 2FA key"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+          {mode === "live" && (
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">2FA Key</label>
+              <input
+                type="password"
+                value={retryPayoutData.twoFAKey}
+                onChange={(e) => setRetryPayoutData({ ...retryPayoutData, twoFAKey: e.target.value })}
+                placeholder="Enter your 2FA key"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          )}
 
           <div className="flex gap-2">
             <button
@@ -1412,16 +1430,18 @@ const Transactions = () => {
               )}
             </div>
 
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">2FA Key</label>
-              <input
-                type="password"
-                value={fiatPayoutData.twoFAKey}
-                onChange={(e) => setFiatPayoutData({ ...fiatPayoutData, twoFAKey: e.target.value })}
-                placeholder="Enter your 2FA key"
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            {mode === "live" && (
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">2FA Key</label>
+                <input
+                  type="password"
+                  value={fiatPayoutData.twoFAKey}
+                  onChange={(e) => setFiatPayoutData({ ...fiatPayoutData, twoFAKey: e.target.value })}
+                  placeholder="Enter your 2FA key"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            )}
 
             <div className="flex gap-2">
               <button
@@ -1429,7 +1449,7 @@ const Transactions = () => {
                 disabled={
                   isInitiatingFiatPayout ||
                   fiatPayoutData.amount.trim() === "" ||
-                  !fiatPayoutData.twoFAKey ||
+                  (mode === "live" && !fiatPayoutData.twoFAKey) ||
                   (
                     !fiatPayoutUsingAccount &&
                     (!resolvedPayoutAccountName || fiatPayoutData.accountIdentifier.length !== 10)
@@ -1607,23 +1627,25 @@ const Transactions = () => {
               )}
             </div>
 
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">2FA Key</label>
-              <input
-                type="password"
-                value={payoutData.twoFAKey}
-                onChange={(e) => setPayoutData({ ...payoutData, twoFAKey: e.target.value })}
-                placeholder="Enter your 2FA key"
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            {mode === "live" && (
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">2FA Key</label>
+                <input
+                  type="password"
+                  value={payoutData.twoFAKey}
+                  onChange={(e) => setPayoutData({ ...payoutData, twoFAKey: e.target.value })}
+                  placeholder="Enter your 2FA key"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            )}
 
             <div className="flex gap-2">
               <button
                 onClick={handleInitiatePayout}
                 disabled={
                   isInitiatingPayout ||
-                  !payoutData.twoFAKey ||
+                  (mode === "live" && !payoutData.twoFAKey) ||
                   payoutData.amount.trim() === "" ||
                   (
                     !payoutUsingAccount && !payoutData.walletAddress

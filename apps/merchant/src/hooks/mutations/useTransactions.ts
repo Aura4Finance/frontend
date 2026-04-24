@@ -46,8 +46,8 @@ export const useRefund = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ originalTxId, to, reason, twoFAKey }: { originalTxId: string; to: string; reason?: string, twoFAKey: string }) => {
-      client.defaults.headers.common["2-fa-key"] = twoFAKey;
+    mutationFn: async ({ originalTxId, to, reason, twoFAKey }: { originalTxId: string; to: string; reason?: string, twoFAKey?: string }) => {
+      if(twoFAKey) client.defaults.headers.common["2-fa-key"] = twoFAKey;
       const response = await client.post(`/user/transactions/refund`, { originalTxId, to, reason });
       return response.data.data as RefundSuccessful;
     },
@@ -66,8 +66,8 @@ export const useRetryRefund = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ transactionId, twoFAKey }: { transactionId: string, twoFAKey: string }) => {
-      client.defaults.headers.common["2-fa-key"] = twoFAKey;
+    mutationFn: async ({ transactionId, twoFAKey }: { transactionId: string, twoFAKey?: string }) => {
+      if(twoFAKey) client.defaults.headers.common["2-fa-key"] = twoFAKey;
       const response = await client.post(`/user/transactions/refund/retry`, { transactionId });
       return response.data.data as RefundSuccessful;
     },
@@ -108,12 +108,12 @@ export const usePayout = () => {
       amount: number; 
       network?: string; 
       walletAddress?: string;
-      twoFAKey: string;
+      twoFAKey?: string;
       alias?: string;
       save?: boolean;
       cryptoSettlementAccountId?: string;
     }) => {
-      client.defaults.headers.common["2-fa-key"] = twoFAKey;
+      if(twoFAKey) client.defaults.headers.common["2-fa-key"] = twoFAKey;
       
       // Scenario 1: Using presaved crypto settlement account
       if (cryptoSettlementAccountId) {
@@ -158,8 +158,8 @@ export const useRetryPayout = (payoutType: "crypto" | "fiat" = "crypto") => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ transactionId, twoFAKey }: { transactionId: string, twoFAKey: string }) => {
-      client.defaults.headers.common["2-fa-key"] = twoFAKey;
+    mutationFn: async ({ transactionId, twoFAKey }: { transactionId: string, twoFAKey?: string }) => {
+      if(twoFAKey) client.defaults.headers.common["2-fa-key"] = twoFAKey;
       const response = await client.post(`/user/transactions/payout/${payoutType}/retry`, { transactionId });
       return response.data.data as PayoutSuccessful;
     },
