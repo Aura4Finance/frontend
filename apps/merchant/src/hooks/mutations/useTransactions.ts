@@ -245,3 +245,18 @@ export const useGetSupoortedNetworks = () => {
     }
   })
 }
+
+
+
+export const useGetRates = (currency: string) => {
+  return useQuery({
+    queryKey: ["rates"],
+    queryFn: async () => {
+      const response = await client.get(`/rates?currency=${currency}`);
+      return response.data.data as  {
+        rate: string;
+        rateDescription: string
+      };
+    }
+  })
+}

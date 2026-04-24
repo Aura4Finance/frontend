@@ -25,21 +25,27 @@ const ImageGallery = ({ images, mode }: ImageGalleryProps) => {
   return (
     <div className="flex flex-col gap-4">
       {/* Main Image Display */}
-      <div className="relative group w-full h-[400px] bg-white rounded-lg border border-gray-100 flex items-center justify-center overflow-hidden">
+      <div className="relative group w-full h-[400px] bg-white rounded-2xl border border-gray-200 shadow-sm flex items-center justify-center overflow-hidden">
         {images.length > 0 ? (
           <div className="w-full h-full relative bg-gray-50 overflow-hidden">
             <img
               src={`${mode == "live" ? WALRUS_GATEWAY_MAINNET : WALRUS_GATEWAY_TESTNET}/${images[currentIndex]}`}
               alt={`Paylink image ${currentIndex + 1}`}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
               loading="lazy"
               onError={(e) => {
                 e.currentTarget.style.display = "none";
               }}
             />
+            <div className="absolute left-3 top-3 rounded-full border border-white/70 bg-white/90 px-3 py-1 text-xs font-semibold text-gray-700 shadow-sm backdrop-blur-sm">
+              {currentIndex + 1} / {images.length}
+            </div>
           </div>
         ) : (
-          <FiShoppingBag className="w-32 h-32 text-gray-200" />
+          <div className="flex flex-col items-center gap-3 text-center text-gray-400">
+            <FiShoppingBag className="w-20 h-20 text-gray-200" />
+            <span className="text-sm font-medium">No image available</span>
+          </div>
         )}
 
         {/* Navigation Arrows */}
@@ -47,13 +53,17 @@ const ImageGallery = ({ images, mode }: ImageGalleryProps) => {
           <>
             <button
               onClick={(e) => { e.preventDefault(); prevImage(); }}
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+              aria-label="Previous image"
+              title="Previous image"
+              className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 p-2.5 rounded-full shadow-sm border border-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <FiChevronLeft className="w-5 h-5" />
             </button>
             <button
               onClick={(e) => { e.preventDefault(); nextImage(); }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+              aria-label="Next image"
+              title="Next image"
+              className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 p-2.5 rounded-full shadow-sm border border-gray-100 opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <FiChevronRight className="w-5 h-5" />
             </button>
@@ -69,10 +79,10 @@ const ImageGallery = ({ images, mode }: ImageGalleryProps) => {
               key={index}
               onClick={() => setCurrentIndex(index)}
               className={cn(
-                "relative flex-shrink-0 w-16 h-16 rounded-md border overflow-hidden transition-all",
+                "relative flex-shrink-0 w-18 h-18 rounded-xl border overflow-hidden transition-all",
                 index === currentIndex
-                  ? "border-orange-500 ring-1 ring-orange-500"
-                  : "border-gray-200 hover:border-orange-300"
+                  ? "border-blue-950 ring-1 ring-blue-950"
+                  : "border-gray-200 hover:border-gray-300"
               )}
             >
               <div className="w-full h-full bg-gray-50 flex items-center justify-center">

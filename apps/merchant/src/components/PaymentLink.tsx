@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { FiTrash2, FiPlus, FiEdit2, FiLink2, FiImage, FiX, FiSearch, FiArrowRight, FiEye } from "react-icons/fi";
 import DashboardWrapper from "./DashboardWrapper";
+import MarkdownEditor from "./MarkdownEditor";
 import Modal from "./transactions/Modal";
 import CopyButton from "./transactions/CopyButton";
 import ErrorState from "./transactions/ErrorState";
@@ -18,9 +19,12 @@ import { tokenStore } from "../store/client"
 import { getSupportedCurrencies } from "../hooks/mutations/useSettings";
 import { useActiveTabStore } from "../store/activeTab";
 import { useLoadingStore } from "../store/loading";
+import { renderMarkdown } from "../lib/markdown";
 
 const WALRUS_GATEWAY_TESTNET ="https://aggregator.walrus-testnet.walrus.space/v1/blobs";
 const WALRUS_GATEWAY_MAINNET ="https://aggregator.walrus-mainnet.walrus.space/v1/blobs";
+const MIN_UPLOAD_IMAGES = 1;
+const MAX_UPLOAD_IMAGES = 4;
 
 const PaymentLink = () => {
   const [, setLocation] = useLocation();
@@ -66,10 +70,25 @@ const PaymentLink = () => {
     const files = e.currentTarget.files;
     if (files) {
       const newFiles = Array.from(files);
-      const newPreviews = newFiles.map((file) => URL.createObjectURL(file));
+      const remainingSlots = MAX_UPLOAD_IMAGES - images.length;
 
-      setImages((prev) => [...prev, ...newFiles]);
+      if (remainingSlots <= 0) {
+        toast.error(`You can upload a maximum of ${MAX_UPLOAD_IMAGES} images.`);
+        e.currentTarget.value = "";
+        return;
+      }
+
+      const filesToAdd = newFiles.slice(0, remainingSlots);
+
+      if (newFiles.length > remainingSlots) {
+        toast.error(`You can upload a maximum of ${MAX_UPLOAD_IMAGES} images.`);
+      }
+
+      const newPreviews = filesToAdd.map((file) => URL.createObjectURL(file));
+
+      setImages((prev) => [...prev, ...filesToAdd]);
       setImagePreview((prev) => [...prev, ...newPreviews]);
+      e.currentTarget.value = "";
     }
   };
 
@@ -85,8 +104,11 @@ const PaymentLink = () => {
   // Reset form
   const resetForm = () => {
     setFormData({ title: "", description: "", amount: "", currency: "USD" });
+    setImagePreview((prev) => {
+      prev.forEach((preview) => URL.revokeObjectURL(preview));
+      return [];
+    });
     setImages([]);
-    setImagePreview([]);
   };
 
   // Handle create
@@ -97,6 +119,12 @@ const PaymentLink = () => {
       toast.error("Please fill in all required fields");
       return;
     }
+
+    if (images.length < MIN_UPLOAD_IMAGES) {
+      toast.error(`Please upload at least ${MIN_UPLOAD_IMAGES} image.`);
+      return;
+    }
+
     const payload = {
       title: formData.title,
       description: formData.description,
@@ -326,7 +354,10 @@ const PaymentLink = () => {
                 {/* Content */}
                 <div className="p-4">
                   <h3 className="line-clamp-2 text-sm font-semibold text-gray-900">{link.title}</h3>
-                  <p className="mt-1 line-clamp-2 text-xs text-gray-500">{link.description}</p>
+                  <div
+                    className="markdown-content markdown-content--summary mt-1 text-xs text-gray-500"
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(link.description) }}
+                  />
 
                   {/* Amount */}
                   <div className="mt-3 flex items-baseline justify-between">
@@ -396,16 +427,12 @@ const PaymentLink = () => {
           </div>
 
           {/* Description */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-700">Description *</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Describe what this payment link is for..."
-              rows={3}
-              className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
+          <MarkdownEditor
+            id="create-payment-link-description"
+            label="Description *"
+            value={formData.description}
+            onChange={(description) => setFormData({ ...formData, description })}
+          />
 
           {/* Amount and Currency */}
           <div className="grid gap-3 sm:grid-cols-2">
@@ -443,7 +470,7 @@ const PaymentLink = () => {
 
           {/* Image Upload */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-2">Images (Optional)</label>
+            <label className="block text-xs font-semibold text-gray-700 mb-2">Images (Required, 1-4)</label>
             <div className="rounded-lg border-2 border-dashed border-gray-300 p-4">
               <input
                 type="file"
@@ -460,7 +487,7 @@ const PaymentLink = () => {
                 <FiImage className="h-6 w-6 text-gray-400" />
                 <div>
                   <p className="text-xs font-semibold text-gray-900">Click to upload images</p>
-                  <p className="text-xs text-gray-500">or drag and drop</p>
+                  <p className="text-xs text-gray-500">Upload 1 to 4 images</p>
                 </div>
               </label>
             </div>
@@ -471,7 +498,7 @@ const PaymentLink = () => {
                 {imagePreview.map((preview, idx) => (
                   <div key={idx} className="relative">
                     <img
-                      src={`${mode == "live" ? WALRUS_GATEWAY_MAINNET : WALRUS_GATEWAY_TESTNET}/${preview}`}
+                      src={preview}
                       alt={`Preview ${idx}`}
                       className="h-20 w-full rounded-lg object-cover"
                     />
@@ -502,7 +529,7 @@ const PaymentLink = () => {
             </button>
             <button
               type="submit"
-              disabled={isCreating}
+              disabled={isCreating || images.length < MIN_UPLOAD_IMAGES}
               className="flex-1 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50"
             >
               {isCreating ? "Creating..." : "Create Link"}
@@ -536,16 +563,12 @@ const PaymentLink = () => {
           </div>
 
           {/* Description */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-700">Description *</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Describe what this payment link is for..."
-              rows={3}
-              className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
+          <MarkdownEditor
+            id="edit-payment-link-description"
+            label="Description *"
+            value={formData.description}
+            onChange={(description) => setFormData({ ...formData, description })}
+          />
 
           {/* Amount and Currency */}
           <div className="grid gap-3 sm:grid-cols-2">
@@ -583,7 +606,7 @@ const PaymentLink = () => {
 
           {/* Image Upload */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-2">Update Images (Optional)</label>
+            <label className="block text-xs font-semibold text-gray-700 mb-2">Update Images (Optional, max 4)</label>
             <div className="rounded-lg border-2 border-dashed border-gray-300 p-4">
               <input
                 type="file"
@@ -600,7 +623,7 @@ const PaymentLink = () => {
                 <FiImage className="h-6 w-6 text-gray-400" />
                 <div>
                   <p className="text-xs font-semibold text-gray-900">Click to upload images</p>
-                  <p className="text-xs text-gray-500">or drag and drop</p>
+                  <p className="text-xs text-gray-500">Upload up to 4 images</p>
                 </div>
               </label>
             </div>
@@ -709,7 +732,10 @@ const PaymentLink = () => {
               {/* Header */}
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
                 <h3 className="text-base font-semibold text-gray-900">{selectedPaylink.title}</h3>
-                <p className="text-xs text-gray-600 mt-1">{selectedPaylink.description}</p>
+                <div
+                  className="markdown-content mt-1 text-xs text-gray-600"
+                  dangerouslySetInnerHTML={{ __html: renderMarkdown(selectedPaylink.description) }}
+                />
               </div>
 
               {/* Details Grid */}

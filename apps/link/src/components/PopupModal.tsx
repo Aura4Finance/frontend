@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Button, Card } from "@orafi/ui";
 import { useGetSupportedNetworkQuery } from "../hooks/useGetPayinkInformationQuery";
+import logo from "@orafi/ui/assets/OraFi.png";
+import { FiChevronDown, FiGlobe, FiMail, FiUser } from "react-icons/fi";
 
 interface PopupModalProps {
   open: boolean;
@@ -34,6 +36,9 @@ const PopupModal = ({ open, onClose, isLoading, onSubmit }: PopupModalProps) => 
     onSubmit({ fullName: `${firstName} ${lastName}`, email, network });
   };
 
+  const inputBaseClass =
+    "w-full h-10 rounded border border-gray-200 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-600";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
       <Card className="w-full max-w-md bg-white rounded-lg p-6">
@@ -46,20 +51,26 @@ const PopupModal = ({ open, onClose, isLoading, onSubmit }: PopupModalProps) => 
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1.5">Name</label>
             <div className="flex gap-2">
-              <input
-                type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                className="flex-1 h-10 rounded border border-gray-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
-                placeholder="First"
-              />
-              <input
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                className="flex-1 h-10 rounded border border-gray-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
-                placeholder="Last"
-              />
+              <div className="relative flex-1">
+                <FiUser className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className={`${inputBaseClass} pl-9`}
+                  placeholder="First"
+                />
+              </div>
+              <div className="relative flex-1">
+                <FiUser className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className={`${inputBaseClass} pl-9`}
+                  placeholder="Last"
+                />
+              </div>
             </div>
           </div>
 
@@ -68,17 +79,20 @@ const PopupModal = ({ open, onClose, isLoading, onSubmit }: PopupModalProps) => 
             <label className="block text-xs font-medium text-gray-700 mb-1.5">
               Email
             </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full h-10 rounded border border-gray-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
-              placeholder="you@example.com"
-            />
+            <div className="relative">
+              <FiMail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={`${inputBaseClass} pl-9`}
+                placeholder="you@example.com"
+              />
+            </div>
           </div>
 
           {/* Network Dropdown */}
-          <div>
+          <div className="relative">
             <label className="block text-xs font-medium text-gray-700 mb-1.5">
               Network
             </label>
@@ -87,26 +101,29 @@ const PopupModal = ({ open, onClose, isLoading, onSubmit }: PopupModalProps) => 
               type="button"
               disabled={networksLoading}
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="w-full h-10 rounded border border-gray-200 px-3 text-sm bg-white flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="w-full h-10 rounded border border-gray-200 bg-white px-3 text-sm flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-blue-600"
             >
-              {selectedNetwork ? (
-                <div className="flex items-center gap-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <FiGlobe className="h-4 w-4 shrink-0 text-gray-400" />
+                {selectedNetwork ? (
+                  <>
                   <img
                     src={selectedNetwork.logoUrl}
                     alt={selectedNetwork.symbol}
-                    className="w-4 h-4 rounded-full"
+                    className="w-4 h-4 rounded-full shrink-0"
                   />
-                  <span className="text-sm">{selectedNetwork.symbol}</span>
-                </div>
-              ) : (
-                <span className="text-gray-500">Select network</span>
-              )}
+                    <span className="text-sm text-gray-900 truncate">{selectedNetwork.symbol}</span>
+                  </>
+                ) : (
+                  <span className="text-gray-500">Select network</span>
+                )}
+              </div>
 
-              <span className="text-xs text-gray-400">▼</span>
+              <FiChevronDown className="h-4 w-4 shrink-0 text-gray-400" />
             </button>
 
             {isDropdownOpen && (
-              <div className="absolute z-10 mt-1 w-80 bg-white border border-gray-200 rounded shadow-md">
+              <div className="absolute left-0 z-10 mt-1 w-full rounded border border-gray-200 bg-white shadow-md">
                 {networks?.map((n) => (
                   <button
                     key={n.symbol}
@@ -115,12 +132,12 @@ const PopupModal = ({ open, onClose, isLoading, onSubmit }: PopupModalProps) => 
                       setNetwork(n.symbol);
                       setIsDropdownOpen(false);
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 text-left"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-gray-50"
                   >
                     <img
                       src={n.logoUrl}
                       alt={n.symbol}
-                      className="w-4 h-4 rounded-full"
+                      className="w-4 h-4 rounded-full shrink-0"
                     />
                     {n.symbol}
                   </button>
@@ -147,7 +164,7 @@ const PopupModal = ({ open, onClose, isLoading, onSubmit }: PopupModalProps) => 
             disabled={isLoading || networksLoading}
           >
             {isLoading && (
-              <span className="h-3 w-3 animate-spin rounded-full border border-white border-t-transparent mr-2" />
+              <img src={logo} alt="OraFi" className="mr-2 h-5 w-5 object-contain" />
             )}
             {isLoading ? "Processing..." : "Proceed"}
           </Button>

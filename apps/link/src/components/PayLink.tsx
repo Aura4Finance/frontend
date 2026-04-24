@@ -35,13 +35,12 @@ const PayLink = () => {
   // Rendering verification states
   if (verifyPaymentMutation.isPending) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 flex-col gap-4">
-        <div className="h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-gray-600 font-medium">Verifying payment...</p>
-        <div className="flex items-center gap-2 mt-4 opacity-50">
-          <img src={logo} alt="OraFi" className="h-5 w-5" />
-          <span className="text-sm font-semibold text-gray-900">OraFi</span>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <img
+          src={logo}
+          alt="OraFi"
+          className="h-20 w-20 object-contain animate-pulse"
+        />
       </div>
     );
   }
@@ -57,11 +56,12 @@ const PayLink = () => {
   // Loading Product Data
   if (paylinkData.isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="h-12 w-12 bg-gray-200 rounded-full mb-4"></div>
-          <div className="h-4 w-32 bg-gray-200 rounded"></div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <img
+          src={logo}
+          alt="OraFi"
+          className="h-20 w-20 object-contain animate-pulse"
+        />
       </div>
     );
   }
@@ -69,17 +69,17 @@ const PayLink = () => {
   if (!paylinkData.data) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
+    <div className="min-h-screen bg-gray-50 font-sans flex flex-col text-gray-900">
       {/* Simple Header */}
       <header className="w-full py-6 flex justify-center">
-        <div className="flex items-center gap-2">
-          <img src={logo} alt="OraFi Logo" className="h-8 w-8 rounded-full shadow-sm" />
-          <span className="text-xl font-bold text-blue-950 tracking-tight">OraFi</span>
+        <div className="flex items-center gap-3 rounded-full border border-gray-200 bg-white px-4 py-2 shadow-sm">
+          <img src={logo} alt="OraFi Logo" className="h-8 w-8 rounded-full object-contain" />
+          <span className="text-lg font-bold tracking-tight text-gray-900">OraFi</span>
         </div>
       </header>
 
       <div className="flex-1 flex items-start justify-center p-4">
-        <Card className="w-full max-w-5xl bg-white shadow-sm border border-gray-100 overflow-hidden">
+        <Card className="w-full max-w-5xl overflow-hidden border border-gray-100 bg-white shadow-sm rounded-2xl">
 
           {/* Test Mode Banner */}
           {paylinkData.data?.mode === "test" && (
@@ -97,11 +97,11 @@ const PayLink = () => {
             </div>
 
             {/* Right Column: Details */}
-            <div className="lg:w-1/2 p-6 md:p-10 flex flex-col">
+            <div className="lg:w-1/2 p-6 md:p-10 flex flex-col bg-white">
 
               {/* Merchant Info (Header) */}
               <div className="flex items-center gap-3 mb-6 pb-6 border-b border-gray-100">
-                <div className="w-12 h-12 bg-blue-900 rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
+                <div className="w-12 h-12 bg-blue-950 rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0 shadow-sm">
                   {paylinkData.data?.profile.businessName.charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -125,11 +125,11 @@ const PayLink = () => {
 
               <div className="flex-1">
                 <div className="flex justify-between items-start gap-4 mb-2">
-                  <h1 className="text-2xl md:text-3xl font-bold text-blue-950 leading-tight">{paylinkData.data?.title}</h1>
+                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight">{paylinkData.data?.title}</h1>
                 </div>
 
                 <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mt-2">₦ {paylinkData.data?.amount.toLocaleString()}</h2>
+                  <h2 className="text-2xl font-bold text-blue-950 mt-2">₦ {paylinkData.data?.amount.toLocaleString()}</h2>
                 </div>
 
                 <div className="prose prose-sm prose-blue text-gray-600 mb-8 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
@@ -142,7 +142,7 @@ const PayLink = () => {
                   <Button
                     variant="default"
                     onClick={()=> setCheckoutOpen(true)}
-                    className="w-full h-12 text-base font-bold bg-blue-950 hover:bg-blue-900 text-white shadow-md rounded-md transition-all active:scale-[0.98]">
+                    className="w-full h-12 text-base font-bold bg-blue-950 hover:bg-blue-900 text-white shadow-sm rounded-xl transition-all active:scale-[0.98]">
                     Proceed to Checkout
                   </Button>
 
