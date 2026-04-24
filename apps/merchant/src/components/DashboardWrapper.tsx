@@ -28,6 +28,10 @@ const DashboardWrapper = ({ children }: { children: React.ReactNode }) => {
   const { profile } = tokenStore();
   const [copied, setCopied] = useState(false);
 
+  const needsOnboarding = !profile?.businessProfile?.onboarded;
+  const needsTwoFactor = !profile?.twoFactorEnabled;
+  const showSetupNotice = needsOnboarding || needsTwoFactor;
+
   const network = profile?.businessProfile?.isLive ? "Mainnet" : "Testnet";
   const walletAddress = profile?.businessProfile?.wallet?.[0]?.address ?? "—";
   const shortWalletAddress =
@@ -61,23 +65,27 @@ const DashboardWrapper = ({ children }: { children: React.ReactNode }) => {
     <div className="flex min-h-screen flex-col md:flex-row">
       <LeftBar />
       <main
-        className={`w-full bg-gray-50 transition-all duration-300 pb-20 md:pb-0 ${
+        className={`relative z-0 w-full bg-gray-50 transition-all duration-300 pb-20 md:pb-0 ${
           collapsed ? "md:ml-20" : "md:ml-55"
         }`}
       >
-        {(!profile?.businessProfile?.onboarded || !profile?.twoFactorEnabled)  && (
+        {showSetupNotice && (
           <div className="flex items-center justify-between gap-4 bg-yellow-400 px-4 py-2.5 sm:px-6">
             <div className="flex items-center gap-2 text-yellow-900">
               <FiAlertTriangle size={16} className="shrink-0" />
               <p className="text-sm font-medium">
-                Your account setup is incomplete. Complete onboarding to unlock all features.
+                {needsOnboarding && needsTwoFactor
+                  ? "Your account setup is incomplete. Complete onboarding and 2FA to unlock all features."
+                  : needsOnboarding
+                    ? "Your account setup is incomplete. Complete onboarding to unlock all features."
+                    : "Your account setup is incomplete. Complete 2FA to unlock all features."}
               </p>
             </div>
             <Link
               to="/onboarding"
               className="shrink-0 rounded-md bg-yellow-900 px-3 py-1.5 text-xs font-semibold text-yellow-50 transition-colors hover:bg-yellow-800"
             >
-              Complete onboarding
+              {needsOnboarding ? "Complete onboarding" : "Set up 2FA"}
             </Link>
           </div>
         )}

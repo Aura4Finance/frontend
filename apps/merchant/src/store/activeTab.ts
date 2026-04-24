@@ -18,15 +18,17 @@ export interface ActiveTabState {
   | "BNB"
   | "SOLANA";
   setNetwork: (network:  ActiveTabState["network"]) => void;
+  setCollapsed: (collapsed: boolean) => void;
   toggleCollapse: () => void;
   setActiveTab: (tab: ActiveTabState["activeTab"]) => void;
 }
 
 export const useActiveTabStore = create<ActiveTabState>((set) => ({
   activeTab: "Dashboard",
-  collapsed: true,
+  collapsed: false,
   network: "SUI",
   setNetwork: (network) => set({network}),
+  setCollapsed: (collapsed) => set({ collapsed }),
   toggleCollapse: () => set((state) => ({ collapsed: !state.collapsed })),
   setActiveTab: (tab) => set({ activeTab: tab }),
 }));

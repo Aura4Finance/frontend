@@ -165,7 +165,7 @@ const Dashboard = () => {
                         : "text-gray-700"
                     }`}
                   >
-                    {coin}
+                    {coin}(SUI)
                   </button>
                 ))}
               </div>

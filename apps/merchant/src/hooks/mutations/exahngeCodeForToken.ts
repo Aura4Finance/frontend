@@ -18,10 +18,10 @@ export const useExchangeCodeForToken = () => {
             return response.data;
         },
         onSuccess: async (data: {message: string, data: { businessProfile: { onboarded: boolean} } }) => {
+            toast.success(data.message || "User logged in successfully!")
             await queryClient.invalidateQueries({ queryKey: ['user-profile'] });
             const isOnboarded = Boolean((data.data?.businessProfile?.onboarded));
             setLocation(isOnboarded ? '/' : '/onboarding');
-            toast.success(data.message || "User logged in successfully!")
             
         },
         onError: (error: any) => {

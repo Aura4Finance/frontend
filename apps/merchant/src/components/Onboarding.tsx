@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { FiArrowRight } from "react-icons/fi";
 import { FaShieldHalved, FaCopy, FaCheck, FaLock } from "react-icons/fa6";
-import { Input } from "@orafi/ui";
+import { Input, Select } from "@orafi/ui";
+import logo from "@orafi/ui/assets/OraFi.png";
 import { useCompleteOnboarding } from "../hooks/mutations/useOnboarding";
 import { setupTwoFactorAuthentication, verifyTwoFactorAuthentication } from "../hooks/mutations/useSettings";
 import { tokenStore } from "../store/client";
@@ -10,6 +11,31 @@ import { getUserProfile } from "../hooks/mutations/useSettings";
 import { BUSINESS_SECTORS, COUNTRIES } from "../constants/onboardingOptions";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
+import Modal from "./transactions/Modal";
+
+const businessSectorOptions = BUSINESS_SECTORS.map((sector) => ({
+  label: sector,
+  value: sector,
+}));
+
+const countryOptions = COUNTRIES.map((country) => ({
+  label: country,
+  value: country,
+}));
+
+const OnboardingBrand = () => (
+  <div className="mb-8 flex flex-col items-center gap-3 text-center">
+    <img src={logo} alt="OraFi Logo" className="h-16 w-16 rounded-2xl object-contain shadow-md" />
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-900">
+        OraFi Merchant
+      </p>
+      <p className="mt-1 text-sm text-gray-500">
+        Complete onboarding to activate your merchant account.
+      </p>
+    </div>
+  </div>
+);
 
 const Onboarding = () => {
   const [, setLocation] = useLocation();
@@ -128,66 +154,67 @@ const Onboarding = () => {
     setLocation("/");
   };
 
-
   // Step tracking
   const isStep1Complete = profile?.businessProfile?.onboarded || false;
   const isStep2Complete = profile?.twoFactorEnabled || false;
-
-  // 2FA Modal Component
-  const TwoFAModal = () => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-      <div className="bg-white rounded-2xl shadow-lg max-w-md w-full p-6 sm:p-8">
-        <div className="flex justify-center mb-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-950/10">
-            <FaShieldHalved className="h-6 w-6 text-blue-950" />
-          </div>
+  const continueWithTwoFAModal = (
+    <Modal
+      isOpen={show2FAModal}
+      onClose={handle2FANo}
+      title="Continue with 2FA?"
+      description="Choose whether to continue the normal 2FA setup now or return to the dashboard."
+      size="default"
+      variant="info"
+      icon={
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-950/10">
+          <FaShieldHalved className="h-5 w-5 text-blue-950" />
         </div>
-        
-        <h2 className="text-2xl font-semibold text-gray-900 text-center mb-2">
-          Set Up 2FA Now?
-        </h2>
-        
-        <p className="text-center text-gray-600 text-sm mb-6">
-          We recommend enabling two-factor authentication to secure your account and enable high-risk actions like payouts, refunds, and API key creation.
+      }
+    >
+      <div className="space-y-5">
+        <p className="text-sm leading-6 text-gray-600">
+          Two-factor authentication secures your account and unlocks sensitive actions like payouts,
+          refunds, and API key creation.
         </p>
 
-        <div className="bg-blue-950/5 border border-blue-950/10 rounded-lg p-4 mb-6">
-          <p className="text-xs font-semibold text-blue-950 mb-2">Why 2FA is important:</p>
-          <ul className="text-xs text-gray-700 space-y-1">
-            <li>✓ Protects your account from unauthorized access</li>
-            <li>✓ Required for sensitive operations</li>
-            <li>✓ Takes less than 2 minutes to set up</li>
+        <div className="rounded-lg border border-blue-950/10 bg-blue-950/5 p-4">
+          <p className="text-xs font-semibold text-blue-950 mb-2">Why continue with 2FA:</p>
+          <ul className="space-y-1 text-xs text-gray-700">
+            <li>• Protects your account from unauthorized access</li>
+            <li>• Required for high-risk operations</li>
+            <li>• Takes less than 2 minutes to complete</li>
           </ul>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row">
           <button
+            type="button"
             onClick={handle2FANo}
-            className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+            className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100"
           >
-            Skip for Now
+            No, return to dashboard
           </button>
           <button
+            type="button"
             onClick={handle2FAYes}
-            className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-blue-950 hover:bg-blue-900 rounded-lg transition-colors flex items-center justify-center gap-2"
+            className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-blue-950 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-900"
           >
-            Set Up Now
+            Yes, continue
             <FiArrowRight size={15} />
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
-
-  if (show2FAModal) {
-    return <TwoFAModal />;
-  }
 
 
   if (currentStep === "business") {
     return (
       <div className="min-h-screen bg-gray-50 px-4 py-10 sm:px-6">
         <div className="mx-auto w-full max-w-3xl">
+          <OnboardingBrand />
+          {continueWithTwoFAModal}
+
           {/* Step Indicator */}
           <div className="mb-8">
             <div className="flex items-center justify-between">
@@ -260,34 +287,26 @@ const Onboarding = () => {
 
               <div className="max-w-xl">
                 <label className="text-sm font-medium text-gray-700">Business sector</label>
-                <select
+                <Select
                   value={businessSector}
-                  onChange={(event) => setBusinessSector(event.target.value)}
-                  className="mt-1 h-10 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-[color,box-shadow] outline-none ring-blue-900/20 placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <option value="">Select business sector</option>
-                  {BUSINESS_SECTORS.map((sector) => (
-                    <option key={sector} value={sector}>
-                      {sector}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(value) => setBusinessSector(value)}
+                  placeholder="Select business sector"
+                  searchPlaceholder="Search business sectors..."
+                  options={businessSectorOptions}
+                  className="mt-1"
+                />
               </div>
 
               <div className="max-w-xl">
                 <label className="text-sm font-medium text-gray-700">Country</label>
-                <select
+                <Select
                   value={country}
-                  onChange={(event) => setCountry(event.target.value)}
-                  className="mt-1 h-10 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-[color,box-shadow] outline-none ring-blue-900/20 placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <option value="">Select country</option>
-                  {COUNTRIES.map((countryOption) => (
-                    <option key={countryOption} value={countryOption}>
-                      {countryOption}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(value) => setCountry(value)}
+                  placeholder="Select country"
+                  searchPlaceholder="Search countries..."
+                  options={countryOptions}
+                  className="mt-1"
+                />
               </div>
 
               <div className="max-w-xl">
@@ -340,6 +359,9 @@ const Onboarding = () => {
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-10 sm:px-6">
       <div className="mx-auto w-full max-w-3xl">
+        <OnboardingBrand />
+        {continueWithTwoFAModal}
+
         {/* Step Indicator */}
         <div className="mb-8">
           <div className="flex items-center justify-between">

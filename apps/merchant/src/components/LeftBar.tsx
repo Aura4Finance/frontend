@@ -1,5 +1,5 @@
 import { Button } from "@orafi/ui";
-import { Card, CardContent, Select } from "@orafi/ui";
+import { Card, CardContent } from "@orafi/ui";
 import { MdOutlineMenu, MdDashboard, MdSettings } from "react-icons/md";
 import { Link } from "wouter";
 import { useEffect, useState } from "react";
@@ -12,7 +12,6 @@ import {
 } from "react-icons/ri";
 import logo from "@orafi/ui/assets/OraFi.png";
 import { useActiveTabStore } from "../store/activeTab";
-import { useGetSupoortedNetworks } from "../hooks/mutations/useTransactions";
 
 const navItems = [
     { name: "Dashboard", icon: <MdDashboard size={22} />, color: "text-blue-600", route: "/" },
@@ -28,36 +27,33 @@ const LeftBar = () => {
     const {
         activeTab,
         collapsed,
-        network,
-        setNetwork,
+        setCollapsed,
         setActiveTab,
         toggleCollapse
     } = useActiveTabStore();
 
-    const { data: supportedNetworks = [] } = useGetSupoortedNetworks();
-    const [networkOptions, setNetworkOptions] = useState<Array<{ label: string; value: string }>>([]);
     const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
     useEffect(() => {
-        if (supportedNetworks && supportedNetworks.length > 0) {
-            const options = supportedNetworks.map((net) => ({
-                label: net.symbol,
-                value: net.symbol,
-            }));
-            setNetworkOptions(options);
-            if (!network && options.length > 0) {
-                setNetwork(options[0].value as any);
-            }
-        }
-    }, [supportedNetworks, network, setNetwork]);
+        const mediaQuery = window.matchMedia("(min-width: 768px)");
+
+        const syncSidebarState = () => {
+            setCollapsed(!mediaQuery.matches);
+        };
+
+        syncSidebarState();
+        mediaQuery.addEventListener("change", syncSidebarState);
+
+        return () => mediaQuery.removeEventListener("change", syncSidebarState);
+    }, [setCollapsed]);
 
     return (
         <>
             {/* Desktop Sidebar - Left */}
-            <div className="hidden md:block md:fixed md:z-40 md:top-0 md:left-0 md:min-h-screen md:transition-colors md:duration-300 md:w-screen md:pointer-events-none">
+            <div className="hidden md:block md:fixed md:z-[80] md:top-0 md:left-0 md:min-h-screen md:transition-colors md:duration-300 md:w-screen md:pointer-events-none">
                 <aside
                     className={`pointer-events-auto ${collapsed ? "md:w-20" : "md:w-55"
-                        } h-screen bg-blue-950 border-r border-slate-200 dark:border-gray-700 transition-all duration-300 flex flex-col shadow-sm`}
+                        } h-screen bg-blue-950 border-r border-slate-200 dark:border-gray-700 transition-all duration-300 flex flex-col shadow-sm relative`}
                 >
                     <div className="p-4 border-b border-slate-200 dark:border-gray-700 flex items-center gap-x-4">
                         <Button
@@ -87,55 +83,66 @@ const LeftBar = () => {
                         {navItems.map((item, index) => {
                             const isActive = activeTab === item.name;
                             return (
-                                <Link to={item.route} key={index} className="block">
-                                    <Card
-                                        onClick={() => setActiveTab(item.name as any)}
-                                        className={`border-none rounded-0 cursor-pointer transition-all duration-200 ${collapsed ? "py-2 px-2 flex justify-center" : "py-2 px-3"
-                                            } ${isActive
-                                                ? "bg-linear-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-700 shadow-md scale-[1.03]"
-                                                : "hover:shadow-md hover:scale-[1.02]"
-                                            }`}
+                                <div
+                                    key={index}
+                                    className={`relative group ${collapsed ? "flex justify-center" : ""}`}
+                                    onMouseEnter={() => setHoveredItem(item.name)}
+                                    onMouseLeave={() => setHoveredItem(null)}
+                                >
+                                    <Link
+                                        to={item.route}
+                                        className={collapsed ? "relative inline-block" : "block"}
                                     >
-                                        <CardContent
-                                            className={`p-0 flex items-center ${collapsed ? "justify-center" : "justify-start gap-x-4"
+                                        <Card
+                                            onClick={() => setActiveTab(item.name as any)}
+                                            className={`border-none rounded-0 cursor-pointer transition-all duration-200 ${collapsed ? "py-2 px-2 flex justify-center" : "py-2 px-3"
+                                                } ${isActive
+                                                    ? "bg-linear-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-700 shadow-md scale-[1.03]"
+                                                    : "hover:shadow-md hover:scale-[1.02]"
                                                 }`}
                                         >
-                                            <span
-                                                className={`${isActive
-                                                    ? "text-indigo-600 dark:text-indigo-400"
-                                                    : item.color
+                                            <CardContent
+                                                className={`p-0 flex items-center ${collapsed ? "justify-center" : "justify-start gap-x-4"
                                                     }`}
                                             >
-                                                {item.icon}
-                                            </span>
-                                            {!collapsed && (
                                                 <span
-                                                    className={`text-sm font-medium ${isActive
-                                                        ? "text-indigo-700 dark:text-indigo-300"
-                                                        : "text-slate-700 dark:text-slate-200"
+                                                    className={`${isActive
+                                                        ? "text-indigo-600 dark:text-indigo-400"
+                                                        : item.color
                                                         }`}
                                                 >
-                                                    {item.name}
+                                                    {item.icon}
                                                 </span>
-                                            )}
-                                        </CardContent>
-                                    </Card>
-                                </Link>
+                                                {!collapsed && (
+                                                    <span
+                                                        className={`text-sm font-medium ${isActive
+                                                            ? "text-indigo-700 dark:text-indigo-300"
+                                                            : "text-slate-700 dark:text-slate-200"
+                                                            }`}
+                                                    >
+                                                        {item.name}
+                                                    </span>
+                                                )}
+                                            </CardContent>
+                                        </Card>
+
+                                        {/* Floating Label - Desktop */}
+                                        {hoveredItem === item.name && collapsed && (
+                                            <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs font-medium px-3 py-1.5 rounded-lg whitespace-nowrap pointer-events-none shadow-lg z-[90] dark:bg-gray-800">
+                                                {item.name}
+                                                <div className="absolute right-full -top-1 w-2 h-2 bg-gray-900 dark:bg-gray-800 transform rotate-45"></div>
+                                            </div>
+                                        )}
+                                    </Link>
+                                </div>
                             );
                         })}
-                    </div>
-                    <div className="px-4 pb-4">
-                        <Select
-                            value={network}
-                            onChange={(e: any) => setNetwork(e?.value || e)}
-                            placeholder="On-chain Network"
-                            options={networkOptions} />
                     </div>
                 </aside>
             </div>
 
             {/* Mobile Bottom Navigation - Floating */}
-            <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden pointer-events-none">
+            <div className="fixed bottom-0 left-0 right-0 z-[80] md:hidden pointer-events-none">
                 <div className="pointer-events-auto mx-4 mb-4">
                     <div className="flex items-center justify-center gap-2 bg-blue-950 rounded-2xl p-3 shadow-lg border border-blue-900/50">
                         {navItems.map((item, index) => {
