@@ -1,10 +1,11 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import client from "../../store/client";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 
 export const useExchangeCodeForToken = () => {
     const [, setLocation] = useLocation();
+    const queryClient = useQueryClient()
     return useMutation({
         mutationFn: async (otp: string) => {    
             let payload = {};
@@ -17,9 +18,10 @@ export const useExchangeCodeForToken = () => {
             return response.data;
         },
         onSuccess: async (data: {message: string, data: { businessProfile: { onboarded: boolean} } }) => {
-            toast.success(data.message || "User logged in successfully!")
+            await queryClient.invalidateQueries({ queryKey: ['user-profile'] });
             const isOnboarded = Boolean((data.data?.businessProfile?.onboarded));
-            setTimeout(() => setLocation(isOnboarded ? '/' : '/onboarding'), 2000);
+            setLocation(isOnboarded ? '/' : '/onboarding');
+            toast.success(data.message || "User logged in successfully!")
             
         },
         onError: (error: any) => {

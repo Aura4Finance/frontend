@@ -63,7 +63,7 @@ const Onboarding = () => {
         businessName: businessName.trim(),
         businessSector: businessSector.trim(),
         country: country.trim(),
-        websiteLink: websiteLink ? websiteLink.trim() : undefined,
+        websiteLink: websiteLink.trim()
       },
       {
         onSuccess: async () => {

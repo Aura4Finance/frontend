@@ -66,6 +66,7 @@ export const getUserProfile = (enabled = true) => {
         queryKey: ["user-profile"],
         queryFn: fetchUserProfile,
         enabled,
+        retry: false
     });
 }
 

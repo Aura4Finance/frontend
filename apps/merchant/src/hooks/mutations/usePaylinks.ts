@@ -159,6 +159,7 @@ export const useDeletePaylink = () => {
   return useMutation({
     mutationFn: async (paylinkId: string) => {
       const response = await client.delete(`/user/paylink/${paylinkId}`);
+      toast.info("Deleting image from payment link", { duration: 3000 });
       return response.data.data;
     },
     onSuccess: (_, paylinkId) => {

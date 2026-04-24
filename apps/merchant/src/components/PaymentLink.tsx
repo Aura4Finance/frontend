@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { FiTrash2, FiPlus, FiEdit2, FiLink2, FiImage, FiX, FiSearch, FiArrowRight, FiEye } from "react-icons/fi";
@@ -53,27 +53,6 @@ const PaymentLink = () => {
   const { mutate: editPaylink, isPending: isEditing } = useEditPaylink();
   const { mutate: deletePaylink, isPending: isDeleting } = useDeletePaylink();
 
-  // Toast loading info (non-blocking)
-  const loadingToastId = useRef<any>(0);
-  useEffect(() => {
-    if (isLoading) {
-      if (!loadingToastId.current) {
-        loadingToastId.current = toast.info("Loading payment links...", { duration: 999999 });
-      }
-    } else {
-      if (loadingToastId.current) {
-        toast.dismiss(loadingToastId.current);
-        loadingToastId.current = undefined;
-      }
-    }
-    return () => {
-      if (loadingToastId.current) {
-        toast.dismiss(loadingToastId.current);
-        loadingToastId.current = undefined;
-      }
-    };
-  }, [isLoading]);
-
   // Progress bar with delay (from global store)
   const { setCreatingPaylink, setEditingPaylink } = useLoadingStore();
 
@@ -125,7 +104,8 @@ const PaymentLink = () => {
       currency: formData.currency,
     };
     setCreatingPaylink(true);
-    setShowCreateModal(false);
+    toast.info("Processing, this may take some monents...")
+    setTimeout(() => setShowCreateModal(false), 3000);
     createPaylink(
       { payload, images },
       {
