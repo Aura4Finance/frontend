@@ -19,6 +19,7 @@ interface MarkdownEditorProps {
 }
 
 const MIN_EDITOR_HEIGHT = 120;
+const MAX_EDITOR_HEIGHT = 256;
 
 const tabButtonBase =
   "rounded-md px-3 py-1.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1";
@@ -46,7 +47,10 @@ const MarkdownEditor = ({
     if (!textarea) return;
 
     textarea.style.height = "auto";
-    textarea.style.height = `${Math.max(textarea.scrollHeight, MIN_EDITOR_HEIGHT)}px`;
+    const nextHeight = Math.max(MIN_EDITOR_HEIGHT, Math.min(textarea.scrollHeight, MAX_EDITOR_HEIGHT));
+
+    textarea.style.height = `${nextHeight}px`;
+    textarea.style.overflowY = textarea.scrollHeight > MAX_EDITOR_HEIGHT ? "auto" : "hidden";
   };
 
   useEffect(() => {
@@ -342,11 +346,11 @@ const MarkdownEditor = ({
               rows={5}
               spellCheck
               className="block w-full resize-none border-0 bg-transparent px-3 py-2.5 font-mono text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-0"
-              style={{ minHeight: `${MIN_EDITOR_HEIGHT}px` }}
+              style={{ minHeight: `${MIN_EDITOR_HEIGHT}px`, maxHeight: `${MAX_EDITOR_HEIGHT}px` }}
             />
           </div>
         ) : (
-          <div id={`${id}-preview-panel`} role="tabpanel" aria-labelledby={`${id}-preview-tab`} className="min-h-[120px] px-3 py-2.5">
+          <div id={`${id}-preview-panel`} role="tabpanel" aria-labelledby={`${id}-preview-tab`} className="max-h-64 overflow-y-auto px-3 py-2.5">
             {value.trim() ? (
               <div className="markdown-content text-sm text-gray-700" dangerouslySetInnerHTML={{ __html: renderMarkdown(value) }} />
             ) : (

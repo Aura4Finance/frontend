@@ -210,11 +210,12 @@ const Checkout = () => {
 
     if (paymentQueryResult.isPending) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="animate-pulse flex flex-col items-center gap-4">
-                    <div className="h-12 w-12 bg-gray-200 rounded-full"></div>
-                    <div className="h-4 w-32 bg-gray-200 rounded"></div>
-                </div>
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+                <img
+                    src={logo}
+                    alt="OraFi"
+                    className="h-20 w-20 object-contain animate-pulse"
+                />
             </div>
         );
     }

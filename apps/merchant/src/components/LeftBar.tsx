@@ -50,7 +50,7 @@ const LeftBar = () => {
     return (
         <>
             {/* Desktop Sidebar - Left */}
-            <div className="hidden md:block md:fixed md:z-[80] md:top-0 md:left-0 md:min-h-screen md:transition-colors md:duration-300 md:w-screen md:pointer-events-none">
+            <div className="hidden md:block md:fixed md:top-0 md:left-0 md:min-h-screen md:transition-colors md:duration-300 md:w-screen md:pointer-events-none">
                 <aside
                     className={`pointer-events-auto ${collapsed ? "md:w-20" : "md:w-55"
                         } h-screen bg-blue-950 border-r border-slate-200 dark:border-gray-700 transition-all duration-300 flex flex-col shadow-sm relative`}
@@ -128,7 +128,7 @@ const LeftBar = () => {
 
                                         {/* Floating Label - Desktop */}
                                         {hoveredItem === item.name && collapsed && (
-                                            <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs font-medium px-3 py-1.5 rounded-lg whitespace-nowrap pointer-events-none shadow-lg z-[90] dark:bg-gray-800">
+                                            <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs font-medium px-3 py-1.5 rounded-lg whitespace-nowrap pointer-events-none shadow-lg dark:bg-gray-800">
                                                 {item.name}
                                                 <div className="absolute right-full -top-1 w-2 h-2 bg-gray-900 dark:bg-gray-800 transform rotate-45"></div>
                                             </div>
@@ -142,7 +142,7 @@ const LeftBar = () => {
             </div>
 
             {/* Mobile Bottom Navigation - Floating */}
-            <div className="fixed bottom-0 left-0 right-0 z-[80] md:hidden pointer-events-none">
+            <div className="fixed bottom-0 left-0 right-0] md:hidden pointer-events-none">
                 <div className="pointer-events-auto mx-4 mb-4">
                     <div className="flex items-center justify-center gap-2 bg-blue-950 rounded-2xl p-3 shadow-lg border border-blue-900/50">
                         {navItems.map((item, index) => {

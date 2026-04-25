@@ -21,7 +21,9 @@ const PayLink = () => {
   const createPaymentMutation = useCreatePaymentMutation();
   const [txId, setTxId] = useState<string | null>(null);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [showFullDescription, setShowFullDescription] = useState(false);
   const description = paylinkData.data?.description?.trim() ?? "";
+  const shouldShowReadMore = description.length > 280;
 
 
   useEffect(() => {
@@ -33,6 +35,10 @@ const PayLink = () => {
       verifyPaymentMutation.mutate(oratx);
     }
   }, [search]);
+
+  useEffect(() => {
+    setShowFullDescription(false);
+  }, [description]);
 
   // Rendering verification states
   if (verifyPaymentMutation.isPending) {
@@ -92,7 +98,7 @@ const PayLink = () => {
 
           <div className="flex flex-col lg:flex-row">
             {/* Left Column: Image Gallery */}
-            <div className="lg:w-1/2 bg-gray-50 p-6 md:p-10 flex items-center justify-center border-b lg:border-b-0 lg:border-r border-gray-100">
+            <div className="lg:w-1/2 bg-gray-50 p-6 md:p-10 flex items-start justify-center border-b lg:border-b-0 lg:border-r border-gray-100">
               <div className="w-full max-w-md">
                 <ImageGallery images={paylinkData.data?.images?.map((img) => img.blobId) || []}  mode={paylinkData.data.mode} />
               </div>
@@ -135,14 +141,23 @@ const PayLink = () => {
                 </div>
 
                 {description ? (
-                  <div className="mb-8 rounded-2xl border border-gray-100 bg-gray-50/80 p-4 shadow-sm">
+                  <div className="mb-8">
                     <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">
                       Description
                     </p>
                     <div
-                      className="markdown-content max-h-60 overflow-y-auto pr-2 text-sm text-gray-600"
+                      className={`markdown-content text-sm leading-6 text-gray-600 ${showFullDescription ? "" : "line-clamp-6"}`}
                       dangerouslySetInnerHTML={{ __html: renderMarkdown(description) }}
                     />
+                    {shouldShowReadMore && (
+                      <button
+                        type="button"
+                        onClick={() => setShowFullDescription((current) => !current)}
+                        className="mt-2 text-sm font-semibold text-blue-600 transition-colors hover:text-blue-700"
+                      >
+                        {showFullDescription ? "Show less" : "Read more"}
+                      </button>
+                    )}
                   </div>
                 ) : null}
               </div>
