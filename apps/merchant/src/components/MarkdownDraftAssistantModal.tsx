@@ -105,8 +105,7 @@ const MarkdownDraftAssistantModal = ({ isOpen, onClose, currentValue, onApply }:
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Generate markdown"
-      description="Pick a mode, answer a few quick questions, and the assistant will generate markdown."
+      title="Generate link description"
       icon={<LuSparkles className="h-5 w-5 text-blue-600" />}
       size="wide"
       variant="info"
@@ -212,7 +211,7 @@ const MarkdownDraftAssistantModal = ({ isOpen, onClose, currentValue, onApply }:
             disabled={isGenerating}
             className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 active:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isGenerating ? "Generating..." : "Generate markdown"}
+            {isGenerating ? "Generating..." : "Generate"}
           </button>
         </div>
       </div>
