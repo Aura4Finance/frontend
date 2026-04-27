@@ -12,6 +12,9 @@ import { useCustomers, useCustomer, useDeleteCustomer, useCreateCustomer } from 
 import { useCustomerFilters, buildCustomerParams } from "../store/customerFilters";
 import { useActiveTabStore } from "../store/activeTab";
 import { tokenStore } from "../store/client";
+import { isBrowser, parseNumberParam, updateQueryParams } from "../lib/queryState";
+
+const CUSTOMER_QUERY_KEYS = ["amountSpent", "limit", "cursor", "page"];
 
 const Customers = () => {
   const [, setLocation] = useLocation();
@@ -34,7 +37,10 @@ const Customers = () => {
 
   // Filter store
   const filters = useCustomerFilters();
+  const setFromQueryParams = useCustomerFilters((state) => state.setFromQueryParams);
+  const getQueryParams = useCustomerFilters((state) => state.getQueryParams);
   const [appliedParams, setAppliedParams] = useState(() => buildCustomerParams(filters, mode));
+
 
   // Search by customer ID or email
   const { data: searchedCustomer, isFetching: searchFetching } = useCustomer(searchId, !!searchId);
@@ -58,12 +64,44 @@ const Customers = () => {
     setAppliedParams(params);
     setCursorHistory([]);
     setCurrentPage(1);
-  }, [filters, mode]);
+
+    updateQueryParams(
+      {
+        ...getQueryParams(),
+        page: null,
+      },
+      { managedKeys: CUSTOMER_QUERY_KEYS, replace: false }
+    );
+  }, [filters, mode, getQueryParams]);
 
   // Set active tab
   useEffect(() => {
     setActiveTab("Customers");
   }, [setActiveTab]);
+
+  // Initialize from URL on load
+  useEffect(() => {
+    if (!isBrowser) return;
+    const params = new URLSearchParams(window.location.search);
+    setFromQueryParams(params);
+    setCurrentPage(parseNumberParam(params.get("page"), 1));
+    setAppliedParams(buildCustomerParams(useCustomerFilters.getState(), mode));
+  }, [setFromQueryParams, mode]);
+
+  // Sync when navigating with browser history
+  useEffect(() => {
+    if (!isBrowser) return;
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      setFromQueryParams(params);
+      setCurrentPage(parseNumberParam(params.get("page"), 1));
+      setAppliedParams(buildCustomerParams(useCustomerFilters.getState(), mode));
+      setCursorHistory([]);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [setFromQueryParams, mode]);
 
   // API hooks
   const {
@@ -79,22 +117,41 @@ const Customers = () => {
   // Handle next page
   const handleNextPage = useCallback(() => {
     if (customersData?.hasNextPage && customersData.nextCursor) {
+      const nextPage = currentPage + 1;
       setCursorHistory((prev) => [...prev, appliedParams.cursor || ""]);
       setAppliedParams((prev: any) => ({ ...prev, cursor: customersData.nextCursor }));
-      setCurrentPage((prev) => prev + 1);
+      setCurrentPage(nextPage);
+      updateQueryParams(
+        {
+          ...getQueryParams(),
+          page: String(nextPage),
+          cursor: customersData.nextCursor,
+        },
+        { managedKeys: CUSTOMER_QUERY_KEYS, replace: false }
+      );
     }
-  }, [customersData, appliedParams.cursor]);
+  }, [customersData, appliedParams.cursor, currentPage, getQueryParams]);
 
   // Handle previous page
   const handlePreviousPage = useCallback(() => {
     if (cursorHistory.length > 0) {
       const newHistory = [...cursorHistory];
       const previousCursor = newHistory.pop();
+      const nextPage = Math.max(1, currentPage - 1);
+      const pageParam = nextPage === 1 ? null : String(nextPage);
       setCursorHistory(newHistory);
       setAppliedParams((prev: any) => ({ ...prev, cursor: previousCursor || undefined }));
-      setCurrentPage((prev) => Math.max(1, prev - 1));
+      setCurrentPage(nextPage);
+      updateQueryParams(
+        {
+          ...getQueryParams(),
+          page: pageParam,
+          cursor: previousCursor || null,
+        },
+        { managedKeys: CUSTOMER_QUERY_KEYS, replace: false }
+      );
     }
-  }, [cursorHistory]);
+  }, [cursorHistory, currentPage, getQueryParams]);
 
   // Handle items per page change
   const handleItemsPerPageChange = useCallback((newLimit: number) => {
@@ -102,6 +159,15 @@ const Customers = () => {
     setAppliedParams((prev: any) => ({ ...prev, limit: newLimit, cursor: undefined }));
     setCursorHistory([]);
     setCurrentPage(1);
+    updateQueryParams(
+      {
+        ...getQueryParams(),
+        limit: newLimit === 10 ? null : String(newLimit),
+        page: null,
+        cursor: null,
+      },
+      { managedKeys: CUSTOMER_QUERY_KEYS, replace: false }
+    );
   }, [filters]);
 
   // Handle delete customer

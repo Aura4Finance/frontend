@@ -19,6 +19,7 @@ import {
   type TransactionType,
 } from "@orafi/transactions";
 import { useTransactionFilters } from "../../store/transactionFilters";
+import { useQueryState } from "../../hooks/useQueryState";
 
 interface DropdownProps<T extends string> {
   label: string;
@@ -273,7 +274,10 @@ interface TransactionFiltersProps {
 
 export default function TransactionFilters({ onApply, onSearch, searchLoading }: TransactionFiltersProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [localSearch, setLocalSearch] = useState("");
+  const [localSearch, setLocalSearch] = useQueryState("txSearch", "", {
+    history: "replace",
+    debounceMs: 400,
+  });
 
   const storeFilters = useTransactionFilters();
   const {

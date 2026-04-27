@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { FiCalendar, FiChevronDown, FiSearch, FiX } from "react-icons/fi";
 import { useWebhookFilters } from "../../store/webhookFilters";
+import { useQueryState } from "../../hooks/useQueryState";
 
 interface DropdownProps<T extends string> {
   label: string;
@@ -212,8 +213,6 @@ const eventOptions = [
 ];
 
 export default function WebhookFilters({ onApply }: WebhookFiltersProps) {
-  const [localSearchId, setLocalSearchId] = useState("");
-
   const {
     status,
     transactionId,
@@ -225,6 +224,15 @@ export default function WebhookFilters({ onApply }: WebhookFiltersProps) {
     setDate,
     resetFilters,
   } = useWebhookFilters();
+
+  const [localSearchId, setLocalSearchId] = useQueryState("transactionId", transactionId || "", {
+    history: "replace",
+    debounceMs: 400,
+  });
+  
+  useEffect(() => {
+    setLocalSearchId(transactionId || "");
+  }, [transactionId, setLocalSearchId]);
 
   useEffect(() => {
     const trimmed = localSearchId.trim();

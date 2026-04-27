@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { WebhookDeliveryQueryParams } from "../hooks/mutations/useWehbooks";
+import { parseNumberParam } from "../lib/queryState";
 
 export interface WebhookFiltersStore {
   status?: string;
@@ -66,10 +67,11 @@ export const useWebhookFilters = create<WebhookFiltersStore>()(
       setFromQueryParams: (params) => {
         const status = params.get("status");
         const transactionId = params.get("transactionId");
-        const event = params.get("event") as "payment.success" | "payment.failed" | undefined;
+        const eventRaw = params.get("event");
+        const event = eventRaw === "payment.success" || eventRaw === "payment.failed" ? eventRaw : undefined;
         const startDate = params.get("startDate");
         const endDate = params.get("endDate");
-        const limit = params.get("limit") ? parseInt(params.get("limit")!) : 10;
+        const limit = params.get("limit") ? parseNumberParam(params.get("limit"), 10) : 10;
         const cursor = params.get("cursor");
 
         const date = startDate || endDate ? { startDate: startDate || "", endDate: endDate || "" } : undefined;

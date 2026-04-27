@@ -10,6 +10,7 @@ import TransactionFilters from "./transactions/TransactionFilters";
 import { tokenStore } from "../store/client";
 import { useActiveTabStore } from "../store/activeTab";
 import { buildTransactionParams, useTransactionFilters } from "../store/transactionFilters";
+import { isBrowser, parseNumberParam, updateQueryParams } from "../lib/queryState";
 import {
   useRefund,
   useRetryRefund,
@@ -22,7 +23,29 @@ import {
 import { useBalance } from "../hooks/mutations/useDashboard";
 import { useGetCryptoSettlements, useGetALLFiatSettlements, useListFiatBanks, useResolveFiatAccount } from "../hooks/mutations/useSettlements";
 
+const TRANSACTION_QUERY_KEYS = [
+  "type",
+  "status",
+  "token",
+  "currency",
+  "network",
+  "paymentMethod",
+  "paymentLinkId",
+  "customerId",
+  "userId",
+  "search",
+  "limit",
+  "dateType",
+  "dateInterval",
+  "startDate",
+  "endDate",
+  "cursor",
+  "page",
+];
+
 const Transactions = () => {
+  const MIN_PAYOUT_AMOUNT = 2;
+  const MAX_PAYOUT_AMOUNT = 200;
   const [cursorHistory, setCursorHistory] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
@@ -117,20 +140,28 @@ const Transactions = () => {
     setActiveTab("Transactions");
   }, [setActiveTab]);
 
-  const [hasInitializedFromUrl, setHasInitializedFromUrl] = useState(false);
-
   useEffect(() => {
+    if (!isBrowser) return;
     const params = new URLSearchParams(window.location.search);
     setFromQueryParams(params);
-    setHasInitializedFromUrl(true);
-  }, [setFromQueryParams]);
+    setCurrentPage(parseNumberParam(params.get("page"), 1));
+    setAppliedParams(buildTransactionParams(useTransactionFilters.getState(), mode));
+    setCursorHistory([]);
+  }, [setFromQueryParams, mode]);
 
-  const syncUrlWithFilters = useCallback(() => {
-    const params = new URLSearchParams(getQueryParams());
-    const query = params.toString();
-    const nextUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname;
-    window.history.replaceState({}, "", nextUrl);
-  }, [getQueryParams]);
+  useEffect(() => {
+    if (!isBrowser) return;
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      setFromQueryParams(params);
+      setCurrentPage(parseNumberParam(params.get("page"), 1));
+      setAppliedParams(buildTransactionParams(useTransactionFilters.getState(), mode));
+      setCursorHistory([]);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [setFromQueryParams, mode]);
 
   const { data: searchedTransaction, isFetching: searchFetching } = useTransaction(searchId, !!searchId);
 
@@ -150,23 +181,16 @@ const Transactions = () => {
     setAppliedParams(params);
     setCursorHistory([]);
     setCurrentPage(1);
-    syncUrlWithFilters();
-  }, [filters, mode, syncUrlWithFilters]);
+    updateQueryParams(
+      {
+        ...getQueryParams(),
+        page: null,
+        cursor: null,
+      },
+      { managedKeys: TRANSACTION_QUERY_KEYS, replace: false }
+    );
+  }, [filters, mode, getQueryParams]);
 
-  // Auto-apply filters when navigating from customer or payment link page with query params
-  useEffect(() => {
-    if (!hasInitializedFromUrl) return;
-
-    const params = new URLSearchParams(window.location.search);
-    const customerId = params.get("customerId");
-    const paymentLinkId = params.get("paymentLinkId");
-    const type = params.get("type");
-
-    // If we have relevant filter params from navigation, apply filters automatically
-    if (customerId || paymentLinkId || type) {
-      handleApplyFilters();
-    }
-  }, [hasInitializedFromUrl, handleApplyFilters]);
 
   const {
     data: transactionsData,
@@ -204,21 +228,40 @@ const Transactions = () => {
 
   const handleNextPage = useCallback(() => {
     if (transactionsData?.hasNextPage && transactionsData.nextCursor) {
+      const nextPage = currentPage + 1;
       setCursorHistory((prev) => [...prev, appliedParams.cursor || ""]);
       setAppliedParams((prev) => ({ ...prev, cursor: transactionsData.nextCursor }));
-      setCurrentPage((prev) => prev + 1);
+      setCurrentPage(nextPage);
+      updateQueryParams(
+        {
+          ...getQueryParams(),
+          page: String(nextPage),
+          cursor: transactionsData.nextCursor,
+        },
+        { managedKeys: TRANSACTION_QUERY_KEYS, replace: false }
+      );
     }
-  }, [transactionsData, appliedParams.cursor]);
+  }, [transactionsData, appliedParams.cursor, currentPage, getQueryParams]);
 
   const handlePreviousPage = useCallback(() => {
     if (cursorHistory.length > 0) {
       const newHistory = [...cursorHistory];
       const previousCursor = newHistory.pop();
+      const nextPage = Math.max(1, currentPage - 1);
+      const pageParam = nextPage === 1 ? null : String(nextPage);
       setCursorHistory(newHistory);
       setAppliedParams((prev) => ({ ...prev, cursor: previousCursor || undefined }));
-      setCurrentPage((prev) => Math.max(1, prev - 1));
+      setCurrentPage(nextPage);
+      updateQueryParams(
+        {
+          ...getQueryParams(),
+          page: pageParam,
+          cursor: previousCursor || null,
+        },
+        { managedKeys: TRANSACTION_QUERY_KEYS, replace: false }
+      );
     }
-  }, [cursorHistory]);
+  }, [cursorHistory, currentPage, getQueryParams]);
 
   const handleItemsPerPageChange = useCallback(
     (newLimit: number) => {
@@ -226,15 +269,15 @@ const Transactions = () => {
       setAppliedParams((prev) => ({ ...prev, limit: newLimit, cursor: undefined }));
       setCursorHistory([]);
       setCurrentPage(1);
-      const params = new URLSearchParams(getQueryParams());
-      if (newLimit === 10) {
-        params.delete("limit");
-      } else {
-        params.set("limit", String(newLimit));
-      }
-      const query = params.toString();
-      const nextUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname;
-      window.history.replaceState({}, "", nextUrl);
+      updateQueryParams(
+        {
+          ...getQueryParams(),
+          limit: newLimit === 10 ? null : String(newLimit),
+          page: null,
+          cursor: null,
+        },
+        { managedKeys: TRANSACTION_QUERY_KEYS, replace: false }
+      );
     },
     [filters, getQueryParams]
   );
@@ -375,6 +418,23 @@ const Transactions = () => {
       toast.error("Please provide amount");
       return;
     }
+    const payoutAmount = Number.parseFloat(payoutData.amount);
+    if (Number.isNaN(payoutAmount)) {
+      toast.error("Please provide a valid amount");
+      return;
+    }
+    if (payoutAmount < MIN_PAYOUT_AMOUNT) {
+      toast.error(`Amount is below the minimum payout of $${MIN_PAYOUT_AMOUNT}`);
+      return;
+    }
+    if (payoutAmount > MAX_PAYOUT_AMOUNT) {
+      toast.error(`Amount exceeds the maximum payout of $${MAX_PAYOUT_AMOUNT}`);
+      return;
+    }
+    if (payoutAmount > totalPayoutableBalance) {
+      toast.error("Insufficient balance for this payout amount");
+      return;
+    }
     if (mode === "live" && !payoutData.twoFAKey) {
       toast.error("Please provide 2FA key");
       return;
@@ -439,6 +499,23 @@ const Transactions = () => {
   const handleInitiateFiatPayout = () => {
     if (!fiatPayoutData.amount) {
       toast.error("Please provide amount");
+      return;
+    }
+    const payoutAmount = Number.parseFloat(fiatPayoutData.amount);
+    if (Number.isNaN(payoutAmount)) {
+      toast.error("Please provide a valid amount");
+      return;
+    }
+    if (payoutAmount < MIN_PAYOUT_AMOUNT) {
+      toast.error(`Amount is below the minimum payout of $${MIN_PAYOUT_AMOUNT}`);
+      return;
+    }
+    if (payoutAmount > MAX_PAYOUT_AMOUNT) {
+      toast.error(`Amount exceeds the maximum payout of $${MAX_PAYOUT_AMOUNT}`);
+      return;
+    }
+    if (payoutAmount > totalPayoutableBalance) {
+      toast.error("Insufficient balance for this payout amount");
       return;
     }
     if (mode === "live" && !fiatPayoutData.twoFAKey) {
@@ -1238,6 +1315,12 @@ const Transactions = () => {
               <p className="text-lg font-semibold text-gray-900">{totalPayoutableBalance.toLocaleString()} USDC</p>
             </div>
 
+            {totalPayoutableBalance < MIN_PAYOUT_AMOUNT && (
+              <div className="rounded-lg bg-yellow-50 border border-yellow-200 p-2">
+                <p className="text-xs text-yellow-700">Amount is below the withdrawal minimum of ${MIN_PAYOUT_AMOUNT}.</p>
+              </div>
+            )}
+
             <div className="rounded-lg bg-blue-50 p-3">
               <p className="text-[11px] text-blue-600">Note</p>
               <p className="text-sm text-blue-700">If you don't select a saved account or provide bank details, your primary account will be used.</p>
@@ -1400,6 +1483,7 @@ const Transactions = () => {
                 step="0.01"
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              <p className="mt-1 text-[11px] text-gray-500">Payout limits: ${MIN_PAYOUT_AMOUNT} - ${MAX_PAYOUT_AMOUNT}</p>
               <div className="mt-2 flex gap-2">
                 <button
                   type="button"
@@ -1426,6 +1510,16 @@ const Transactions = () => {
               {fiatPayoutData.amount && parseFloat(fiatPayoutData.amount) > totalPayoutableBalance && (
                 <div className="mt-2 rounded-lg bg-red-50 border border-red-200 p-2">
                   <p className="text-xs text-red-700">✗ Insufficient balance. Available: {totalPayoutableBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC</p>
+                </div>
+              )}
+              {fiatPayoutData.amount && parseFloat(fiatPayoutData.amount) < MIN_PAYOUT_AMOUNT && (
+                <div className="mt-2 rounded-lg bg-yellow-50 border border-yellow-200 p-2">
+                  <p className="text-xs text-yellow-700">✗ Amount is below the withdrawal minimum of ${MIN_PAYOUT_AMOUNT}.</p>
+                </div>
+              )}
+              {fiatPayoutData.amount && parseFloat(fiatPayoutData.amount) > MAX_PAYOUT_AMOUNT && (
+                <div className="mt-2 rounded-lg bg-yellow-50 border border-yellow-200 p-2">
+                  <p className="text-xs text-yellow-700">✗ Amount exceeds the maximum payout of ${MAX_PAYOUT_AMOUNT}.</p>
                 </div>
               )}
             </div>
@@ -1457,6 +1551,10 @@ const Transactions = () => {
                   (
                     !!fiatPayoutData.amount &&
                     parseFloat(fiatPayoutData.amount) > totalPayoutableBalance
+                  ) ||
+                  (
+                    !!fiatPayoutData.amount &&
+                    (parseFloat(fiatPayoutData.amount) < MIN_PAYOUT_AMOUNT || parseFloat(fiatPayoutData.amount) > MAX_PAYOUT_AMOUNT)
                   )
                 }
                 className="flex-1 rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -1493,6 +1591,12 @@ const Transactions = () => {
               <p className="text-[11px] text-blue-600">Available Balance</p>
               <p className="text-lg font-semibold text-gray-900">{totalPayoutableBalance.toLocaleString()} USDC</p>
             </div>
+
+            {totalPayoutableBalance < MIN_PAYOUT_AMOUNT && (
+              <div className="rounded-lg bg-yellow-50 border border-yellow-200 p-2">
+                <p className="text-xs text-yellow-700">Amount is below the withdrawal minimum of ${MIN_PAYOUT_AMOUNT}.</p>
+              </div>
+            )}
 
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Payout Method</label>
@@ -1597,6 +1701,7 @@ const Transactions = () => {
                 step="0.01"
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              <p className="mt-1 text-[11px] text-gray-500">Payout limits: ${MIN_PAYOUT_AMOUNT} - ${MAX_PAYOUT_AMOUNT}</p>
               <div className="mt-2 flex gap-2">
                 <button
                   type="button"
@@ -1623,6 +1728,16 @@ const Transactions = () => {
               {payoutData.amount && parseFloat(payoutData.amount) > totalPayoutableBalance && (
                 <div className="mt-2 rounded-lg bg-red-50 border border-red-200 p-2">
                   <p className="text-xs text-red-700">✗ Insufficient balance. Available: {totalPayoutableBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC</p>
+                </div>
+              )}
+              {payoutData.amount && parseFloat(payoutData.amount) < MIN_PAYOUT_AMOUNT && (
+                <div className="mt-2 rounded-lg bg-yellow-50 border border-yellow-200 p-2">
+                  <p className="text-xs text-yellow-700">✗ Amount is below the withdrawal minimum of ${MIN_PAYOUT_AMOUNT}.</p>
+                </div>
+              )}
+              {payoutData.amount && parseFloat(payoutData.amount) > MAX_PAYOUT_AMOUNT && (
+                <div className="mt-2 rounded-lg bg-yellow-50 border border-yellow-200 p-2">
+                  <p className="text-xs text-yellow-700">✗ Amount exceeds the maximum payout of ${MAX_PAYOUT_AMOUNT}.</p>
                 </div>
               )}
             </div>
@@ -1653,6 +1768,10 @@ const Transactions = () => {
                   (
                     !!payoutData.amount &&
                     parseFloat(payoutData.amount) > totalPayoutableBalance
+                  ) ||
+                  (
+                    !!payoutData.amount &&
+                    (parseFloat(payoutData.amount) < MIN_PAYOUT_AMOUNT || parseFloat(payoutData.amount) > MAX_PAYOUT_AMOUNT)
                   )
                 }
                 className="flex-1 rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"

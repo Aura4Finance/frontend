@@ -12,6 +12,7 @@ import {
   type TransactionToken,
   type TransactionType,
 } from "@orafi/transactions";
+import { parseNumberParam } from "../lib/queryState";
 
 export interface TransactionFiltersStore extends TransactionFiltersState {
   setType: (type?: TransactionType) => void;
@@ -71,6 +72,7 @@ export const useTransactionFilters = create<TransactionFiltersStore>()(
         if (state.userId) params.userId = state.userId;
         if (state.searchQuery) params.search = state.searchQuery;
         if (state.limit !== 10) params.limit = String(state.limit);
+        if (state.cursor) params.cursor = state.cursor;
 
         if (state.date) {
           params.dateType = state.date.type;
@@ -99,6 +101,7 @@ export const useTransactionFilters = create<TransactionFiltersStore>()(
         const userId = params.get("userId");
         const search = params.get("search");
         const limit = params.get("limit");
+        const cursor = params.get("cursor");
         const dateType = params.get("dateType") as "preset" | "range" | null;
 
         if (type) filters.type = type;
@@ -111,7 +114,8 @@ export const useTransactionFilters = create<TransactionFiltersStore>()(
         if (customerId) filters.customerId = customerId;
         if (userId) filters.userId = userId;
         if (search) filters.searchQuery = search;
-        if (limit) filters.limit = parseInt(limit, 10);
+        if (limit) filters.limit = parseNumberParam(limit, defaultTransactionFilters.limit);
+        if (cursor) filters.cursor = cursor;
 
         if (dateType) {
           if (dateType === "preset") {

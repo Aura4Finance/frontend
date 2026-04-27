@@ -15,6 +15,9 @@ import WebhookFilters from "./webhooks/WebhookFilters";
 import { FiCopy, FiCheck, FiAlertTriangle, FiEye, FiEyeOff } from "react-icons/fi";
 import type { WebhookDelivery, WebhookDeliveryQueryParams } from "../hooks/mutations/useWehbooks";
 import { buildWebhookParams, useWebhookFilters } from "../store/webhookFilters";
+import { isBrowser, updateQueryParams } from "../lib/queryState";
+
+const WEBHOOK_QUERY_KEYS = ["status", "transactionId", "event", "startDate", "endDate", "limit", "cursor", "page"];
 
 const Webhook = () => {
   const { setActiveTab } = useActiveTabStore();
@@ -32,6 +35,8 @@ const Webhook = () => {
 
   // Filter store
   const filters = useWebhookFilters();
+  const setFromQueryParams = useWebhookFilters((state) => state.setFromQueryParams);
+  const getQueryParams = useWebhookFilters((state) => state.getQueryParams);
 
   // API hooks
   const registerWebhookMutation = useRegisterWehbook();
@@ -43,6 +48,25 @@ const Webhook = () => {
   useEffect(() => {
     setActiveTab("Webhook");
   }, [setActiveTab]);
+
+  useEffect(() => {
+    if (!isBrowser) return;
+    const params = new URLSearchParams(window.location.search);
+    setFromQueryParams(params);
+    setAppliedParams(buildWebhookParams(useWebhookFilters.getState()));
+  }, [setFromQueryParams]);
+
+  useEffect(() => {
+    if (!isBrowser) return;
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      setFromQueryParams(params);
+      setAppliedParams(buildWebhookParams(useWebhookFilters.getState()));
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [setFromQueryParams]);
 
   const handleRegisterWebhook = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,7 +146,8 @@ const Webhook = () => {
   const handleApplyFilters = useCallback(() => {
     const params = buildWebhookParams(filters);
     setAppliedParams(params);
-  }, [filters]);
+    updateQueryParams(getQueryParams(), { managedKeys: WEBHOOK_QUERY_KEYS, replace: false });
+  }, [filters, getQueryParams]);
 
   const handleDeliveryClick = useCallback((delivery: WebhookDelivery) => {
     setSelectedDelivery(delivery);
