@@ -17,11 +17,10 @@ export const useExchangeCodeForToken = () => {
             const response = await client.post('/auth/exchange-code', payload);
             return response.data;
         },
-        onSuccess: async (data: {message: string, data: { businessProfile: { onboarded: boolean} } }) => {
+        onSuccess: async (data: {message: string }) => {
             toast.success(data.message || "User logged in successfully!")
             await queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-            const isOnboarded = Boolean((data.data?.businessProfile?.onboarded));
-            setLocation(isOnboarded ? '/' : '/onboarding');
+            setLocation('/');
             
         },
         onError: (error: any) => {

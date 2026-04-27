@@ -54,7 +54,7 @@ export interface EditPaylinkPayload {
 export const useGeneratePaylinkDescription = () => {
   return useMutation({
     mutationFn: async (payload: MarkdownDraftInput) => {
-      const response = await client.post("/v1/paylink/ai-description", payload);
+      const response = await client.post("/user/paylink/ai-description", payload);
       return response.data as PaylinkAIDescriptionResponse;
     },
   });
