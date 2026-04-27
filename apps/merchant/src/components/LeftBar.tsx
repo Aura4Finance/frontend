@@ -142,7 +142,7 @@ const LeftBar = () => {
             </div>
 
             {/* Mobile Bottom Navigation - Floating */}
-            <div className="fixed bottom-0 left-0 right-0] md:hidden pointer-events-none">
+            <div className="fixed bottom-0 left-0 right-0 z-30 md:hidden pointer-events-none">
                 <div className="pointer-events-auto mx-4 mb-4">
                     <div className="flex items-center justify-center gap-2 bg-blue-950 rounded-2xl p-3 shadow-lg border border-blue-900/50">
                         {navItems.map((item, index) => {
