@@ -3,11 +3,11 @@ import { LuSparkles } from "react-icons/lu";
 import { toast } from "sonner";
 import Modal from "./transactions/Modal";
 import {
-  generateMarkdownDescription,
   type MarkdownDraftInput,
   type MarkdownDraftMode,
   type MarkdownDraftTone,
 } from "../lib/descriptionAssistant";
+import { useGeneratePaylinkDescription } from "../hooks/mutations/usePaylinks";
 
 interface MarkdownDraftAssistantModalProps {
   isOpen: boolean;
@@ -64,6 +64,7 @@ const MarkdownDraftAssistantModal = ({ isOpen, onClose, currentValue, onApply }:
   const [form, setForm] = useState<MarkdownDraftInput>(createInitialForm(currentValue));
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const generateDescription = useGeneratePaylinkDescription();
 
   useEffect(() => {
     if (!isOpen) {
@@ -77,7 +78,7 @@ const MarkdownDraftAssistantModal = ({ isOpen, onClose, currentValue, onApply }:
 
   const handleGenerate = async () => {
     if (!form.topic.trim() && !form.roughNotes.trim()) {
-      setError("Add a short topic so the assistant has something to work with.");
+      setError("Add a topic or a few notes so the assistant has something to work with.");
       return;
     }
 
@@ -85,17 +86,21 @@ const MarkdownDraftAssistantModal = ({ isOpen, onClose, currentValue, onApply }:
     setError(null);
 
     try {
-      const result = await generateMarkdownDescription(form);
-      onApply(result.content);
-      onClose();
+      const result = await generateDescription.mutateAsync(form);
 
-      if (result.source === "local-ai") {
-        toast.success("Description drafted with the free local AI model.");
-      } else {
-        toast.info("Local AI was unavailable, so a structured markdown draft was inserted instead.");
+      if (!result?.success || !result.data) {
+        throw new Error(result?.message || "Unable to draft the description right now.");
       }
+
+      onApply(result.data);
+      onClose();
+      toast.success("Description drafted successfully.");
     } catch (generateError) {
-      setError(generateError instanceof Error ? generateError.message : "Unable to draft the description right now.");
+      const message =
+        (generateError as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        (generateError instanceof Error ? generateError.message : "Unable to draft the description right now.");
+      setError(message);
+      toast.error(message);
     } finally {
       setIsGenerating(false);
     }
@@ -113,8 +118,8 @@ const MarkdownDraftAssistantModal = ({ isOpen, onClose, currentValue, onApply }:
       <div className="space-y-5">
         <div className="rounded-xl border border-blue-100 bg-blue-50/80 px-4 py-3 text-sm text-blue-900">
           {currentValue.trim()
-            ? "The current editor content is used as hidden context, so this can rewrite what is already there."
-            : "No long draft field here. Pick a mode and answer a few quick questions."}
+            ? "We will use the current editor content as context, so the draft can refine what is already there."
+            : "Pick a mode and share a few details to generate a draft description."}
         </div>
 
         <fieldset className="space-y-3">
@@ -191,7 +196,7 @@ const MarkdownDraftAssistantModal = ({ isOpen, onClose, currentValue, onApply }:
               rows={4}
               className="mt-1 w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
-            <p className="mt-1 text-xs text-gray-500">The closing line is added automatically.</p>
+            <p className="mt-1 text-xs text-gray-500">Include any must-mention details you want highlighted.</p>
           </label>
         </div>
 

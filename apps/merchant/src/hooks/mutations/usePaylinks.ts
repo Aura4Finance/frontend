@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import client from "../../store/client";
 import { toast } from "sonner";
+import client from "../../store/client";
+import type { MarkdownDraftInput } from "../../lib/descriptionAssistant";
 
 // Types
 export type PaylinkMode = "live" | "test";
@@ -30,6 +31,12 @@ export interface PaylinkListResponse {
   data: Paylink[];
 }
 
+export interface PaylinkAIDescriptionResponse {
+  success: boolean;
+  data: string;
+  message?: string;
+}
+
 export interface CreatePaylinkPayload {
   title: string;
   description: string;
@@ -43,6 +50,15 @@ export interface EditPaylinkPayload {
   amount?: number;
   currency?: string;
 }
+
+export const useGeneratePaylinkDescription = () => {
+  return useMutation({
+    mutationFn: async (payload: MarkdownDraftInput) => {
+      const response = await client.post("/v1/paylink/ai-description", payload);
+      return response.data as PaylinkAIDescriptionResponse;
+    },
+  });
+};
 
 // Get all paylinks
 export const useGetPaylinks = (mode: string) => {
