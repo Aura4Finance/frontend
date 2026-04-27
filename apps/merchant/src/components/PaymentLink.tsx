@@ -20,6 +20,7 @@ import { getSupportedCurrencies } from "../hooks/mutations/useSettings";
 import { useActiveTabStore } from "../store/activeTab";
 import { useLoadingStore } from "../store/loading";
 import { renderMarkdown } from "../lib/markdown";
+import { useQueryState } from "../hooks/useQueryState";
 
 const WALRUS_GATEWAY_TESTNET ="https://aggregator.walrus-testnet.walrus.space/v1/blobs";
 const WALRUS_GATEWAY_MAINNET ="https://aggregator.walrus-mainnet.walrus.space/v1/blobs";
@@ -38,7 +39,10 @@ const PaymentLink = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedPaylink, setSelectedPaylink] = useState<Paylink | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useQueryState("search", "", {
+    history: "replace",
+    debounceMs: 400,
+  });
 
   // Form state
   const [formData, setFormData] = useState({

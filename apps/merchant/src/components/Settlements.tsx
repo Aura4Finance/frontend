@@ -1,6 +1,7 @@
 import DashboardWrapper from "./DashboardWrapper";
 import { useEffect, useState } from "react";
 import { useActiveTabStore } from "../store/activeTab";
+import { useQueryState } from "../hooks/useQueryState";
 import { 
   useGetCryptoSettlements, 
   useAddCryptoSettlements, 
@@ -16,9 +17,19 @@ import { useGetSupoortedNetworks } from "../hooks/mutations/useTransactions";
 import Modal from "./transactions/Modal";
 import { FiTrash2, FiCopy, FiCheck, FiStar, FiBriefcase } from "react-icons/fi";
 
+const SETTLEMENT_TAB_IDS = ["crypto", "fiat"] as const;
+
 const Settlements = () => {
   const { setActiveTab } = useActiveTabStore();
-  const [activeTab, setActiveTabValue] = useState("crypto");
+  const [activeTab, setActiveTabValue] = useQueryState("settlementsTab", "crypto", {
+    history: "push",
+    parse: (value) => {
+      if (!SETTLEMENT_TAB_IDS.includes(value as (typeof SETTLEMENT_TAB_IDS)[number])) {
+        throw new Error("Invalid settlements tab");
+      }
+      return value;
+    },
+  });
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [settlementToDelete, setSettlementToDelete] = useState<string | null>(null);

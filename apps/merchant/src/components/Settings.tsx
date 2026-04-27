@@ -6,6 +6,7 @@ import DashboardWrapper from "./DashboardWrapper";
 import Modal from "./transactions/Modal";
 import { useActiveTabStore } from "../store/activeTab";
 import { tokenStore } from "../store/client";
+import { useQueryState } from "../hooks/useQueryState";
 import {
   generateAPIKey,
   getAPIKeys,
@@ -55,7 +56,16 @@ const Settings = () => {
   const toggleBusinessModeMutation = toggleBusinessMode();
   const toggleNotificationMutation = toggleNotification();
 
-  const [activeTabValue, setActiveTabValue] = useState("profile");
+  const settingsTabIds = ["profile", "api-keys", "notifications", "preferences"] as const;
+  const [activeTabValue, setActiveTabValue] = useQueryState("settingsTab", "profile", {
+    history: "push",
+    parse: (value) => {
+      if (!settingsTabIds.includes(value as (typeof settingsTabIds)[number])) {
+        throw new Error("Invalid settings tab");
+      }
+      return value;
+    },
+  });
   const [requestEmail, setRequestEmail] = useState("");
   const [verifyEmail, setVerifyEmail] = useState("");
   const [verifyToken, setVerifyToken] = useState("");

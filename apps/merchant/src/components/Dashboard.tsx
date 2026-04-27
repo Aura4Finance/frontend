@@ -21,6 +21,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useBalance, useDashboard } from "../hooks/mutations/useDashboard";
+import { useQueryState } from "../hooks/useQueryState";
 
 const RATES_TO_NGN: Record<string, number> = {
   USDC: 1_580,
@@ -53,7 +54,9 @@ const ChartSkeleton = () => (
 
 const Dashboard = () => {
   const [balanceVisible, setBalanceVisible] = useState(true);
-  const [selectedCoin, setSelectedCoin] = useState("");
+  const [selectedCoin, setSelectedCoin] = useQueryState("coin", "", {
+    history: "push",
+  });
   const [coinDropdownOpen, setCoinDropdownOpen] = useState(false);
 
   const { data, isLoading, isError } = useDashboard();
