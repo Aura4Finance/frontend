@@ -62,7 +62,7 @@ function App() {
     return (
       <>
         <div className="flex h-screen w-screen items-center justify-center bg-white">
-          <img src={logo} alt="OraFi Logo" className="h-16 w-16 rounded-2xl object-contain" />
+          <img src={logo} alt="OraFi Logo" className="h-16 w-16 rounded-2xl object-contain animate-pulse" />
         </div>
         <Toaster position="top-right" richColors/>
       </>
