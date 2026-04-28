@@ -13,6 +13,7 @@ import Onboarding from "./components/Onboarding";
 import Transactions from "./components/Transactions";
 import Webhook from "./components/Webhook";
 import PaymentLink from "./components/PaymentLink";
+import logo from "@orafi/ui/assets/OraFi.png";
 
 // Global Progress Bar Component
 function GlobalProgressBar() {
@@ -61,7 +62,7 @@ function App() {
     return (
       <>
         <div className="flex h-screen w-screen items-center justify-center bg-white">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-black border-t-transparent" />
+          <img src={logo} alt="OraFi Logo" className="h-16 w-16 rounded-2xl object-contain" />
         </div>
         <Toaster position="top-right" richColors/>
       </>
