@@ -5,13 +5,14 @@ import { Transaction } from "@mysten/sui/transactions";
 import { ConnectButton, useWallet } from "@suiet/wallet-kit";
 import { Button, Card } from "@orafi/ui";
 import logo from "@orafi/ui/assets/OraFi.png";
-import { FiCheckCircle, FiShield, FiAlertCircle } from "react-icons/fi";
+import { FiCheckCircle, FiShield, FiAlertCircle, FiArrowLeft } from "react-icons/fi";
 import { RiSecurePaymentLine } from "react-icons/ri";
 import { FiChevronDown } from "react-icons/fi";
 import { MobileWalletPrompt } from "./MobileWalletPrompt";
 import { PaymentMethodSelector } from "./PaymentMethodSelector";
 import { TransferPayment } from "./TransferPayment";
-import { useGetPaymentInformationQuery } from "../hooks/useGetPaymentInformationQuery";
+import { useGetPaymentInformationQuery, useGeneratePaymentIntentMutation } from "../hooks/useGetPaymentInformationQuery";
+import { useGetSupportedNetworksAndTokens } from "../hooks/useGetSupportedNetworksAndTokens";
 import { PACKAGE_ID_TESTNET, PACKAGE_ID_MAINNET } from "../client/constant";
 import { toast } from "sonner";
 
@@ -20,9 +21,15 @@ const Checkout = () => {
     const [_location, _setLocation] = useLocation();
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [paymentMethod, setPaymentMethod] = useState<"mobile" | "transfer" | null>(null);
+    const [paymentMethod, setPaymentMethod] = useState<"transfer_address" | "deposit_address" | null>(null);
     const [redirect, setRedirect] = useState<string | undefined>(undefined);
     const [showModal, setShowModal] = useState(false);
+    const [selectedToken, setSelectedToken] = useState<string>("");
+    const [isGeneratingIntent, setIsGeneratingIntent] = useState(false);
+    const [generatedAddresses, setGeneratedAddresses] = useState<{
+        depositAddress?: string;
+        transferAddress?: string;
+    }>({});
     const wallet = useWallet();
     const accounts = useMemo(
         () => (wallet.connected ? wallet.getAccounts?.() ?? [] : []),
@@ -30,6 +37,86 @@ const Checkout = () => {
     );
 
     const paymentQueryResult = useGetPaymentInformationQuery(params?.txId as string);
+    const supportedNetworksQuery = useGetSupportedNetworksAndTokens();
+    const generateIntentMutation = useGeneratePaymentIntentMutation(params?.txId as string);
+        // Find the supported network that matches paymentData.network
+        const matchedNetwork = useMemo(() => {
+            if (!supportedNetworksQuery.data || !paymentQueryResult.data) return null;
+            return supportedNetworksQuery.data.find(
+                (n) => n.symbol.toLowerCase() === paymentQueryResult.data.network.toLowerCase()
+            );
+        }, [supportedNetworksQuery.data, paymentQueryResult.data]);
+
+        // Set default token when network changes
+        useEffect(() => {
+            if (matchedNetwork && matchedNetwork.supportedTokens.length > 0) {
+                setSelectedToken(matchedNetwork.supportedTokens[0]);
+            }
+        }, [matchedNetwork]);
+
+        // Generate deposit/transfer address if missing
+        useEffect(() => {
+            if (!paymentQueryResult.data) return;
+            if (!paymentQueryResult.data.depositAddress && !generatedAddresses.depositAddress) {
+                generateIntentMutation.mutate("deposit_address", {
+                    onSuccess: (address: string) => {
+                        setGeneratedAddresses(prev => ({
+                            ...prev,
+                            depositAddress: address
+                        }));
+                    }
+                });
+            }
+            if (!paymentQueryResult.data.transferAddress && !generatedAddresses.transferAddress) {
+                generateIntentMutation.mutate("transfer_address", {
+                    onSuccess: (address: string) => {
+                        setGeneratedAddresses(prev => ({
+                            ...prev,
+                            transferAddress: address
+                        }));
+                    }
+                });
+            }
+        }, [paymentQueryResult.data]);
+
+        // Handle payment method selection - call mutation to generate intent
+        const handleSelectPaymentMethod = async (method: "transfer_address" | "deposit_address") => {
+            // Map method to property name
+            const propertyName = method === "transfer_address" ? "transferAddress" : "depositAddress";
+            
+            // Check if address already exists (in payment data or cached)
+            const existingAddress = paymentQueryResult.data?.[propertyName as keyof typeof paymentQueryResult.data] || generatedAddresses[propertyName as keyof typeof generatedAddresses];
+            
+            if (existingAddress) {
+                // Address already exists, just proceed
+                setPaymentMethod(method);
+                return;
+            }
+
+            // Need to generate new address
+            setIsGeneratingIntent(true);
+            setError(null);
+            try {
+                generateIntentMutation.mutate(method, {
+                    onSuccess: (address: string) => {
+                        setGeneratedAddresses(prev => ({
+                            ...prev,
+                            [propertyName]: address
+                        }));
+                        setPaymentMethod(method);
+                        setIsGeneratingIntent(false);
+                        toast.success(`${method === "deposit_address" ? "Deposit" : "Transfer"} address generated`);
+                    },
+                    onError: () => {
+                        setIsGeneratingIntent(false);
+                        toast.error("Failed to generate payment address");
+                    }
+                });
+            } catch (err) {
+                setIsGeneratingIntent(false);
+                toast.error("Failed to generate payment address");
+            }
+        };
     // Check if redirect=false is in URL
     const hasNoRedirect = new URL(window.location.href).searchParams.get('redirect') === 'false';
 
@@ -59,6 +146,12 @@ const Checkout = () => {
             return;
         }
 
+        const depositAddress = paymentQueryResult.data.depositAddress || generatedAddresses.depositAddress;
+        if (!depositAddress) {
+            toast.error("Deposit address not available");
+            return;
+        }
+
         setProcessing(true);
         setError(null);
 
@@ -77,7 +170,7 @@ const Checkout = () => {
                2. Read required payment amount (BASE UNITS)
             ------------------------------------------------------------- */
             const depositObject = await client.getObject({
-                id: paymentQueryResult.data.depositAddress,
+                id: depositAddress,
                 options: { showContent: true },
             });
 
@@ -172,7 +265,7 @@ const Checkout = () => {
                 target: `${paymentQueryResult.data.mode == "live" ? PACKAGE_ID_MAINNET : PACKAGE_ID_TESTNET}::main::pay`,
                 arguments: [
                     paymentCoin,
-                    tx.object(paymentQueryResult.data.depositAddress),
+                    tx.object(depositAddress),
                 ],
             });
 
@@ -221,6 +314,7 @@ const Checkout = () => {
     }
 
     if (!paymentQueryResult.data) return <div className="p-10 text-center">Payment not found</div>;
+    if (supportedNetworksQuery.isPending) return <div className="p-10 text-center">Loading networks...</div>;
 
     return (
         <>
@@ -265,6 +359,18 @@ const Checkout = () => {
                             <p className="text-xs text-gray-500 font-medium mb-1">Paying to</p>
                             <h3 className="text-lg font-bold text-gray-900 mb-6">{paymentQueryResult.data.businessName}</h3>
 
+                            {/* Network Info */}
+                            {matchedNetwork && (
+                                <div className="w-full mb-4 pb-4 border-b border-gray-100">
+                                    <p className="text-xs text-gray-500 font-medium mb-2">Network</p>
+                                    <div className="flex items-center gap-2">
+                                        {matchedNetwork.logoUrl && (
+                                            <img src={matchedNetwork.logoUrl} alt={matchedNetwork.name} className="h-4 w-4 object-contain" />
+                                        )}
+                                        <span className="text-sm font-semibold text-blue-950">{matchedNetwork.name.toUpperCase()}</span>
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="w-full space-y-3">
                                 <div className="flex justify-between items-center pb-3 border-b border-gray-100">
@@ -282,6 +388,19 @@ const Checkout = () => {
 
                 {/* Right Side - Checkout Form */}
                 <Card className="w-full max-w-md bg-white shadow-xl border-t-4 border-t-blue-900 border-x-0 border-b-0 rounded-xl overflow-hidden p-5 lg:shadow-lg">
+                    {/* Top Change Method Button */}
+                    {paymentMethod && (
+                        <div className="mb-4">
+                            <button
+                                onClick={() => setPaymentMethod(null)}
+                                className="flex items-center gap-2 text-xs text-blue-900 hover:text-blue-700 font-semibold uppercase tracking-wider transition-colors"
+                            >
+                                <FiArrowLeft size={14} />
+                                Change Payment Method
+                            </button>
+                        </div>
+                    )}
+
                     {/* Mobile Header - Hidden on Desktop */}
                     <div className="lg:hidden p-6 pb-4 border-b border-gray-100 bg-white mb-4">
                         <div className="flex flex-col items-center text-center">
@@ -315,14 +434,30 @@ const Checkout = () => {
                     )}
 
                     <div className="space-y-4">
+                        {/* Token Dropdown */}
+                        {matchedNetwork && matchedNetwork.supportedTokens.length > 0 && (
+                            <div className="mb-4">
+                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Select Token</label>
+                                <select
+                                    className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                                    value={selectedToken}
+                                    onChange={e => setSelectedToken(e.target.value)}
+                                >
+                                    {matchedNetwork.supportedTokens.map(token => (
+                                        <option key={token} value={token}>{token}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                         {/* Payment Method Selection or Active Method */}
                         {!paymentMethod ? (
                             <PaymentMethodSelector
-                                onSelectMethod={setPaymentMethod}
+                                onSelectMethod={handleSelectPaymentMethod}
+                                isLoading={isGeneratingIntent}
                             />
-                        ) : paymentMethod === "mobile" ? (
+                        ) : paymentMethod === "deposit_address" ? (
                             <>
-                                {/* Mobile/Wallet Payment Method */}
+                                {/* Deposit Address Payment Method */}
                                 {!wallet.connected ? (
                                     <div className="flex flex-col gap-3">
                                         <p className="text-sm text-gray-600 text-center">Connect your Sui wallet to pay</p>
@@ -424,37 +559,25 @@ const Checkout = () => {
                                         </Button>
                                     </div>
                                 )}
-                                        {paymentMethod === "mobile" && (
+                                        {paymentMethod === "deposit_address" && (
                                             <MobileWalletPrompt
                                                 redirectUrl={!hasNoRedirect ? redirect : undefined}
                                                 client={client}
-                                                depositAddress={paymentQueryResult.data.depositAddress}
+                                                depositAddress={paymentQueryResult.data.depositAddress || generatedAddresses.depositAddress || ""}
                                             />
                                         )}
-                                        <Button
-                                            variant="default"
-                                            onClick={() => setPaymentMethod(null)}
-                                            className="text-xs text-gray-500 hover:text-gray-700 text-center py-2 transition-colors"
-                                        >
-                                            Change payment method
-                                        </Button>
                             </>
-                        ) : paymentMethod === "transfer" ? (
+                        ) : paymentMethod === "transfer_address" ? (
                             <>
-                                {/* Transfer Payment Method */}
-                                <TransferPayment
-                                    transferAddress={paymentQueryResult.data.transferAddress}
-                                    amountInUSDC={(Math.ceil(paymentQueryResult?.data.amountInUSDC * 100) / 100).toFixed(2)}
-                                    redirectUrl={!hasNoRedirect ? redirect as string : undefined}
-                                    transactionId={params?.txId as string}
-                                />
-                                <Button
-                                    variant="default"
-                                    onClick={() => setPaymentMethod(null)}
-                                    className="text-xs text-gray-500 hover:text-gray-700 text-center py-2 transition-colors"
-                                >
-                                    Change payment method
-                                </Button>
+                                {/* Transfer Address Payment Method */}
+                                {(paymentQueryResult.data.transferAddress || generatedAddresses.transferAddress) && (
+                                    <TransferPayment
+                                        transferAddress={paymentQueryResult.data.transferAddress || generatedAddresses.transferAddress || ""}
+                                        amountInUSDC={(Math.ceil(paymentQueryResult?.data.amountInUSDC * 100) / 100).toFixed(2)}
+                                        redirectUrl={!hasNoRedirect ? redirect as string : undefined}
+                                        transactionId={params?.txId as string}
+                                    />
+                                )}
                             </>
                         ) : null}
                     </div>

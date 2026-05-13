@@ -1,16 +1,20 @@
-import { useQuery } from "@tanstack/react-query";
+import { 
+  useQuery,
+  useMutation,
+ } from "@tanstack/react-query";
 import client from "../client/client";
 
 type PaymentData = {
   id: string;
-  depositAddress: string;
-  transferAddress: string;
   businessName: string;
+  depositAddress: string;
+  transferAddress:  string;
   amount: number;
   amountInUSDC: number;
   currency: string;
   redirectUrl: string;
-  mode: "test" | "live"
+  mode: "test" | "live";
+  network: string
 };
 
 export const useGetPaymentInformationQuery = (paymentId: string) => {
@@ -18,7 +22,7 @@ export const useGetPaymentInformationQuery = (paymentId: string) => {
     queryKey: ["payment-information", paymentId],
     queryFn: async () => {
       const { data } = await client.get(
-        `/transactions/payment?paymentId=${paymentId}`,
+        `/transactions/payment/${paymentId}`,
       );
       return data.data;
     },
@@ -29,3 +33,17 @@ export const useGetPaymentInformationQuery = (paymentId: string) => {
     refetchOnMount: false,
   });
 };
+
+export const useGeneratePaymentIntentMutation = (paymentId: string) => {
+  return useMutation({
+    mutationKey: ["generate-payment-intent", paymentId],
+    mutationFn: async (intent: "deposit_address" | "transfer_address") => {
+      const { data } = await client.patch(
+        `/transactions/payment/${paymentId}?intent=${intent}`,
+      );
+      return data.data as string;
+    }
+  })
+}
+
+

@@ -1,19 +1,21 @@
 import { useState } from "react";
 import { Button } from "@orafi/ui";
-import { FiArrowRight } from "react-icons/fi";
+import { FiArrowRight, FiLoader } from "react-icons/fi";
 
 interface PaymentMethodSelectorProps {
-    onSelectMethod: (method: "mobile" | "transfer") => void;
+    onSelectMethod: (method: "transfer_address" | "deposit_address") => void;
+    isLoading?: boolean;
 }
 
 export const PaymentMethodSelector = ({
     onSelectMethod,
+    isLoading = false,
 }: PaymentMethodSelectorProps) => {
-    const [selectedMethod, setSelectedMethod] = useState<"mobile" | "transfer" | null>(
+    const [selectedMethod, setSelectedMethod] = useState<"transfer_address" | "deposit_address" | null>(
         null
     );
 
-    const handleSelect = (method: "mobile" | "transfer") => {
+    const handleSelect = (method: "transfer_address" | "deposit_address") => {
         setSelectedMethod(method);
         onSelectMethod(method);
     };
@@ -27,19 +29,20 @@ export const PaymentMethodSelector = ({
             </div>
 
             <div className="grid grid-cols-1 gap-4">
-                {/* Pay with Mobile */}
+                {/* Deposit Address */}
                 <button
-                    onClick={() => handleSelect("mobile")}
+                    onClick={() => handleSelect("deposit_address")}
+                    disabled={isLoading}
                     className={`relative overflow-hidden rounded-lg border-2 p-4 transition-all duration-300 ${
-                        selectedMethod === "mobile"
+                        selectedMethod === "deposit_address"
                             ? "border-blue-900 bg-blue-50 shadow-md"
                             : "border-gray-200 bg-white hover:border-blue-200 hover:shadow-sm"
-                    }`}
+                    } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                     <div className="flex items-center justify-between">
                         <div className="text-left">
                             <h3 className="font-bold text-gray-900 text-sm">
-                                Pay via SUI Wallet
+                                Pay via Deposit Address
                             </h3>
                             <p className="text-xs text-gray-600 mt-1">
                                 Direct wallet payment via Sui Network
@@ -47,31 +50,32 @@ export const PaymentMethodSelector = ({
                         </div>
                         <div
                             className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                selectedMethod === "mobile"
+                                selectedMethod === "deposit_address"
                                     ? "border-blue-900 bg-blue-900"
                                     : "border-gray-300"
                             }`}
                         >
-                            {selectedMethod === "mobile" && (
+                            {selectedMethod === "deposit_address" && (
                                 <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
                             )}
                         </div>
                     </div>
                 </button>
 
-                {/* Pay with Transfer USDC */}
+                {/* Transfer Address */}
                 <button
-                    onClick={() => handleSelect("transfer")}
+                    onClick={() => handleSelect("transfer_address")}
+                    disabled={isLoading}
                     className={`relative overflow-hidden rounded-lg border-2 p-4 transition-all duration-300 ${
-                        selectedMethod === "transfer"
+                        selectedMethod === "transfer_address"
                             ? "border-blue-900 bg-blue-50 shadow-md"
                             : "border-gray-200 bg-white hover:border-blue-200 hover:shadow-sm"
-                    }`}
+                    } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                     <div className="flex items-center justify-between">
                         <div className="text-left">
                             <h3 className="font-bold text-gray-900 text-sm">
-                                Pay via Transfer USDC
+                                Pay via Transfer Address
                             </h3>
                             <p className="text-xs text-gray-600 mt-1">
                                 Send USDC to wallet address manually
@@ -79,12 +83,12 @@ export const PaymentMethodSelector = ({
                         </div>
                         <div
                             className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                                selectedMethod === "transfer"
+                                selectedMethod === "transfer_address"
                                     ? "border-blue-900 bg-blue-900"
                                     : "border-gray-300"
                             }`}
                         >
-                            {selectedMethod === "transfer" && (
+                            {selectedMethod === "transfer_address" && (
                                 <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
                             )}
                         </div>
@@ -96,9 +100,18 @@ export const PaymentMethodSelector = ({
                 <Button
                     variant="default"
                     className="w-full h-11 bg-blue-900 hover:bg-blue-800 text-white font-bold shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-                    disabled={!selectedMethod}
+                    disabled={!selectedMethod || isLoading}
                 >
-                    Continue <FiArrowRight size={16} />
+                    {isLoading ? (
+                        <>
+                            <FiLoader size={16} className="animate-spin" />
+                            Creating Address...
+                        </>
+                    ) : (
+                        <>
+                            Continue <FiArrowRight size={16} />
+                        </>
+                    )}
                 </Button>
             )}
         </div>
