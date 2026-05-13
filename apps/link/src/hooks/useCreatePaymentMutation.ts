@@ -24,10 +24,28 @@ export const useCreatePaymentMutation = () => {
             fullname,
             paymentLinkId,
         }: CreatePaylinkPaymentPayload) => {
+            const generateUuid = () => {
+                try {
+                    if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+                        // @ts-ignore
+                        return crypto.randomUUID();
+                    }
+                } catch (e) {}
+                // fallback UUID v4
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+                    const r = (Math.random() * 16) | 0;
+                    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+                    return v.toString(16);
+                });
+            };
+
+            const txRef = generateUuid();
+
             const response = await client.post(
                 "/transactions/payment/paylink",
                 {
                     amount,
+                    txRef,
                     customer: {
                         email,
                         fullname,
@@ -40,7 +58,7 @@ export const useCreatePaymentMutation = () => {
                         "payment-link-id": paymentLinkId,
                     },
                 }
-      );
+            );
             return response.data.data;
         },
         onError: (error: any) => {
