@@ -15,9 +15,9 @@ import {
   useRefund,
   useRetryRefund,
   useRetryPayout,
-  usePayout,
   useTransaction,
   useTransactions,
+  useCreateCryptoPayout,
   useCreateFiatPayout,
 } from "../hooks/mutations/useTransactions";
 import { useBalance } from "../hooks/mutations/useDashboard";

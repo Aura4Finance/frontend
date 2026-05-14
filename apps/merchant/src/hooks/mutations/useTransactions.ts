@@ -92,7 +92,7 @@ type PayoutSuccessful = {
   amountRecieved: number;
 }
 
-export const usePayout = () => {
+export const useCreateCryptoPayout = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
