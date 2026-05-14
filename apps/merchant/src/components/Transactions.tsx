@@ -212,7 +212,7 @@ const Transactions = () => {
 
   const payoutTypeForRetry = getPayoutTypeFromTransaction(selectedTransaction);
   const { mutate: retryPayoutTransaction, isPending: isRetryingPayout } = useRetryPayout(payoutTypeForRetry);
-  const { mutate: initiatePayoutTransaction, isPending: isInitiatingPayout } = usePayout();
+  const { mutate: initiatePayoutTransaction, isPending: isInitiatingPayout } = useCreateCryptoPayout();
   const { mutate: initiateFiatPayoutTransaction, isPending: isInitiatingFiatPayout } = useCreateFiatPayout();
   const { data: balances = [] } = useBalance();
   const { data: cryptoSettlements = [] } = useGetCryptoSettlements();
