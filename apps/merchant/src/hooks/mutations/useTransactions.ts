@@ -48,7 +48,7 @@ export const useRefund = () => {
   return useMutation({
     mutationFn: async ({ originalTxId, to, reason, twoFAKey }: { originalTxId: string; to: string; reason?: string, twoFAKey?: string }) => {
       if(twoFAKey) client.defaults.headers.common["2-fa-key"] = twoFAKey;
-      const response = await client.post(`/user/transactions/refund${originalTxId}`, { to, reason });
+      const response = await client.post(`/user/transactions/refund/${originalTxId}`, { to, reason });
       return response.data.data as RefundSuccessful;
     },
     onSuccess: (_, variables) => {
