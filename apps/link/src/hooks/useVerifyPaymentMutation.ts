@@ -5,7 +5,7 @@ import { toast } from "sonner";
 export const useVerifyPaymentMutation = () => {
     return useMutation({
         mutationFn: async (paymentId: string) => {
-            const response = await client.post("/transactions/payment/verify", { paymentId });
+            const response = await client.post(`/transactions/payment/${paymentId}verify`);
             return response.data.data;
         },
         onSuccess: (response) => {

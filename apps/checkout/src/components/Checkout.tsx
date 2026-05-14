@@ -54,31 +54,6 @@ const Checkout = () => {
             }
         }, [matchedNetwork]);
 
-        // Generate deposit/transfer address if missing
-        useEffect(() => {
-            if (!paymentQueryResult.data) return;
-            if (!paymentQueryResult.data.depositAddress && !generatedAddresses.depositAddress) {
-                generateIntentMutation.mutate("deposit_address", {
-                    onSuccess: (address: string) => {
-                        setGeneratedAddresses(prev => ({
-                            ...prev,
-                            depositAddress: address
-                        }));
-                    }
-                });
-            }
-            if (!paymentQueryResult.data.transferAddress && !generatedAddresses.transferAddress) {
-                generateIntentMutation.mutate("transfer_address", {
-                    onSuccess: (address: string) => {
-                        setGeneratedAddresses(prev => ({
-                            ...prev,
-                            transferAddress: address
-                        }));
-                    }
-                });
-            }
-        }, [paymentQueryResult.data]);
-
         // Handle payment method selection - call mutation to generate intent
         const handleSelectPaymentMethod = async (method: "transfer_address" | "deposit_address") => {
             // Map method to property name
