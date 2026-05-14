@@ -48,7 +48,7 @@ export const useRefund = () => {
   return useMutation({
     mutationFn: async ({ originalTxId, to, reason, twoFAKey }: { originalTxId: string; to: string; reason?: string, twoFAKey?: string }) => {
       if(twoFAKey) client.defaults.headers.common["2-fa-key"] = twoFAKey;
-      const response = await client.post(`/user/transactions/refund`, { originalTxId, to, reason });
+      const response = await client.post(`/user/transactions/refund${originalTxId}`, { to, reason });
       return response.data.data as RefundSuccessful;
     },
     onSuccess: (_, variables) => {
@@ -68,7 +68,7 @@ export const useRetryRefund = () => {
   return useMutation({
     mutationFn: async ({ transactionId, twoFAKey }: { transactionId: string, twoFAKey?: string }) => {
       if(twoFAKey) client.defaults.headers.common["2-fa-key"] = twoFAKey;
-      const response = await client.post(`/user/transactions/refund/retry`, { transactionId });
+      const response = await client.post(`/user/transactions/refund/${transactionId}/retry`);
       return response.data.data as RefundSuccessful;
     },
     onSuccess: (_, variables) => {
@@ -154,13 +154,13 @@ export const usePayout = () => {
   })
 }
 
-export const useRetryPayout = (payoutType: "crypto" | "fiat" = "crypto") => {
+export const useRetryPayout = (_payoutType: "crypto" | "fiat" = "crypto") => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ transactionId, twoFAKey }: { transactionId: string, twoFAKey?: string }) => {
       if(twoFAKey) client.defaults.headers.common["2-fa-key"] = twoFAKey;
-      const response = await client.post(`/user/transactions/payout/${payoutType}/retry`, { transactionId });
+      const response = await client.post(`/user/transactions/payout/${transactionId}/retry`);
       return response.data.data as PayoutSuccessful;
     },
     onSuccess: () => {
