@@ -137,7 +137,7 @@ const PayLink = () => {
                 </div>
 
                 <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-blue-950 mt-2">₦ {paylinkData.data?.amount.toLocaleString()}</h2>
+                  <h2 className="text-2xl font-bold text-blue-950 mt-2">{paylinkData.data?.currency} {paylinkData.data?.amount.toLocaleString()}</h2>
                 </div>
 
                 {description ? (
