@@ -65,7 +65,7 @@ const Checkout = () => {
 
         const displayTokenSymbol = selectedTokenObject?.symbol || "USDC";
         const displayTokenLogoUrl = selectedTokenObject?.logoUrl;
-        const displayTokenAmount = isLoadingTokenAmount ? "Calculating..." : (tokenAmount || roundedAmountInUSDC);
+        const displayTokenAmount = isLoadingTokenAmount ? "..." : (tokenAmount || roundedAmountInUSDC);
 
         useEffect(() => {
             const fetchTokenAmount = async () => {

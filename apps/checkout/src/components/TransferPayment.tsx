@@ -60,9 +60,8 @@ export const TransferPayment = ({
                 
                 // Calculate amount: amountInUSDC / rate
                 const amountInToken = parseFloat(amountInUSDC) / rate;
-                
                 // Format with proper decimals
-                setTokenAmount(amountInToken.toFixed(parseInt(selectedToken.decimals) || 6));
+                setTokenAmount((Math.ceil(amountInToken * 100) / 100).toFixed(2));
             } catch (error) {
                 console.error("Failed to fetch token price", error);
                 // Fallback to amountInUSDC if fetch fails
@@ -132,7 +131,7 @@ export const TransferPayment = ({
             {/* Transfer Address Section */}
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-6">
                 <p className="text-xs font-bold text-blue-900 uppercase tracking-wider mb-4">
-                    Send USDC to
+                    Send {tokenSymbol} to
                 </p>
 
                 {/* QR Code */}
@@ -206,7 +205,7 @@ export const TransferPayment = ({
                         Verify Transfer
                     </p>
                     <p className="text-sm text-gray-600">
-                        After sending USDC, click the button below to verify your transaction
+                        After sending, click the button below to verify your transaction
                     </p>
                 </div>
 
