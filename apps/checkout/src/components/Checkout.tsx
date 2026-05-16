@@ -13,7 +13,6 @@ import { PaymentMethodSelector } from "./PaymentMethodSelector";
 import { TransferPayment } from "./TransferPayment";
 import { useGetPaymentInformationQuery, useGeneratePaymentIntentMutation } from "../hooks/useGetPaymentInformationQuery";
 import { useGetSupportedNetworksAndTokens } from "../hooks/useGetSupportedNetworksAndTokens";
-import { PACKAGE_ID_TESTNET, PACKAGE_ID_MAINNET } from "../client/constant";
 import { toast } from "sonner";
 
 const Checkout = () => {
@@ -24,6 +23,7 @@ const Checkout = () => {
     const [paymentMethod, setPaymentMethod] = useState<"transfer_address" | "deposit_address" | null>(null);
     const [redirect, setRedirect] = useState<string | undefined>(undefined);
     const [showModal, setShowModal] = useState(false);
+    const [showTokenDropdown, setShowTokenDropdown] = useState(false);
     const [selectedToken, setSelectedToken] = useState<string>("");
     const [isGeneratingIntent, setIsGeneratingIntent] = useState(false);
     const [generatedAddresses, setGeneratedAddresses] = useState<{
@@ -47,10 +47,31 @@ const Checkout = () => {
             );
         }, [supportedNetworksQuery.data, paymentQueryResult.data]);
 
+        // Get the selected token object from matched network
+        const selectedTokenObject = useMemo(() => {
+            if (!matchedNetwork || !selectedToken) return null;
+            return matchedNetwork.supportedTokens.find(t => t.symbol === selectedToken);
+        }, [matchedNetwork, selectedToken]);
+
+        // Determine if token should be disabled
+        const isTokenDisabled = (tokenSymbol: string): boolean => {
+            if (!matchedNetwork) return true;
+            const isTestnet = paymentQueryResult.data?.mode === "test";
+            
+            if (isTestnet) {
+                // On testnet, only allow SUI and USDC
+                return !["SUI", "USDC"].includes(tokenSymbol);
+            }
+            // On mainnet (live mode), allow all tokens
+            return false;
+        };
+
         // Set default token when network changes
         useEffect(() => {
             if (matchedNetwork && matchedNetwork.supportedTokens.length > 0) {
-                setSelectedToken(matchedNetwork.supportedTokens[0]);
+                // Find first enabled token or first token available
+                const enabledToken = matchedNetwork.supportedTokens.find(t => !isTokenDisabled(t.symbol));
+                setSelectedToken(enabledToken?.symbol || matchedNetwork.supportedTokens[0].symbol);
             }
         }, [matchedNetwork]);
 
@@ -72,7 +93,7 @@ const Checkout = () => {
             setIsGeneratingIntent(true);
             setError(null);
             try {
-                generateIntentMutation.mutate(method, {
+                generateIntentMutation.mutate({intent: method, token: selectedToken}, {
                     onSuccess: (address: string) => {
                         setGeneratedAddresses(prev => ({
                             ...prev,
@@ -167,21 +188,25 @@ const Checkout = () => {
             }
 
             /* ------------------------------------------------------------
-               3. Fetch ALL USDC coins owned by wallet
+               3. Fetch coins for selected token
             ------------------------------------------------------------- */
-            const USDC_TYPE = paymentQueryResult.data.mode === "live" ?
-                "0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC" :
-                "0xa1ec7fc00a6f40db9693ad1415d0c193ad3906494428cf252621037bd7117e29::usdc::USDC";
+            if (!selectedTokenObject) {
+                throw new Error("No token selected");
+            }
+
+            const tokenCoinType = paymentQueryResult.data.mode === "live" ?
+                selectedTokenObject.mainnet.coinType :
+                selectedTokenObject.testnet.coinType;
 
             const coins = await client.getCoins({
                 owner: wallet.address,
-                coinType: USDC_TYPE,
+                coinType: tokenCoinType,
             });
 
             const allCoins = coins.data;
 
             if (allCoins.length === 0) {
-                toast.error("No USDC balance");
+                toast.error(`No ${selectedTokenObject.symbol} balance`);
                 return;
             }
 
@@ -194,7 +219,7 @@ const Checkout = () => {
             );
 
             if (totalBalance < amount) {
-                toast.error("Insufficient USDC balance");
+                toast.error(`Insufficient ${selectedTokenObject.symbol} balance`);
                 return;
             }
 
@@ -236,12 +261,21 @@ const Checkout = () => {
                 [tx.pure.u64(amount)]
             );
 
+            const packageId = paymentQueryResult.data.mode == "live" 
+                ? matchedNetwork?.smartContractPackageId.mainnet 
+                : matchedNetwork?.smartContractPackageId.testnet;
+
+            if (!packageId) {
+                throw new Error("Package ID not available for this network");
+            }
+
             tx.moveCall({
-                target: `${paymentQueryResult.data.mode == "live" ? PACKAGE_ID_MAINNET : PACKAGE_ID_TESTNET}::main::pay`,
+                target: `${packageId}::main::pay`,
                 arguments: [
                     paymentCoin,
                     tx.object(depositAddress),
                 ],
+                typeArguments: [tokenCoinType]
             });
 
             await wallet.signAndExecuteTransactionBlock({
@@ -413,15 +447,57 @@ const Checkout = () => {
                         {matchedNetwork && matchedNetwork.supportedTokens.length > 0 && (
                             <div className="mb-4">
                                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Select Token</label>
-                                <select
-                                    className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                                    value={selectedToken}
-                                    onChange={e => setSelectedToken(e.target.value)}
-                                >
-                                    {matchedNetwork.supportedTokens.map(token => (
-                                        <option key={token} value={token}>{token}</option>
-                                    ))}
-                                </select>
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setShowTokenDropdown((v) => !v)}
+                                        disabled={paymentMethod === "deposit_address" || isGeneratingIntent}
+                                        className="w-full border border-gray-300 rounded-md p-2 text-sm flex items-center justify-between hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-white"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            {selectedTokenObject?.logoUrl && (
+                                                <img 
+                                                    src={selectedTokenObject.logoUrl} 
+                                                    alt={selectedTokenObject.symbol} 
+                                                    className="h-4 w-4 object-contain" 
+                                                />
+                                            )}
+                                            <span>{selectedToken}</span>
+                                        </div>
+                                        <FiChevronDown size={16} className={`transition-transform ${showTokenDropdown ? "rotate-180" : ""}`} />
+                                    </button>
+                                    
+                                    {showTokenDropdown && paymentMethod !== "deposit_address" && (
+                                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-40 max-h-64 overflow-y-auto">
+                                            {matchedNetwork.supportedTokens.map((token) => (
+                                                <button
+                                                    key={token.symbol}
+                                                    onClick={() => {
+                                                        setSelectedToken(token.symbol);
+                                                        setShowTokenDropdown(false);
+                                                    }}
+                                                    disabled={isTokenDisabled(token.symbol)}
+                                                    className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 transition-colors ${
+                                                        selectedToken === token.symbol
+                                                            ? "bg-blue-50 text-blue-900"
+                                                            : "hover:bg-gray-50"
+                                                    } ${isTokenDisabled(token.symbol) ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                                                >
+                                                    {token.logoUrl && (
+                                                        <img 
+                                                            src={token.logoUrl} 
+                                                            alt={token.symbol} 
+                                                            className="h-4 w-4 object-contain" 
+                                                        />
+                                                    )}
+                                                    <div className="flex flex-col">
+                                                        <span className="font-semibold">{token.symbol}</span>
+                                                        <span className="text-xs text-gray-600">{token.name}</span>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
                         {/* Payment Method Selection or Active Method */}
@@ -551,6 +627,8 @@ const Checkout = () => {
                                         amountInUSDC={(Math.ceil(paymentQueryResult?.data.amountInUSDC * 100) / 100).toFixed(2)}
                                         redirectUrl={!hasNoRedirect ? redirect as string : undefined}
                                         transactionId={params?.txId as string}
+                                        selectedToken={selectedTokenObject || undefined}
+                                        isTestnet={paymentQueryResult.data?.mode === "test"}
                                     />
                                 )}
                             </>

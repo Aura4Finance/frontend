@@ -235,7 +235,7 @@ export const useGetSupoortedNetworks = () => {
     isActie: boolean;
     supportedTokens: string[];
     logoUrl: string
-  }
+  } 
 
   return useQuery({
     queryKey: ["supportedNetworks"],

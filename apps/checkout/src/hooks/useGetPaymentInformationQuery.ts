@@ -37,9 +37,9 @@ export const useGetPaymentInformationQuery = (paymentId: string) => {
 export const useGeneratePaymentIntentMutation = (paymentId: string) => {
   return useMutation({
     mutationKey: ["generate-payment-intent", paymentId],
-    mutationFn: async (intent: "deposit_address" | "transfer_address") => {
+    mutationFn: async ({intent, token}: {intent: "deposit_address" | "transfer_address", token: string}) => {
       const { data } = await client.patch(
-        `/transactions/payment/${paymentId}?intent=${intent}`,
+        `/transactions/payment/${paymentId}?intent=${intent}&token=${token}`,
       );
       return data.data as string;
     }

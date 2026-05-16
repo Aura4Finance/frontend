@@ -4,8 +4,8 @@ import { toast } from "sonner";
 
 export const useVerifyTransferMutation = (redirectUrl?: string) => {
     return useMutation({
-        mutationFn: async (paymentId: string) => {
-            await client.post("/transactions/payment/verify-transfer", { paymentId });
+        mutationFn: async ({paymentId, token}: {paymentId: string, token: string}) => {
+            await client.post(`/transactions/payment/${paymentId}/verify-transfer?token=${token}`);
         },
         onSuccess: () => {
             toast.success("Transfer verified successfully!");

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 // @ts-ignore
 import QRCode from "qrcode";
 import { FiCopy, FiCheckCircle, FiAlertCircle, FiLoader } from "react-icons/fi";
@@ -11,17 +11,74 @@ interface TransferPaymentProps {
     amountInUSDC: string;
     transactionId: string;
     redirectUrl?: string;
+    isTestnet?: boolean;
+    selectedToken?: {
+        name: string;
+        symbol: string;
+        logoUrl: string;
+        decimals: string;
+        mainnet: { coinType: string };
+        testnet: { coinType: string };
+    };
 }
 
 export const TransferPayment = ({
     transferAddress,
     amountInUSDC,
     transactionId,
-    redirectUrl
+    redirectUrl,
+    isTestnet = true,
+    selectedToken
 }: TransferPaymentProps) => {
     const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
     const [copied, _setCopied] = useState<boolean>(false);
+    const [tokenAmount, setTokenAmount] = useState<string>(amountInUSDC);
+    const [isLoadingAmount, setIsLoadingAmount] = useState<boolean>(false);
     const verifyTransferMutation = useVerifyTransferMutation(redirectUrl);
+
+    // Fetch token price and calculate amount
+    useEffect(() => {
+        const fetchTokenAmount = async () => {
+            if (!selectedToken || selectedToken.symbol === "USDC") {
+                // If USDC is selected, amount stays the same
+                setTokenAmount(amountInUSDC);
+                return;
+            }
+
+            setIsLoadingAmount(true);
+            try {
+                // Dynamic import to avoid build issues
+                const { getTokenPrice } = await import("@7kprotocol/sdk-ts");
+                
+                // Get the coin type based on network
+                const coinType = isTestnet 
+                    ? selectedToken.testnet.coinType 
+                    : selectedToken.mainnet.coinType;
+                
+                // Get the price rate
+                const rate = await getTokenPrice(coinType);
+                
+                // Calculate amount: amountInUSDC / rate
+                const amountInToken = parseFloat(amountInUSDC) / rate;
+                
+                // Format with proper decimals
+                setTokenAmount(amountInToken.toFixed(parseInt(selectedToken.decimals) || 6));
+            } catch (error) {
+                console.error("Failed to fetch token price", error);
+                // Fallback to amountInUSDC if fetch fails
+                setTokenAmount(amountInUSDC);
+            } finally {
+                setIsLoadingAmount(false);
+            }
+        };
+
+        fetchTokenAmount();
+    }, [selectedToken, amountInUSDC, isTestnet]);
+
+    // Get the token symbol, with fallback to USDC
+    const tokenSymbol = selectedToken?.symbol || "USDC";
+    const tokenLogo = selectedToken?.logoUrl || "";
+    const tokenName = selectedToken?.name || "USDC";
 
     // Generate QR code on mount
     const generateQRCode = async () => {
@@ -67,7 +124,7 @@ export const TransferPayment = ({
     };
 
     const handleVerifyTransfer = () => {
-        verifyTransferMutation.mutate(transactionId);
+        verifyTransferMutation.mutate({ paymentId: transactionId, token: tokenSymbol });
     };
 
     return (
@@ -118,15 +175,28 @@ export const TransferPayment = ({
                     </div>
                 </div>
 
-                {/* Amount Info */}
-                <div className="bg-blue-900/5 rounded-md p-3 text-center">
-                    <p className="text-xs text-gray-600 font-medium uppercase tracking-widest mb-1">
-                        Amount to Transfer
-                    </p>
-                    <p className="text-2xl font-bold text-blue-900 font-mono">
-                        {amountInUSDC} USDC
-                    </p>
+            {/* Amount Info */}
+            <div className="bg-blue-900/5 rounded-md p-3 text-center">
+                <p className="text-xs text-gray-600 font-medium uppercase tracking-widest mb-1">
+                    Amount to Transfer
+                </p>
+                <div className="flex items-center justify-center gap-2 mb-2">
+                    {tokenLogo && (
+                        <img src={tokenLogo} alt={tokenSymbol} className="h-5 w-5 object-contain" />
+                    )}
+                    <span className="text-sm font-semibold text-blue-900">{tokenName}</span>
                 </div>
+                {isLoadingAmount ? (
+                    <div className="flex items-center justify-center gap-2">
+                        <FiLoader className="animate-spin" size={16} />
+                        <span className="text-sm text-gray-600">Calculating amount...</span>
+                    </div>
+                ) : (
+                    <p className="text-2xl font-bold text-blue-900 font-mono">
+                        {tokenAmount} {tokenSymbol}
+                    </p>
+                )}
+            </div>
             </div>
 
             {/* Verify Transfer Section */}

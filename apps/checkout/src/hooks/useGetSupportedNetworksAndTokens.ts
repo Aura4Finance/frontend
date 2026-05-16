@@ -8,8 +8,23 @@ type SupportedNetwork = {
     name: string;
     symbol: string;
     isActive: boolean;
-    supportedTokens: string[];
-    smartContractPackageId: string;
+    supportedTokens: {
+        name: string;
+        symbol: string;
+        logoUrl: string;
+        decimals: string;
+        mainnet: {
+            coinType: string
+        }
+        testnet: {
+            coinType: string
+        }
+        
+    }[],
+    smartContractPackageId: {
+        testnet: string,
+        mainnet: string;
+    };
     explorerUrl: string;
     logoUrl: string;
 }

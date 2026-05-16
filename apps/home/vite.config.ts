@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite'
-//import { ratter } from '@ratter/vite'
+//import { ratter } from 'ratter-vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
