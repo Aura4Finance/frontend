@@ -211,6 +211,9 @@ importers:
       '@orafi/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@pythnetwork/hermes-client':
+        specifier: ^3.1.0
+        version: 3.1.0(axios@1.13.2)
       '@suiet/wallet-kit':
         specifier: ^0.2.22
         version: 0.2.25(@mysten/sui.js@0.54.1(typescript@5.9.3))(@types/react-dom@19.2.3(@types/react@19.2.8))(@types/react@19.2.8)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
@@ -5638,7 +5641,6 @@ snapshots:
       zod: 3.25.76
     transitivePeerDependencies:
       - axios
-    optional: true
 
   '@pythnetwork/pyth-sui-js@2.4.0(axios@1.13.2)(typescript@5.9.3)':
     dependencies:
