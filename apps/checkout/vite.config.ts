@@ -15,6 +15,13 @@ export default defineConfig({
   resolve: {
     alias: {
       "@orafi/ui": path.resolve(__dirname, "../../packages/ui/src"),
+      "node:buffer": "buffer",
     },
+  },
+  optimizeDeps: {
+    include: ["buffer"],
+  },
+  define: {
+    global: "globalThis",
   },
 });
