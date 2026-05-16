@@ -26,6 +26,8 @@ const Checkout = () => {
     const [showTokenDropdown, setShowTokenDropdown] = useState(false);
     const [selectedToken, setSelectedToken] = useState<string>("");
     const [isGeneratingIntent, setIsGeneratingIntent] = useState(false);
+    const [tokenAmount, setTokenAmount] = useState<string>("");
+    const [isLoadingTokenAmount, setIsLoadingTokenAmount] = useState(false);
     const [generatedAddresses, setGeneratedAddresses] = useState<{
         depositAddress?: string;
         transferAddress?: string;
@@ -52,6 +54,52 @@ const Checkout = () => {
             if (!matchedNetwork || !selectedToken) return null;
             return matchedNetwork.supportedTokens.find(t => t.symbol === selectedToken);
         }, [matchedNetwork, selectedToken]);
+
+        const roundedAmountInUSDC = useMemo(() => {
+            if (!paymentQueryResult.data) return "0.00";
+            return (Math.ceil(paymentQueryResult.data.amountInUSDC * 100) / 100).toFixed(2);
+        }, [paymentQueryResult.data]);
+
+        const formatTokenAmount = (value: number) =>
+            (Math.ceil(value * 100) / 100).toFixed(2);
+
+        const displayTokenSymbol = selectedTokenObject?.symbol || "USDC";
+        const displayTokenLogoUrl = selectedTokenObject?.logoUrl;
+        const displayTokenAmount = isLoadingTokenAmount ? "Calculating..." : (tokenAmount || roundedAmountInUSDC);
+
+        useEffect(() => {
+            const fetchTokenAmount = async () => {
+                if (!paymentQueryResult.data) return;
+
+                const amountInUSDC = (Math.ceil(paymentQueryResult.data.amountInUSDC * 100) / 100).toFixed(2);
+
+                if (!selectedTokenObject || selectedTokenObject.symbol === "USDC") {
+                    setTokenAmount(amountInUSDC);
+                    return;
+                }
+
+                setIsLoadingTokenAmount(true);
+                try {
+                    const { getTokenPrice } = await import("@7kprotocol/sdk-ts");
+
+                    const coinType = paymentQueryResult.data.mode === "test"
+                        ? selectedTokenObject.testnet.coinType
+                        : selectedTokenObject.mainnet.coinType;
+
+                    const rate = await getTokenPrice(coinType);
+                    const amountInToken = parseFloat(amountInUSDC) / rate;
+
+                    setTokenAmount(formatTokenAmount(amountInToken));
+                } catch (error) {
+                    console.error("Failed to fetch token price", error);
+                    setTokenAmount(amountInUSDC);
+                } finally {
+                    setIsLoadingTokenAmount(false);
+                }
+            };
+
+            fetchTokenAmount();
+        }, [paymentQueryResult.data, selectedTokenObject]);
 
         // Determine if token should be disabled
         const isTokenDisabled = (tokenSymbol: string): boolean => {
@@ -383,8 +431,10 @@ const Checkout = () => {
 
                             <div className="w-full space-y-3">
                                 <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-                                    <span className="text-sm text-gray-600">Amount (USD)</span>
-                                    <span className="font-bold text-gray-900">${(Math.ceil(paymentQueryResult?.data.amountInUSDC * 100) / 100).toFixed(2)}</span>
+                                    <span className="text-sm text-gray-600">Amount ({displayTokenSymbol})</span>
+                                    <span className="font-bold text-gray-900">
+                                        {displayTokenAmount} {displayTokenSymbol}
+                                    </span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-sm text-gray-600">Equivalent ({paymentQueryResult.data.currency})</span>
@@ -421,7 +471,7 @@ const Checkout = () => {
 
                             <div className="flex flex-col items-center">
                                 <span className="text-4xl font-extrabold text-blue-950 font-mono tracking-tighter">
-                                    ${(Math.ceil(paymentQueryResult?.data.amountInUSDC * 100) / 100).toFixed(2)}
+                                    {displayTokenAmount} {displayTokenSymbol}
                                 </span>
                                 <span className="text-sm text-gray-500 font-medium mt-1">
                                     ≈ {paymentQueryResult.data.currency}{paymentQueryResult.data.amount.toLocaleString()}
@@ -454,14 +504,14 @@ const Checkout = () => {
                                         className="w-full border border-gray-300 rounded-md p-2 text-sm flex items-center justify-between hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-white"
                                     >
                                         <div className="flex items-center gap-2">
-                                            {selectedTokenObject?.logoUrl && (
+                                            {displayTokenLogoUrl && (
                                                 <img 
-                                                    src={selectedTokenObject.logoUrl} 
-                                                    alt={selectedTokenObject.symbol} 
+                                                    src={displayTokenLogoUrl} 
+                                                    alt={displayTokenSymbol} 
                                                     className="h-4 w-4 object-contain" 
                                                 />
                                             )}
-                                            <span>{selectedToken}</span>
+                                            <span>{displayTokenSymbol}</span>
                                         </div>
                                         <FiChevronDown size={16} className={`transition-transform ${showTokenDropdown ? "rotate-180" : ""}`} />
                                     </button>
@@ -605,7 +655,7 @@ const Checkout = () => {
                                                     Processing...
                                                 </div>
                                             ) : (
-                                                `Pay $${(Math.ceil(paymentQueryResult?.data.amountInUSDC * 100) / 100).toFixed(2)}`
+                                                `Pay ${displayTokenAmount} ${displayTokenSymbol}`
                                             )}
                                         </Button>
                                     </div>
