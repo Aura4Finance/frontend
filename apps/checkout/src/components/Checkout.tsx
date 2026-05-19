@@ -41,128 +41,128 @@ const Checkout = () => {
     const paymentQueryResult = useGetPaymentInformationQuery(params?.txId as string);
     const supportedNetworksQuery = useGetSupportedNetworksAndTokens();
     const generateIntentMutation = useGeneratePaymentIntentMutation(params?.txId as string);
-        // Find the supported network that matches paymentData.network
-        const matchedNetwork = useMemo(() => {
-            if (!supportedNetworksQuery.data || !paymentQueryResult.data) return null;
-            return supportedNetworksQuery.data.find(
-                (n) => n.symbol.toLowerCase() === paymentQueryResult.data.network.toLowerCase()
-            );
-        }, [supportedNetworksQuery.data, paymentQueryResult.data]);
+    // Find the supported network that matches paymentData.network
+    const matchedNetwork = useMemo(() => {
+        if (!supportedNetworksQuery.data || !paymentQueryResult.data) return null;
+        return supportedNetworksQuery.data.find(
+            (n) => n.symbol.toLowerCase() === paymentQueryResult.data.network.toLowerCase()
+        );
+    }, [supportedNetworksQuery.data, paymentQueryResult.data]);
 
-        // Get the selected token object from matched network
-        const selectedTokenObject = useMemo(() => {
-            if (!matchedNetwork || !selectedToken) return null;
-            return matchedNetwork.supportedTokens.find(t => t.symbol === selectedToken);
-        }, [matchedNetwork, selectedToken]);
+    // Get the selected token object from matched network
+    const selectedTokenObject = useMemo(() => {
+        if (!matchedNetwork || !selectedToken) return null;
+        return matchedNetwork.supportedTokens.find(t => t.symbol === selectedToken);
+    }, [matchedNetwork, selectedToken]);
 
-        const roundedAmountInUSDC = useMemo(() => {
-            if (!paymentQueryResult.data) return "0.00";
-            return (Math.ceil(paymentQueryResult.data.amountInUSDC * 100) / 100).toFixed(2);
-        }, [paymentQueryResult.data]);
+    const roundedAmountInUSDC = useMemo(() => {
+        if (!paymentQueryResult.data) return "0.00";
+        return (Math.ceil(paymentQueryResult.data.amountInUSDC * 100) / 100).toFixed(2);
+    }, [paymentQueryResult.data]);
 
-        const formatTokenAmount = (value: number) =>
-            (Math.ceil(value * 100) / 100).toFixed(2);
+    const formatTokenAmount = (value: number) =>
+        (Math.ceil(value * 100) / 100).toFixed(2);
 
-        const displayTokenSymbol = selectedTokenObject?.symbol || "USDC";
-        const displayTokenLogoUrl = selectedTokenObject?.logoUrl;
-        const displayTokenAmount = isLoadingTokenAmount ? "..." : (tokenAmount || roundedAmountInUSDC);
+    const displayTokenSymbol = selectedTokenObject?.symbol || "USDC";
+    const displayTokenLogoUrl = selectedTokenObject?.logoUrl;
+    const displayTokenAmount = isLoadingTokenAmount ? "..." : (tokenAmount || roundedAmountInUSDC);
 
-        useEffect(() => {
-            const fetchTokenAmount = async () => {
-                if (!paymentQueryResult.data) return;
+    useEffect(() => {
+        const fetchTokenAmount = async () => {
+            if (!paymentQueryResult.data) return;
 
-                const amountInUSDC = (Math.ceil(paymentQueryResult.data.amountInUSDC * 100) / 100).toFixed(2);
+            const amountInUSDC = (Math.ceil(paymentQueryResult.data.amountInUSDC * 100) / 100).toFixed(2);
 
-                if (!selectedTokenObject || selectedTokenObject.symbol === "USDC") {
-                    setTokenAmount(amountInUSDC);
-                    return;
-                }
-
-                setIsLoadingTokenAmount(true);
-                try {
-                    const { getTokenPrice } = await import("@7kprotocol/sdk-ts");
-
-                    const coinType = paymentQueryResult.data.mode === "test"
-                        ? selectedTokenObject.testnet.coinType
-                        : selectedTokenObject.mainnet.coinType;
-
-                    const rate = await getTokenPrice(coinType);
-                    const amountInToken = parseFloat(amountInUSDC) / rate;
-
-                    setTokenAmount(formatTokenAmount(amountInToken));
-                } catch (error) {
-                    console.error("Failed to fetch token price", error);
-                    setTokenAmount(amountInUSDC);
-                } finally {
-                    setIsLoadingTokenAmount(false);
-                }
-            };
-
-            fetchTokenAmount();
-        }, [paymentQueryResult.data, selectedTokenObject]);
-
-        // Determine if token should be disabled
-        const isTokenDisabled = (tokenSymbol: string): boolean => {
-            if (!matchedNetwork) return true;
-            const isTestnet = paymentQueryResult.data?.mode === "test";
-            
-            if (isTestnet) {
-                // On testnet, only allow SUI and USDC
-                return !["SUI", "USDC"].includes(tokenSymbol);
-            }
-            // On mainnet (live mode), allow all tokens
-            return false;
-        };
-
-        // Set default token when network changes
-        useEffect(() => {
-            if (matchedNetwork && matchedNetwork.supportedTokens.length > 0) {
-                // Find first enabled token or first token available
-                const enabledToken = matchedNetwork.supportedTokens.find(t => !isTokenDisabled(t.symbol));
-                setSelectedToken(enabledToken?.symbol || matchedNetwork.supportedTokens[0].symbol);
-            }
-        }, [matchedNetwork]);
-
-        // Handle payment method selection - call mutation to generate intent
-        const handleSelectPaymentMethod = async (method: "transfer_address" | "deposit_address") => {
-            // Map method to property name
-            const propertyName = method === "transfer_address" ? "transferAddress" : "depositAddress";
-            
-            // Check if address already exists (in payment data or cached)
-            const existingAddress = paymentQueryResult.data?.[propertyName as keyof typeof paymentQueryResult.data] || generatedAddresses[propertyName as keyof typeof generatedAddresses];
-            
-            if (existingAddress) {
-                // Address already exists, just proceed
-                setPaymentMethod(method);
+            if (!selectedTokenObject || selectedTokenObject.symbol === "USDC") {
+                setTokenAmount(amountInUSDC);
                 return;
             }
 
-            // Need to generate new address
-            setIsGeneratingIntent(true);
-            setError(null);
+            setIsLoadingTokenAmount(true);
             try {
-                generateIntentMutation.mutate({intent: method, token: selectedToken}, {
-                    onSuccess: (address: string) => {
-                        setGeneratedAddresses(prev => ({
-                            ...prev,
-                            [propertyName]: address
-                        }));
-                        setPaymentMethod(method);
-                        setIsGeneratingIntent(false);
-                        toast.success(`${method === "deposit_address" ? "Deposit" : "Transfer"} address generated`);
-                    },
-                    onError: () => {
-                        setIsGeneratingIntent(false);
-                        toast.error("Failed to generate payment address");
-                    }
-                });
-            } catch (err) {
-                setIsGeneratingIntent(false);
-                toast.error("Failed to generate payment address");
+                const { getTokenPrice } = await import("@7kprotocol/sdk-ts");
+
+                const coinType = paymentQueryResult.data.mode === "test"
+                    ? selectedTokenObject.testnet.coinType
+                    : selectedTokenObject.mainnet.coinType;
+
+                const rate = await getTokenPrice(coinType);
+                const amountInToken = parseFloat(amountInUSDC) / rate;
+
+                setTokenAmount(formatTokenAmount(amountInToken));
+            } catch (error) {
+                console.error("Failed to fetch token price", error);
+                setTokenAmount(amountInUSDC);
+            } finally {
+                setIsLoadingTokenAmount(false);
             }
         };
+
+        fetchTokenAmount();
+    }, [paymentQueryResult.data, selectedTokenObject]);
+
+    // Determine if token should be disabled
+    const isTokenDisabled = (tokenSymbol: string): boolean => {
+        if (!matchedNetwork) return true;
+        const isTestnet = paymentQueryResult.data?.mode === "test";
+
+        if (isTestnet) {
+            // On testnet, only allow SUI and USDC
+            return !["SUI", "USDC"].includes(tokenSymbol);
+        }
+        // On mainnet (live mode), allow all tokens
+        return false;
+    };
+
+    // Set default token when network changes
+    useEffect(() => {
+        if (matchedNetwork && matchedNetwork.supportedTokens.length > 0) {
+            // Find first enabled token or first token available
+            const enabledToken = matchedNetwork.supportedTokens.find(t => !isTokenDisabled(t.symbol));
+            setSelectedToken(enabledToken?.symbol || matchedNetwork.supportedTokens[0].symbol);
+        }
+    }, [matchedNetwork]);
+
+    // Handle payment method selection - call mutation to generate intent
+    const handleSelectPaymentMethod = async (method: "transfer_address" | "deposit_address") => {
+        // Map method to property name
+        const propertyName = method === "transfer_address" ? "transferAddress" : "depositAddress";
+
+        // Check if address already exists (in payment data or cached)
+        const existingAddress = paymentQueryResult.data?.[propertyName as keyof typeof paymentQueryResult.data] || generatedAddresses[propertyName as keyof typeof generatedAddresses];
+
+        if (existingAddress) {
+            // Address already exists, just proceed
+            setPaymentMethod(method);
+            return;
+        }
+
+        // Need to generate new address
+        setIsGeneratingIntent(true);
+        setError(null);
+        try {
+            generateIntentMutation.mutate({ intent: method, token: selectedToken }, {
+                onSuccess: (address: string) => {
+                    setGeneratedAddresses(prev => ({
+                        ...prev,
+                        [propertyName]: address
+                    }));
+                    setPaymentMethod(method);
+                    setIsGeneratingIntent(false);
+                    toast.success(`${method === "deposit_address" ? "Deposit" : "Transfer"} address generated`);
+                },
+                onError: () => {
+                    setIsGeneratingIntent(false);
+                    toast.error("Failed to generate payment address");
+                }
+            });
+        } catch (err) {
+            setIsGeneratingIntent(false);       
+            toast.error("Failed to generate payment address");
+        }
+    };
     // Check if redirect=false is in URL
-    const hasNoRedirect = new URL(window.location.href).searchParams.get('redirect') === 'false';
+    const hasNoRedirect = !redirect || new URL(window.location.href).searchParams.get('redirect') === 'false';
 
     const network = paymentQueryResult.data?.mode === "live" ? "mainnet" : "testnet";
     const client = new SuiClient({
@@ -170,19 +170,17 @@ const Checkout = () => {
     });
 
     useEffect(() => {
-        if (paymentQueryResult.data?.redirectUrl) {
-            const url = new URL(
-                paymentQueryResult.data?.redirectUrl
-            );
+        const redirectUrl = paymentQueryResult.data?.redirectUrl?.trim();
 
-            url.searchParams.set(
-                "oratx",
-                params?.txId as string
-            );
+        if (!redirectUrl) return;
+
+        try {
+            const url = new URL(redirectUrl);
+            url.searchParams.set("oratx", params?.txId as string);
             setRedirect(url.toString());
+        } catch {
         }
-    }
-        , [paymentQueryResult.data]);
+    }, [paymentQueryResult.data?.redirectUrl]);
     // 2. Handle Payment
     const executePayment = async () => {
         if (!wallet.connected || !paymentQueryResult.data || !wallet.address) {
@@ -309,8 +307,8 @@ const Checkout = () => {
                 [tx.pure.u64(amount)]
             );
 
-            const packageId = paymentQueryResult.data.mode == "live" 
-                ? matchedNetwork?.smartContractPackageId.mainnet 
+            const packageId = paymentQueryResult.data.mode == "live"
+                ? matchedNetwork?.smartContractPackageId.mainnet
                 : matchedNetwork?.smartContractPackageId.testnet;
 
             if (!packageId) {
@@ -505,17 +503,17 @@ const Checkout = () => {
                                     >
                                         <div className="flex items-center gap-2">
                                             {displayTokenLogoUrl && (
-                                                <img 
-                                                    src={displayTokenLogoUrl} 
-                                                    alt={displayTokenSymbol} 
-                                                    className="h-4 w-4 object-contain" 
+                                                <img
+                                                    src={displayTokenLogoUrl}
+                                                    alt={displayTokenSymbol}
+                                                    className="h-4 w-4 object-contain"
                                                 />
                                             )}
                                             <span>{displayTokenSymbol}</span>
                                         </div>
                                         <FiChevronDown size={16} className={`transition-transform ${showTokenDropdown ? "rotate-180" : ""}`} />
                                     </button>
-                                    
+
                                     {showTokenDropdown && paymentMethod !== "deposit_address" && (
                                         <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-40 max-h-64 overflow-y-auto">
                                             {matchedNetwork.supportedTokens.map((token) => (
@@ -526,17 +524,16 @@ const Checkout = () => {
                                                         setShowTokenDropdown(false);
                                                     }}
                                                     disabled={isTokenDisabled(token.symbol)}
-                                                    className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 transition-colors ${
-                                                        selectedToken === token.symbol
-                                                            ? "bg-blue-50 text-blue-900"
-                                                            : "hover:bg-gray-50"
-                                                    } ${isTokenDisabled(token.symbol) ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                                                    className={`w-full px-3 py-2 text-left text-sm flex items-center gap-2 transition-colors ${selectedToken === token.symbol
+                                                        ? "bg-blue-50 text-blue-900"
+                                                        : "hover:bg-gray-50"
+                                                        } ${isTokenDisabled(token.symbol) ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                                                 >
                                                     {token.logoUrl && (
-                                                        <img 
-                                                            src={token.logoUrl} 
-                                                            alt={token.symbol} 
-                                                            className="h-4 w-4 object-contain" 
+                                                        <img
+                                                            src={token.logoUrl}
+                                                            alt={token.symbol}
+                                                            className="h-4 w-4 object-contain"
                                                         />
                                                     )}
                                                     <div className="flex flex-col">
@@ -660,13 +657,13 @@ const Checkout = () => {
                                         </Button>
                                     </div>
                                 )}
-                                        {paymentMethod === "deposit_address" && (
-                                            <MobileWalletPrompt
-                                                redirectUrl={!hasNoRedirect ? redirect : undefined}
-                                                client={client}
-                                                depositAddress={paymentQueryResult.data.depositAddress || generatedAddresses.depositAddress || ""}
-                                            />
-                                        )}
+                                {paymentMethod === "deposit_address" && (
+                                    <MobileWalletPrompt
+                                        redirectUrl={!hasNoRedirect ? redirect : undefined}
+                                        client={client}
+                                        depositAddress={paymentQueryResult.data.depositAddress || generatedAddresses.depositAddress || ""}
+                                    />
+                                )}
                             </>
                         ) : paymentMethod === "transfer_address" ? (
                             <>

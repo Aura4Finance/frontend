@@ -12,7 +12,7 @@ type PaymentData = {
   amount: number;
   amountInUSDC: number;
   currency: string;
-  redirectUrl: string;
+  redirectUrl?: string;
   mode: "test" | "live";
   network: string
 };
