@@ -1,18 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
-import { FiArrowRight, FiEdit2, FiFilter, FiPlus, FiSearch, FiTrash2, FiUserPlus } from "react-icons/fi";
+import { FiArrowRight, FiChevronDown, FiChevronUp, FiEdit2, FiFilter, FiPlus, FiSearch, FiTrash2, FiUserPlus } from "react-icons/fi";
 import DashboardWrapper from "./DashboardWrapper";
 import Modal from "./transactions/Modal";
+import CopyButton from "./transactions/CopyButton";
 import ErrorState from "./transactions/ErrorState";
 import { useActiveTabStore } from "../store/activeTab";
 import { useQueryState } from "../hooks/useQueryState";
 import {
   formatSubscriptionStatus,
-  isSubscriptionBillingInterval,
   isSubscriptionStatus,
   normalizeSubscriptionStatus,
-  subscriptionBillingIntervalOptions,
   subscriptionStatusOptions,
   type CreateSubscriptionPlanRequest,
   type CreateSubscriptionRequest,
@@ -33,11 +32,8 @@ import {
 
 type PlanFormState = {
   name: string;
-  description: string;
   amount: string;
   currency: string;
-  interval: string;
-  intervalCount: string;
   trialDays: string;
   isActive: boolean;
 };
@@ -51,11 +47,8 @@ type SubscriptionFormState = {
 
 const defaultPlanFormState: PlanFormState = {
   name: "",
-  description: "",
   amount: "",
   currency: "USDC",
-  interval: "MONTHLY",
-  intervalCount: "1",
   trialDays: "",
   isActive: true,
 };
@@ -100,14 +93,6 @@ const readPlanName = (plan?: SubscriptionPlan | null) => {
   return plan.name || plan.title || plan.planName || plan.id;
 };
 
-const readPlanDescription = (plan?: SubscriptionPlan | null) => {
-  if (!plan) {
-    return "";
-  }
-
-  return plan.description || "No description provided";
-};
-
 const readPlanAmount = (plan?: SubscriptionPlan | null) => {
   if (!plan) {
     return undefined;
@@ -126,29 +111,12 @@ const readPlanCurrency = (plan?: SubscriptionPlan | null) => {
   return plan.currency || plan.token || "USDC";
 };
 
-const readPlanInterval = (plan?: SubscriptionPlan | null) => {
-  if (!plan) {
-    return "MONTHLY";
-  }
-
-  return plan.interval || plan.billingInterval || "MONTHLY";
-};
-
-const readPlanIntervalCount = (plan?: SubscriptionPlan | null) => {
-  if (!plan) {
-    return 1;
-  }
-
-  const candidate = plan.intervalCount;
-  return Number.isFinite(candidate) && candidate ? candidate : 1;
-};
-
 const readPlanTrialDays = (plan?: SubscriptionPlan | null) => {
   if (!plan) {
     return undefined;
   }
 
-  return plan.trialDays ?? undefined;
+  return plan.trialDays ?? plan.trailDays ?? undefined;
 };
 
 const readPlanActiveState = (plan?: SubscriptionPlan | null) => {
@@ -193,6 +161,17 @@ const readSubscriptionAmount = (subscription: Subscription) => {
   return Number.isNaN(amount) ? undefined : amount;
 };
 
+const readSubscriptionCustomerEmail = (subscription: Subscription) => {
+  const customer = subscription.customer;
+  if (customer?.email) {
+    return customer.email;
+  }
+
+  return typeof (subscription as Record<string, unknown>).customerEmail === "string"
+    ? ((subscription as Record<string, unknown>).customerEmail as string)
+    : "—";
+};
+
 const readSubscriptionCurrency = (subscription: Subscription, fallbackCurrency = "USDC") => {
   return (
     subscription.currency ||
@@ -205,7 +184,7 @@ const readSubscriptionCurrency = (subscription: Subscription, fallbackCurrency =
 const readSubscriptionCustomerName = (subscription: Subscription) => {
   const customer = subscription.customer;
   if (customer) {
-    const fullName = [customer.firstname, customer.lastname].filter(Boolean).join(" ").trim();
+    const fullName = [customer.firstName ?? customer.firstname, customer.lastName ?? customer.lastname].filter(Boolean).join(" ").trim();
     if (fullName) {
       return fullName;
     }
@@ -225,11 +204,6 @@ const readSubscriptionCustomerName = (subscription: Subscription) => {
   }
 
   return subscription.customerId || "Unknown customer";
-};
-
-const readSubscriptionBillingDate = (subscription: Subscription) => {
-  const fallback = subscription.nextBillingAt || (subscription as Record<string, unknown>).nextChargeAt || (subscription as Record<string, unknown>).renewalAt;
-  return formatDate(typeof fallback === "string" ? fallback : undefined);
 };
 
 const getPlanTone = (plan?: SubscriptionPlan | null) => {
@@ -296,6 +270,7 @@ const Subscriptions = () => {
   const [showDeletePlanModal, setShowDeletePlanModal] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [subscriptionForm, setSubscriptionForm] = useState<SubscriptionFormState>(emptySubscriptionForm());
+  const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<string | null>(null);
 
   const { data: plans = [], isLoading: plansLoading, error: plansError, refetch: refetchPlans } = useSubscriptionPlans();
   const {
@@ -341,11 +316,10 @@ const Subscriptions = () => {
     return plans.filter((plan) => {
       const haystack = [
         readPlanName(plan),
-        readPlanDescription(plan),
         plan.id,
         readPlanCurrency(plan),
         String(readPlanAmount(plan) ?? ""),
-        String(readPlanInterval(plan)),
+        String(readPlanTrialDays(plan) ?? ""),
       ]
         .filter(Boolean)
         .join(" ")
@@ -384,6 +358,7 @@ const Subscriptions = () => {
   const handleSelectPlan = (planId: string) => {
     setSelectedPlanId(planId);
     setSubscriptionStatus("");
+    setExpandedSubscriptionId(null);
   };
 
   const handleOpenCreatePlan = () => {
@@ -396,11 +371,8 @@ const Subscriptions = () => {
     setPlanModalMode("edit");
     setPlanForm({
       name: readPlanName(plan),
-      description: readPlanDescription(plan) === "No description provided" ? "" : readPlanDescription(plan),
       amount: String(readPlanAmount(plan) ?? ""),
       currency: readPlanCurrency(plan),
-      interval: readPlanInterval(plan),
-      intervalCount: String(readPlanIntervalCount(plan)),
       trialDays: String(readPlanTrialDays(plan) ?? ""),
       isActive: readPlanActiveState(plan),
     });
@@ -424,22 +396,11 @@ const Subscriptions = () => {
       return;
     }
 
-    if (!isSubscriptionBillingInterval(planForm.interval)) {
-      toast.error("Select a valid billing interval");
-      return;
-    }
-
     const amount = Number(planForm.amount);
-    const intervalCount = planForm.intervalCount.trim() ? Number(planForm.intervalCount) : undefined;
     const trialDays = planForm.trialDays.trim() ? Number(planForm.trialDays) : undefined;
 
     if (Number.isNaN(amount)) {
       toast.error("Plan amount must be a number");
-      return;
-    }
-
-    if (intervalCount !== undefined && Number.isNaN(intervalCount)) {
-      toast.error("Interval count must be a number");
       return;
     }
 
@@ -450,19 +411,17 @@ const Subscriptions = () => {
 
     const payload: CreateSubscriptionPlanRequest = {
       name: planForm.name.trim(),
-      description: planForm.description.trim() || undefined,
       amount,
       currency: planForm.currency.trim().toUpperCase(),
-      interval: planForm.interval,
-      intervalCount,
       trialDays,
+      trailDays: trialDays,
       isActive: planForm.isActive,
     };
 
     if (planModalMode === "create") {
       createPlan(payload, {
-        onSuccess: (createdPlan) => {
-          setSelectedPlanId(createdPlan.id);
+        onSuccess: (result) => {
+          setSelectedPlanId(result.data.id);
           setShowPlanModal(false);
           setPlanForm(emptyPlanForm());
         },
@@ -561,7 +520,7 @@ const Subscriptions = () => {
   };
 
   const handleNavigateToTransactions = (subscriptionId: string) => {
-    setLocation(`/transactions?subscriptionId=${encodeURIComponent(subscriptionId)}`);
+    setLocation(`/transactions?subscriptionId=${encodeURIComponent(subscriptionId)}&type=PAYMENT`);
   };
 
   const handleCancelSubscription = (subscription: Subscription) => {
@@ -587,7 +546,7 @@ const Subscriptions = () => {
 
   const selectedPlanAmount = readPlanAmount(selectedPlan);
   const selectedPlanCurrency = readPlanCurrency(selectedPlan);
-  const selectedPlanInterval = readPlanInterval(selectedPlan);
+  const selectedPlanTrialDays = readPlanTrialDays(selectedPlan);
 
   return (
     <DashboardWrapper>
@@ -680,9 +639,16 @@ const Subscriptions = () => {
                     const currency = readPlanCurrency(plan);
 
                     return (
-                      <button
+                      <div
                         key={plan.id}
+                        role="button"
+                        tabIndex={0}
                         onClick={() => handleSelectPlan(plan.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            handleSelectPlan(plan.id);
+                          }
+                        }}
                         className={`w-full rounded-xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-sm ${
                           isSelected
                             ? "border-blue-300 bg-blue-50/70 shadow-sm"
@@ -692,7 +658,10 @@ const Subscriptions = () => {
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <p className="text-sm font-semibold text-gray-900">{readPlanName(plan)}</p>
-                            <p className="mt-1 text-xs text-gray-500">{shortenId(plan.id)}</p>
+                            <div className="mt-1 flex items-center gap-1.5 text-xs text-gray-500">
+                              <span>{shortenId(plan.id)}</span>
+                              <CopyButton text={plan.id} />
+                            </div>
                           </div>
                           <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${getPlanTone(plan)}`}>
                             {readPlanStatusLabel(plan)}
@@ -700,12 +669,14 @@ const Subscriptions = () => {
                         </div>
 
                         <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-600">
-                          <span className="rounded-full bg-gray-100 px-2.5 py-1">{amount !== undefined ? `${currency} ${amount.toLocaleString()}` : `${currency} custom`}</span>
-                          <span className="rounded-full bg-gray-100 px-2.5 py-1">{String(readPlanInterval(plan))}</span>
+                          <span className="rounded-full bg-gray-100 px-2.5 py-1">
+                            {amount !== undefined ? `${currency} ${amount.toLocaleString()}` : `${currency} custom`}
+                          </span>
+                          <span className="rounded-full bg-gray-100 px-2.5 py-1">
+                            {readPlanTrialDays(plan) !== undefined ? `${readPlanTrialDays(plan)} trial days` : "No trial"}
+                          </span>
                           <span className="rounded-full bg-gray-100 px-2.5 py-1">{subscriptionCount} subscriptions</span>
                         </div>
-
-                        <p className="mt-3 line-clamp-2 text-xs text-gray-500">{readPlanDescription(plan)}</p>
 
                         <div className="mt-4 flex flex-wrap items-center gap-2">
                           <button
@@ -729,7 +700,7 @@ const Subscriptions = () => {
                             Delete
                           </button>
                         </div>
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -794,33 +765,34 @@ const Subscriptions = () => {
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                       <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
                         <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">Plan</p>
-                        <p className="mt-2 text-lg font-semibold text-gray-900">{readPlanName(selectedPlan)}</p>
-                        <p className="mt-1 text-sm text-gray-500">{shortenId(selectedPlan.id)}</p>
+                        <div className="mt-2 flex items-center gap-1.5 text-lg font-semibold text-gray-900">
+                          <span className="truncate">{readPlanName(selectedPlan)}</span>
+                          <CopyButton text={selectedPlan.id} />
+                        </div>
+                        <div className="mt-1 flex items-center gap-1.5 text-sm text-gray-500">
+                          <span>{shortenId(selectedPlan.id)}</span>
+                          <CopyButton text={selectedPlan.id} />
+                        </div>
                       </div>
                       <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
                         <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">Amount</p>
                         <p className="mt-2 text-lg font-semibold text-gray-900">
                           {selectedPlanAmount !== undefined ? `${selectedPlanCurrency} ${selectedPlanAmount.toLocaleString()}` : `${selectedPlanCurrency} custom`}
                         </p>
-                        <p className="mt-1 text-sm text-gray-500">Billed {String(selectedPlanInterval)}</p>
+                        <p className="mt-1 text-sm text-gray-500">No billing interval is stored for plans</p>
                       </div>
                       <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
                         <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">Trial</p>
                         <p className="mt-2 text-lg font-semibold text-gray-900">
-                          {readPlanTrialDays(selectedPlan) !== undefined ? `${readPlanTrialDays(selectedPlan)} days` : "No trial"}
+                          {selectedPlanTrialDays !== undefined ? `${selectedPlanTrialDays} days` : "No trial"}
                         </p>
-                        <p className="mt-1 text-sm text-gray-500">Interval count: {readPlanIntervalCount(selectedPlan)}</p>
+                        <p className="mt-1 text-sm text-gray-500">Trial days are optional</p>
                       </div>
                       <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
                         <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">Status</p>
                         <p className="mt-2 text-lg font-semibold text-gray-900">{readPlanStatusLabel(selectedPlan)}</p>
                         <p className="mt-1 text-sm text-gray-500">Created {formatDate(selectedPlan.createdAt)}</p>
                       </div>
-                    </div>
-
-                    <div className="rounded-xl border border-gray-100 bg-white p-4">
-                      <p className="text-sm font-medium text-gray-900">Description</p>
-                      <p className="mt-2 text-sm leading-6 text-gray-600">{readPlanDescription(selectedPlan)}</p>
                     </div>
                   </div>
                 ) : (
@@ -868,6 +840,10 @@ const Subscriptions = () => {
                       const amount = readSubscriptionAmount(subscription);
                       const currency = readSubscriptionCurrency(subscription, selectedPlanCurrency);
                       const normalizedStatus = normalizeSubscriptionStatus(subscription.status);
+                      const customer = subscription.customer;
+                      const isExpanded = expandedSubscriptionId === subscription.id;
+                      const customerName = readSubscriptionCustomerName(subscription);
+                      const customerEmail = readSubscriptionCustomerEmail(subscription);
 
                       return (
                         <div
@@ -880,58 +856,120 @@ const Subscriptions = () => {
                               handleNavigateToTransactions(subscription.id);
                             }
                           }}
-                          className="group flex cursor-pointer items-start justify-between gap-4 rounded-xl border border-gray-100 bg-white p-4 transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50/40 hover:shadow-sm"
+                          className="group cursor-pointer rounded-xl border border-gray-100 bg-white p-4 transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50/40 hover:shadow-sm"
                         >
-                          <div className="min-w-0 flex-1 space-y-2">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="text-sm font-semibold text-gray-900">{readSubscriptionCustomerName(subscription)}</p>
-                              <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${getSubscriptionTone(subscription.status)}`}>
-                                {statusLabel}
-                              </span>
+                          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                            <div className="min-w-0 flex-1 space-y-3">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="text-sm font-semibold text-gray-900">{customerName}</p>
+                                <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${getSubscriptionTone(subscription.status)}`}>
+                                  {statusLabel}
+                                </span>
+                              </div>
+
+                              <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                                <div className="flex items-center gap-1.5">
+                                  <span>Subscription ID: {shortenId(subscription.id)}</span>
+                                  <CopyButton text={subscription.id} />
+                                </div>
+                                {subscription.customerId ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <span>Customer ID: {shortenId(subscription.customerId)}</span>
+                                    <CopyButton text={subscription.customerId} />
+                                  </div>
+                                ) : null}
+                              </div>
+
+                              <div className="flex flex-wrap gap-2 text-xs text-gray-600">
+                                <span className="rounded-full bg-gray-100 px-2.5 py-1">
+                                  {amount !== undefined ? `${currency} ${amount.toLocaleString()}` : `${currency} amount unavailable`}
+                                </span>
+                                <span className="rounded-full bg-gray-100 px-2.5 py-1">
+                                  Started {formatDate(subscription.startDate || subscription.startedAt || subscription.createdAt)}
+                                </span>
+                                <span className="rounded-full bg-gray-100 px-2.5 py-1">
+                                  Next billing {formatDate(subscription.nextBillingAt || (subscription as Record<string, unknown>).nextChargeAt as string | undefined)}
+                                </span>
+                              </div>
                             </div>
 
-                            <p className="text-xs text-gray-500">
-                              Subscription ID: {shortenId(subscription.id)}
-                              {subscription.customerId ? ` · Customer ID: ${shortenId(subscription.customerId)}` : ""}
-                            </p>
-
-                            <div className="flex flex-wrap gap-2 text-xs text-gray-600">
-                              <span className="rounded-full bg-gray-100 px-2.5 py-1">
-                                {amount !== undefined ? `${currency} ${amount.toLocaleString()}` : `${currency} amount unavailable`}
-                              </span>
-                              <span className="rounded-full bg-gray-100 px-2.5 py-1">
-                                Started {formatDate(subscription.startDate || subscription.startedAt || subscription.createdAt)}
-                              </span>
-                              <span className="rounded-full bg-gray-100 px-2.5 py-1">
-                                Next billing {readSubscriptionBillingDate(subscription)}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="flex shrink-0 items-center gap-2">
-                            <button
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                handleNavigateToTransactions(subscription.id);
-                              }}
-                              className="inline-flex items-center gap-1 rounded-lg border border-blue-200 px-3 py-2 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-50"
-                            >
-                              Transactions
-                              <FiArrowRight className="h-3.5 w-3.5" />
-                            </button>
-                            {normalizedStatus !== "CANCELLED" && (
+                            <div className="flex shrink-0 flex-wrap items-center gap-2">
                               <button
                                 onClick={(event) => {
                                   event.stopPropagation();
-                                  handleCancelSubscription(subscription);
+                                  handleNavigateToTransactions(subscription.id);
                                 }}
-                                disabled={isCancelingSubscription}
-                                className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                className="inline-flex items-center gap-1 rounded-lg border border-blue-200 px-3 py-2 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-50"
                               >
-                                Cancel
+                                Transactions
+                                <FiArrowRight className="h-3.5 w-3.5" />
                               </button>
-                            )}
+                              <button
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setExpandedSubscriptionId(isExpanded ? null : subscription.id);
+                                }}
+                                className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                              >
+                                {isExpanded ? "Show less" : "Show more"}
+                                {isExpanded ? <FiChevronUp className="h-3.5 w-3.5" /> : <FiChevronDown className="h-3.5 w-3.5" />}
+                              </button>
+                              {normalizedStatus !== "CANCELLED" && (
+                                <button
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    handleCancelSubscription(subscription);
+                                  }}
+                                  disabled={isCancelingSubscription}
+                                  className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  Cancel
+                                </button>
+                              )}
+                            </div>
                           </div>
+
+                          {isExpanded && (
+                            <div className="mt-4 rounded-xl border border-gray-100 bg-gray-50 p-4">
+                              <div className="grid gap-3 md:grid-cols-3">
+                                <div>
+                                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-500">Customer name</p>
+                                  <div className="mt-1 flex items-center gap-1.5 text-sm font-medium text-gray-900">
+                                    <span className="truncate">{customerName}</span>
+                                    <CopyButton text={customerName} />
+                                  </div>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-500">Customer email</p>
+                                  <div className="mt-1 flex items-center gap-1.5 text-sm font-medium text-gray-900">
+                                    <span className="break-all">{customerEmail}</span>
+                                    {customerEmail !== "—" ? <CopyButton text={customerEmail} /> : null}
+                                  </div>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-500">Customer id</p>
+                                  <div className="mt-1 flex items-center gap-1.5 text-sm font-medium text-gray-900">
+                                    <span className="break-all">{subscription.customer?.id || subscription.customerId || "—"}</span>
+                                    {(subscription.customer?.id || subscription.customerId) ? (
+                                      <CopyButton text={String(subscription.customer?.id || subscription.customerId)} />
+                                    ) : null}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="mt-4 flex flex-wrap gap-2 text-xs text-gray-600">
+                                {customer?.firstName || customer?.firstname ? (
+                                  <span className="rounded-full bg-white px-2.5 py-1 border border-gray-200">First name: {customer.firstName || customer.firstname}</span>
+                                ) : null}
+                                {customer?.lastName || customer?.lastname ? (
+                                  <span className="rounded-full bg-white px-2.5 py-1 border border-gray-200">Last name: {customer.lastName || customer.lastname}</span>
+                                ) : null}
+                                {subscription.customer?.name ? (
+                                  <span className="rounded-full bg-white px-2.5 py-1 border border-gray-200">Name alias: {subscription.customer.name}</span>
+                                ) : null}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -963,16 +1001,6 @@ const Subscriptions = () => {
                 placeholder="Premium Plan"
               />
             </div>
-            <div className="md:col-span-2">
-              <label className="mb-1 block text-sm font-medium text-gray-700">Description</label>
-              <textarea
-                value={planForm.description}
-                onChange={(event) => handlePlanFormChange("description", event.target.value)}
-                rows={4}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Describe what this plan includes"
-              />
-            </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">Amount</label>
               <input
@@ -993,32 +1021,6 @@ const Subscriptions = () => {
                 onChange={(event) => handlePlanFormChange("currency", event.target.value.toUpperCase())}
                 className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="USDC"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Interval</label>
-              <select
-                value={planForm.interval}
-                onChange={(event) => handlePlanFormChange("interval", event.target.value)}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {subscriptionBillingIntervalOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Interval count</label>
-              <input
-                type="number"
-                min="1"
-                step="1"
-                value={planForm.intervalCount}
-                onChange={(event) => handlePlanFormChange("intervalCount", event.target.value)}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="1"
               />
             </div>
             <div>
@@ -1075,28 +1077,34 @@ const Subscriptions = () => {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
               <label className="mb-1 block text-sm font-medium text-gray-700">Plan</label>
-              <select
-                value={subscriptionForm.planId}
-                onChange={(event) => handleSubscriptionFormChange("planId", event.target.value)}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select a plan</option>
-                {plans.map((plan) => (
-                  <option key={plan.id} value={plan.id}>
-                    {readPlanName(plan)} ({shortenId(plan.id)})
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center gap-2">
+                <select
+                  value={subscriptionForm.planId}
+                  onChange={(event) => handleSubscriptionFormChange("planId", event.target.value)}
+                  className="min-w-0 flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select a plan</option>
+                  {plans.map((plan) => (
+                    <option key={plan.id} value={plan.id}>
+                      {readPlanName(plan)} ({shortenId(plan.id)})
+                    </option>
+                  ))}
+                </select>
+                {subscriptionForm.planId ? <CopyButton text={subscriptionForm.planId} /> : null}
+              </div>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">Customer ID</label>
-              <input
-                type="text"
-                value={subscriptionForm.customerId}
-                onChange={(event) => handleSubscriptionFormChange("customerId", event.target.value)}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="customer_123"
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={subscriptionForm.customerId}
+                  onChange={(event) => handleSubscriptionFormChange("customerId", event.target.value)}
+                  className="min-w-0 flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="customer_123"
+                />
+                {subscriptionForm.customerId ? <CopyButton text={subscriptionForm.customerId} /> : null}
+              </div>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">Status</label>
@@ -1159,10 +1167,11 @@ const Subscriptions = () => {
         <div className="space-y-4">
           <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
             {planToDelete ? (
-              <>
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="font-semibold">{readPlanName(planToDelete)}</span>
-                <span className="ml-2 text-red-600">({shortenId(planToDelete.id)})</span>
-              </>
+                <span className="text-red-600">({shortenId(planToDelete.id)})</span>
+                <CopyButton text={planToDelete.id} />
+              </div>
             ) : (
               "Confirm deletion of this plan."
             )}

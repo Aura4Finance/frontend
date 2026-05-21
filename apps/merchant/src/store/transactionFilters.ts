@@ -116,6 +116,7 @@ export const useTransactionFilters = create<TransactionFiltersStore>()(
         if (paymentMethod) filters.paymentMethod = paymentMethod;
         if (paymentLinkId) filters.paymentLinkId = paymentLinkId;
         if (subscriptionId) filters.subscriptionId = subscriptionId;
+        if (subscriptionId && !type) filters.type = "PAYMENT";
         if (customerId) filters.customerId = customerId;
         if (userId) filters.userId = userId;
         if (search) filters.searchQuery = search;

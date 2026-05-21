@@ -145,8 +145,8 @@ const LeftBar = () => {
 
             {/* Mobile Bottom Navigation - Floating */}
             <div className="fixed bottom-0 left-0 right-0 z-30 md:hidden pointer-events-none">
-                <div className="pointer-events-auto mx-4 mb-4">
-                    <div className="flex items-center justify-center gap-2 bg-blue-950 rounded-2xl p-3 shadow-lg border border-blue-900/50">
+                <div className="pointer-events-auto mx-2 mb-2">
+                    <div className="grid grid-cols-8 items-center gap-0.5 bg-blue-950 rounded-2xl p-2 shadow-lg border border-blue-900/50">
                         {navItems.map((item, index) => {
                             const isActive = activeTab === item.name;
                             return (
@@ -159,14 +159,14 @@ const LeftBar = () => {
                                     <Link to={item.route} className="block">
                                         <button
                                             onClick={() => setActiveTab(item.name as any)}
-                                            className={`relative p-2 rounded-lg transition-all duration-200 ${
+                                            className={`relative mx-auto flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200 ${
                                                 isActive
                                                     ? "bg-blue-100 text-indigo-600"
                                                     : "text-slate-400 hover:text-slate-200 hover:bg-blue-900/50"
                                             }`}
                                             title={item.name}
                                         >
-                                            {item.icon}
+                                            <span className="scale-90">{item.icon}</span>
                                         </button>
                                     </Link>
 

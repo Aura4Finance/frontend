@@ -82,7 +82,9 @@ function Dropdown<T extends string>({
     });
   }, [options, searchQuery, searchable]);
 
-  const dropdownWidthClass = searchable ? "w-72" : "w-56";
+  const dropdownWidthClass = searchable
+    ? "w-[min(18rem,calc(100vw-1rem))]"
+    : "w-[min(14rem,calc(100vw-1rem))]";
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -109,7 +111,7 @@ function Dropdown<T extends string>({
       </button>
 
       {isOpen && (
-        <div className={`absolute z-50 mt-1 max-h-72 ${dropdownWidthClass} overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg`}>
+        <div className={`absolute z-50 mt-1 max-h-72 max-w-[calc(100vw-1rem)] overflow-x-hidden overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg ${dropdownWidthClass}`}>
           {searchable && (
             <div className="border-b border-gray-100 p-2">
               <div className="relative">
@@ -235,7 +237,7 @@ function DatePicker({ date, onChange }: DatePickerProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-64 rounded-lg border border-gray-200 bg-white p-3 shadow-lg">
+        <div className="absolute z-50 mt-1 w-[min(16rem,calc(100vw-1rem))] max-w-[calc(100vw-1rem)] rounded-lg border border-gray-200 bg-white p-3 shadow-lg">
           <div className="mb-3 flex gap-1">
             <button
               onClick={() => setActiveTab("preset")}

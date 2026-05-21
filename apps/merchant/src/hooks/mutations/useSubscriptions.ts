@@ -13,11 +13,19 @@ type SubscriptionPlanDetail = SubscriptionPlan & {
   subscriptions?: Subscription[];
 };
 
+type ApiResponse<T> = {
+  data: T;
+  message?: string;
+};
+
+type MutationResult<T> = {
+  data: T;
+  message?: string;
+};
+
 const getErrorMessage = (error: any, fallback: string) => {
   return error?.response?.data?.message || error?.message || fallback;
 };
-
-const extractPayload = (response: any) => response?.data?.data ?? response?.data ?? response;
 
 const normalizeSubscriptions = (payload: any): Subscription[] => {
   if (Array.isArray(payload)) {
@@ -35,52 +43,13 @@ const normalizeSubscriptions = (payload: any): Subscription[] => {
   return [];
 };
 
-const normalizePlans = (payload: any): SubscriptionPlan[] => {
-  if (Array.isArray(payload)) {
-    return payload as SubscriptionPlan[];
-  }
-
-  if (Array.isArray(payload?.plans)) {
-    return payload.plans as SubscriptionPlan[];
-  }
-
-  if (Array.isArray(payload?.items)) {
-    return payload.items as SubscriptionPlan[];
-  }
-
-  return [];
-};
-
-const normalizePlanDetail = (payload: any): SubscriptionPlanDetail => {
-  if (payload && typeof payload === "object" && "plan" in payload && payload.plan) {
-    const plan = payload.plan as SubscriptionPlanDetail;
-    return {
-      ...plan,
-      subscriptions: normalizeSubscriptions(payload.subscriptions ?? plan.subscriptions),
-    };
-  }
-
-  const plan = payload as SubscriptionPlanDetail;
-  return {
-    ...plan,
-    subscriptions: normalizeSubscriptions(plan?.subscriptions),
-  };
-};
-
-const normalizeSubscription = (payload: any): Subscription => {
-  if (payload && typeof payload === "object" && "subscription" in payload && payload.subscription) {
-    return payload.subscription as Subscription;
-  }
-
-  return payload as Subscription;
-};
-
 export const useSubscriptionPlans = () => {
   return useQuery<SubscriptionPlan[]>({
     queryKey: ["subscription-plans"],
     queryFn: async () => {
       const response = await client.get("/user/subscriptions/plans");
-      return normalizePlans(extractPayload(response));
+      const payload = response.data as ApiResponse<SubscriptionPlan[]>;
+      return payload.data;
     },
     staleTime: 2 * 60 * 1000,
     retry: 2,
@@ -92,7 +61,11 @@ export const useSubscriptionPlan = (planId: string, enabled: boolean = true) => 
     queryKey: ["subscription-plan", planId],
     queryFn: async () => {
       const response = await client.get(`/user/subscriptions/plans/${planId}`);
-      return normalizePlanDetail(extractPayload(response));
+      const payload = response.data as ApiResponse<SubscriptionPlanDetail>;
+      return {
+        ...payload.data,
+        subscriptions: Array.isArray(payload.data?.subscriptions) ? payload.data.subscriptions : [],
+      };
     },
     enabled: enabled && !!planId,
     staleTime: 2 * 60 * 1000,
@@ -104,7 +77,8 @@ export const useCustomerSubscriptions = (customerId: string, enabled: boolean = 
     queryKey: ["customer-subscriptions", customerId],
     queryFn: async () => {
       const response = await client.get(`/user/subscriptions/customer/${customerId}`);
-      return normalizeSubscriptions(extractPayload(response));
+      const payload = response.data as ApiResponse<Subscription[] | { subscriptions?: Subscription[] }>;
+      return normalizeSubscriptions(payload.data);
     },
     enabled: enabled && !!customerId,
     staleTime: 2 * 60 * 1000,
@@ -117,12 +91,16 @@ export const useCreateSubscriptionPlan = () => {
   return useMutation({
     mutationFn: async (payload: CreateSubscriptionPlanRequest) => {
       const response = await client.post("/user/subscriptions/plans", payload);
-      return normalizePlanDetail(extractPayload(response));
+      const apiResponse = response.data as ApiResponse<SubscriptionPlan>;
+      return {
+        data: apiResponse.data,
+        message: apiResponse.message,
+      } satisfies MutationResult<SubscriptionPlan>;
     },
-    onSuccess: (plan) => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["subscription-plans"] });
-      queryClient.invalidateQueries({ queryKey: ["subscription-plan", plan.id] });
-      toast.success("Subscription plan created successfully");
+      queryClient.invalidateQueries({ queryKey: ["subscription-plan", result.data.id] });
+      toast.success(result.message || "Subscription plan created successfully");
     },
     onError: (error: any) => {
       toast.error(getErrorMessage(error, "Unable to create subscription plan"));
@@ -136,12 +114,16 @@ export const useUpdateSubscriptionPlan = () => {
   return useMutation({
     mutationFn: async ({ planId, payload }: { planId: string; payload: UpdateSubscriptionPlanRequest }) => {
       const response = await client.patch(`/user/subscriptions/plans/${planId}`, payload);
-      return normalizePlanDetail(extractPayload(response));
+      const apiResponse = response.data as ApiResponse<SubscriptionPlan>;
+      return {
+        data: apiResponse.data,
+        message: apiResponse.message,
+      } satisfies MutationResult<SubscriptionPlan>;
     },
-    onSuccess: (plan) => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["subscription-plans"] });
-      queryClient.invalidateQueries({ queryKey: ["subscription-plan", plan.id] });
-      toast.success("Subscription plan updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["subscription-plan", result.data.id] });
+      toast.success(result.message || "Subscription plan updated successfully");
     },
     onError: (error: any) => {
       toast.error(getErrorMessage(error, "Unable to update subscription plan"));
@@ -154,13 +136,17 @@ export const useDeleteSubscriptionPlan = () => {
 
   return useMutation({
     mutationFn: async (planId: string) => {
-      await client.delete(`/user/subscriptions/plans/${planId}`);
-      return planId;
+      const response = await client.delete(`/user/subscriptions/plans/${planId}`);
+      const apiResponse = response.data as ApiResponse<unknown>;
+      return {
+        data: planId,
+        message: apiResponse.message,
+      } satisfies MutationResult<string>;
     },
-    onSuccess: (planId) => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["subscription-plans"] });
-      queryClient.invalidateQueries({ queryKey: ["subscription-plan", planId] });
-      toast.success("Subscription plan deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["subscription-plan", result.data] });
+      toast.success(result.message || "Subscription plan deleted successfully");
     },
     onError: (error: any) => {
       toast.error(getErrorMessage(error, "Unable to delete subscription plan"));
@@ -174,13 +160,21 @@ export const useCreateSubscription = () => {
   return useMutation({
     mutationFn: async (payload: CreateSubscriptionRequest) => {
       const response = await client.post("/user/subscriptions", payload);
-      return normalizeSubscription(extractPayload(response));
+      const apiResponse = response.data as ApiResponse<Subscription>;
+      return {
+        data: apiResponse.data,
+        message: apiResponse.message,
+      } satisfies MutationResult<Subscription>;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["subscription-plans"] });
-      queryClient.invalidateQueries({ queryKey: ["subscription-plan", variables.planId] });
-      queryClient.invalidateQueries({ queryKey: ["customer-subscriptions", variables.customerId] });
-      toast.success("Subscription created successfully");
+      if (result.data.planId) {
+        queryClient.invalidateQueries({ queryKey: ["subscription-plan", result.data.planId] });
+      }
+      if (result.data.customerId) {
+        queryClient.invalidateQueries({ queryKey: ["customer-subscriptions", result.data.customerId] });
+      }
+      toast.success(result.message || "Subscription created successfully");
     },
     onError: (error: any) => {
       toast.error(getErrorMessage(error, "Unable to create subscription"));
@@ -194,15 +188,21 @@ export const useCancelSubscription = () => {
   return useMutation({
     mutationFn: async (subscriptionId: string) => {
       const response = await client.post(`/user/subscriptions/${subscriptionId}/cancel`);
-      return normalizeSubscription(extractPayload(response));
+      const apiResponse = response.data as ApiResponse<Subscription>;
+      return {
+        data: apiResponse.data,
+        message: apiResponse.message,
+      } satisfies MutationResult<Subscription>;
     },
-    onSuccess: (subscription) => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["subscription-plans"] });
-      queryClient.invalidateQueries({ queryKey: ["subscription-plan", subscription.planId] });
-      if (subscription.customerId) {
-        queryClient.invalidateQueries({ queryKey: ["customer-subscriptions", subscription.customerId] });
+      if (result.data.planId) {
+        queryClient.invalidateQueries({ queryKey: ["subscription-plan", result.data.planId] });
       }
-      toast.success("Subscription canceled successfully");
+      if (result.data.customerId) {
+        queryClient.invalidateQueries({ queryKey: ["customer-subscriptions", result.data.customerId] });
+      }
+      toast.success(result.message || "Subscription canceled successfully");
     },
     onError: (error: any) => {
       toast.error(getErrorMessage(error, "Unable to cancel subscription"));

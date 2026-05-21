@@ -1,4 +1,4 @@
-import type { SubscriptionBillingInterval, SubscriptionStatus } from "./types";
+import type { SubscriptionStatus } from "./types";
 
 export interface FilterOption<T extends string> {
   label: string;
@@ -23,21 +23,12 @@ const subscriptionStatusAliasMap: Record<string, SubscriptionStatus> = {
   PAST_DUE: "PAST_DUE",
 };
 
-const billingIntervalValues: SubscriptionBillingInterval[] = ["DAILY", "WEEKLY", "MONTHLY", "YEARLY"];
-
 export const subscriptionStatusOptions: FilterOption<SubscriptionStatus>[] = [
   { label: "Active", value: "ACTIVE" },
   { label: "Abandoned", value: "ABANDONDED" },
   { label: "Pending", value: "PENDING" },
   { label: "Cancelled", value: "CANCELLED" },
   { label: "Past Due", value: "PAST_DUE" },
-];
-
-export const subscriptionBillingIntervalOptions: FilterOption<SubscriptionBillingInterval>[] = [
-  { label: "Daily", value: "DAILY" },
-  { label: "Weekly", value: "WEEKLY" },
-  { label: "Monthly", value: "MONTHLY" },
-  { label: "Yearly", value: "YEARLY" },
 ];
 
 export const normalizeSubscriptionStatus = (value?: string | null): SubscriptionStatus | undefined => {
@@ -67,8 +58,4 @@ export const formatSubscriptionStatus = (value?: string | null) => {
 
 export const isSubscriptionStatus = (value: string): value is SubscriptionStatus => {
   return normalizeSubscriptionStatus(value) !== undefined;
-};
-
-export const isSubscriptionBillingInterval = (value: string): value is SubscriptionBillingInterval => {
-  return billingIntervalValues.includes(value.trim().toUpperCase() as SubscriptionBillingInterval);
 };

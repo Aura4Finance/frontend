@@ -6,10 +6,10 @@ export type SubscriptionStatus =
   | "CANCELLED"
   | "PAST_DUE";
 
-export type SubscriptionBillingInterval = "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
-
 export interface SubscriptionCustomer {
   id?: string;
+  firstName?: string;
+  lastName?: string;
   firstname?: string;
   lastname?: string;
   name?: string;
@@ -39,17 +39,14 @@ export interface SubscriptionPlan {
   name?: string;
   title?: string;
   planName?: string;
-  description?: string;
   amount?: number;
   price?: number;
   amountInUSDC?: number;
   value?: number;
   currency?: string;
   token?: string;
-  interval?: SubscriptionBillingInterval | string;
-  billingInterval?: SubscriptionBillingInterval | string;
-  intervalCount?: number;
   trialDays?: number;
+  trailDays?: number;
   isActive?: boolean;
   status?: string;
   subscriptions?: Subscription[];
@@ -76,12 +73,10 @@ export interface SubscriptionsResponse {
 
 export interface CreateSubscriptionPlanRequest {
   name: string;
-  description?: string;
   amount?: number;
   currency?: string;
-  interval?: SubscriptionBillingInterval | string;
-  intervalCount?: number;
   trialDays?: number;
+  trailDays?: number;
   isActive?: boolean;
   [key: string]: unknown;
 }
