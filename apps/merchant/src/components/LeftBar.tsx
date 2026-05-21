@@ -9,6 +9,7 @@ import {
     RiExchangeDollarLine,
     RiWallet3Line,
     RiBankLine,
+    RiRepeat2Line,
 } from "react-icons/ri";
 import logo from "@orafi/ui/assets/OraFi.png";
 import { useActiveTabStore } from "../store/activeTab";
@@ -16,6 +17,7 @@ import { useActiveTabStore } from "../store/activeTab";
 const navItems = [
     { name: "Dashboard", icon: <MdDashboard size={22} />, color: "text-blue-600", route: "/" },
     { name: "Transactions", icon: <RiExchangeDollarLine size={22} />, color: "text-emerald-600", route: "/transactions" },
+    { name: "Subscriptions", icon: <RiRepeat2Line size={22} />, color: "text-cyan-600", route: "/subscriptions" },
     { name: "Customers", icon: <RiCustomerService2Line size={22} />, color: "text-purple-600", route: "/customers" },
     { name: "Settlements", icon: <RiWallet3Line size={22} />, color: "text-orange-600", route: "/settlements" },
     { name: "Payment Links", icon: <RiMoneyDollarCircleLine size={22} />, color: "text-teal-600", route: "/payment-links" },

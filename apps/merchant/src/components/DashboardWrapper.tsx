@@ -8,6 +8,7 @@ import { tokenStore } from "../store/client";
 const tabSubtitles: Record<string, string> = {
   Dashboard: "Overview of your merchant activity",
   Transactions: "Track and review all transactions",
+  Subscriptions: "Manage subscription plans and customer subscriptions",
   Customers: "Manage customer relationships",
   Balances: "Monitor available wallet balances",
   "Payment Link": "Create and manage payment links",

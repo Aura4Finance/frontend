@@ -3,7 +3,9 @@
     "baseUrl": ".",
     "paths": {
       "@orafi/transactions": ["../../packages/transactions/src/index.ts"],
-      "@orafi/transactions/*": ["../../packages/transactions/src/*"]
+      "@orafi/transactions/*": ["../../packages/transactions/src/*"],
+      "@orafi/subscriptions": ["../../packages/subscriptions/src/index.ts"],
+      "@orafi/subscriptions/*": ["../../packages/subscriptions/src/*"]
     }
   },
   "files": [],

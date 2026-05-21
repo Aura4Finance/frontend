@@ -5,6 +5,7 @@ export interface ActiveTabState {
   activeTab:
   | "Dashboard"
   | "Transactions"
+  | "Subscriptions"
   | "Customers"
   | "Settlements"
   | "Payment Links"

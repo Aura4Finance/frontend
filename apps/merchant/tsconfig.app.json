@@ -12,7 +12,9 @@
       "@orafi/transactions": ["../../packages/transactions/src/index.ts"],
       "@orafi/transactions/*": ["../../packages/transactions/src/*"],
       "@orafi/customers": ["../../packages/customers/src/index.ts"],
-      "@orafi/customers/*": ["../../packages/customers/src/*"]
+      "@orafi/customers/*": ["../../packages/customers/src/*"],
+      "@orafi/subscriptions": ["../../packages/subscriptions/src/index.ts"],
+      "@orafi/subscriptions/*": ["../../packages/subscriptions/src/*"]
     },
 
     /* Bundler mode */

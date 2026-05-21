@@ -363,6 +363,7 @@ export default function TransactionFilters({ onApply, onSearch, searchLoading }:
     paymentMethod,
     customerId,
     paymentLinkId,
+    subscriptionId,
     userId,
     setType,
     setStatus,
@@ -373,6 +374,7 @@ export default function TransactionFilters({ onApply, onSearch, searchLoading }:
     setPaymentMethod,
     setCustomerId,
     setPaymentLinkId,
+    setSubscriptionId,
     setUserId,
     resetFilters,
   } = storeFilters;
@@ -457,7 +459,7 @@ export default function TransactionFilters({ onApply, onSearch, searchLoading }:
   }, [localSearch, onSearch]);
 
   // Count active filters from store (applied filters)
-  const activeFilterCount = [type, status, token, currency, network, date, paymentMethod, customerId, paymentLinkId, userId].filter(Boolean).length;
+  const activeFilterCount = [type, status, token, currency, network, date, paymentMethod, customerId, paymentLinkId, subscriptionId, userId].filter(Boolean).length;
 
   const getActiveFilters = useCallback(() => {
     const filters: { label: string; onRemove: () => void }[] = [];
@@ -499,6 +501,9 @@ export default function TransactionFilters({ onApply, onSearch, searchLoading }:
     if (paymentLinkId) {
       filters.push({ label: `Paylink: ${paymentLinkId.slice(0, 8)}...`, onRemove: () => setPaymentLinkId(undefined) });
     }
+    if (subscriptionId) {
+      filters.push({ label: `Subscription: ${subscriptionId.slice(0, 8)}...`, onRemove: () => setSubscriptionId(undefined) });
+    }
     if (userId) {
       filters.push({ label: `User: ${userId.slice(0, 8)}...`, onRemove: () => setUserId(undefined) });
     }
@@ -514,6 +519,7 @@ export default function TransactionFilters({ onApply, onSearch, searchLoading }:
     paymentMethod,
     customerId,
     paymentLinkId,
+    subscriptionId,
     userId,
     setType,
     setStatus,
@@ -524,6 +530,7 @@ export default function TransactionFilters({ onApply, onSearch, searchLoading }:
     setPaymentMethod,
     setCustomerId,
     setPaymentLinkId,
+    setSubscriptionId,
     setUserId,
   ]);
 
@@ -643,6 +650,16 @@ export default function TransactionFilters({ onApply, onSearch, searchLoading }:
               value={paymentLinkId || ""}
               onChange={(event) => setPaymentLinkId(event.target.value || undefined)}
               placeholder="Payment Link ID"
+              className="w-36 rounded-lg border border-gray-200 px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="relative">
+            <input
+              type="text"
+              value={subscriptionId || ""}
+              onChange={(event) => setSubscriptionId(event.target.value || undefined)}
+              placeholder="Subscription ID"
               className="w-36 rounded-lg border border-gray-200 px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>

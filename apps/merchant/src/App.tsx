@@ -11,6 +11,7 @@ import Customers from "./components/Customers";
 import Settlements from "./components/Settlements";
 import Onboarding from "./components/Onboarding";
 import Transactions from "./components/Transactions";
+import Subscriptions from "./components/Subscriptions";
 import Webhook from "./components/Webhook";
 import PaymentLink from "./components/PaymentLink";
 import logo from "@orafi/ui/assets/OraFi.png";
@@ -91,6 +92,7 @@ function App() {
                 <Route path="/customers" component={Customers}/>
                 <Route path="/settlements" component={Settlements}/>
                 <Route path="/transactions" component={Transactions}/>
+                <Route path="/subscriptions" component={Subscriptions}/>
                 <Route path="/webhook" component={Webhook}/>
                 <Route path="/payment-links" component={PaymentLink}/>
               </Switch>

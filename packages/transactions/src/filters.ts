@@ -36,6 +36,7 @@ export interface TransactionFiltersState {
   date?: DateFilter;
   paymentMethod?: PaymentMethod;
   paymentLinkId?: string;
+  subscriptionId?: string;
   customerId?: string;
   userId?: string;
   limit: number;
@@ -52,6 +53,7 @@ export const defaultTransactionFilters: TransactionFiltersState = {
   date: undefined,
   paymentMethod: undefined,
   paymentLinkId: undefined,
+  subscriptionId: undefined,
   customerId: undefined,
   userId: undefined,
   limit: 10,
@@ -128,6 +130,7 @@ export const buildTransactionParams = (
   if (filters.network) params.network = filters.network;
   if (filters.paymentMethod) params.paymentMethod = filters.paymentMethod;
   if (filters.paymentLinkId) params.paymentLinkId = filters.paymentLinkId;
+  if (filters.subscriptionId) params.subscriptionId = filters.subscriptionId;
   if (filters.customerId) params.customerId = filters.customerId;
   if (filters.userId) params.userId = filters.userId;
   if (filters.cursor) params.cursor = filters.cursor;
