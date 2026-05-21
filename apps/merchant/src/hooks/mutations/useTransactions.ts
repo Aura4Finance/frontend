@@ -242,7 +242,7 @@ export const useCreateFiatPayout = () => {
 
       const response = await client.post(`/user/transactions/payout/fiat`, payload);
       return response.data.data as PayoutSuccessful;
-    },
+    }, 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       toast.success("Fiat payout created successfully");

@@ -79,7 +79,7 @@ export const useSubscriptionPlans = () => {
   return useQuery<SubscriptionPlan[]>({
     queryKey: ["subscription-plans"],
     queryFn: async () => {
-      const response = await client.get("/subscription/plans");
+      const response = await client.get("/user/subscriptions/plans");
       return normalizePlans(extractPayload(response));
     },
     staleTime: 2 * 60 * 1000,
@@ -91,7 +91,7 @@ export const useSubscriptionPlan = (planId: string, enabled: boolean = true) => 
   return useQuery<SubscriptionPlanDetail>({
     queryKey: ["subscription-plan", planId],
     queryFn: async () => {
-      const response = await client.get(`/subscription/plans/${planId}`);
+      const response = await client.get(`/user/subscriptions/plans/${planId}`);
       return normalizePlanDetail(extractPayload(response));
     },
     enabled: enabled && !!planId,
@@ -103,7 +103,7 @@ export const useCustomerSubscriptions = (customerId: string, enabled: boolean = 
   return useQuery<Subscription[]>({
     queryKey: ["customer-subscriptions", customerId],
     queryFn: async () => {
-      const response = await client.get(`/subscription/customer/${customerId}`);
+      const response = await client.get(`/user/subscriptions/customer/${customerId}`);
       return normalizeSubscriptions(extractPayload(response));
     },
     enabled: enabled && !!customerId,
@@ -116,7 +116,7 @@ export const useCreateSubscriptionPlan = () => {
 
   return useMutation({
     mutationFn: async (payload: CreateSubscriptionPlanRequest) => {
-      const response = await client.post("/subscription/plans", payload);
+      const response = await client.post("/user/subscriptions/plans", payload);
       return normalizePlanDetail(extractPayload(response));
     },
     onSuccess: (plan) => {
@@ -135,7 +135,7 @@ export const useUpdateSubscriptionPlan = () => {
 
   return useMutation({
     mutationFn: async ({ planId, payload }: { planId: string; payload: UpdateSubscriptionPlanRequest }) => {
-      const response = await client.patch(`/subscription/plans/${planId}`, payload);
+      const response = await client.patch(`/user/subscriptions/plans/${planId}`, payload);
       return normalizePlanDetail(extractPayload(response));
     },
     onSuccess: (plan) => {
@@ -154,7 +154,7 @@ export const useDeleteSubscriptionPlan = () => {
 
   return useMutation({
     mutationFn: async (planId: string) => {
-      await client.delete(`/subscription/plans/${planId}`);
+      await client.delete(`/user/subscriptions/plans/${planId}`);
       return planId;
     },
     onSuccess: (planId) => {
@@ -173,7 +173,7 @@ export const useCreateSubscription = () => {
 
   return useMutation({
     mutationFn: async (payload: CreateSubscriptionRequest) => {
-      const response = await client.post("/subscription", payload);
+      const response = await client.post("/user/subscriptions", payload);
       return normalizeSubscription(extractPayload(response));
     },
     onSuccess: (_, variables) => {
@@ -193,7 +193,7 @@ export const useCancelSubscription = () => {
 
   return useMutation({
     mutationFn: async (subscriptionId: string) => {
-      const response = await client.post(`/subscription/${subscriptionId}/cancel`);
+      const response = await client.post(`/user/subscriptions/${subscriptionId}/cancel`);
       return normalizeSubscription(extractPayload(response));
     },
     onSuccess: (subscription) => {
