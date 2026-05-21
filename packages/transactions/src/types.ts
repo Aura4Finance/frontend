@@ -1,16 +1,17 @@
 export interface Payment {
   id: string;
   refunded: boolean;
-  depositAddress: string;
+  depositAddress?: string;
   wallet: {
-    address: string;
+    address?: string;
   };
   txRef: string;
   currency: string;
   network: string;
   paymentMethod: string;
   redirectUrl: string;
-  paylinkId: string;
+  paylinkId?: string;
+  subscriptionId?: string;
 }
 
 export interface Payout {
@@ -42,7 +43,10 @@ export interface Transaction {
   mode: string;
   createdAt: string;
   confirmedAt: string;
-  token: string;
+  token: {
+    symbol: string;
+    logo: string;
+  };
   customerId?: string;
   webhookDeliveryId: string;
   profileId: string;
@@ -84,6 +88,7 @@ export interface TransactionsParams {
   sortOrder?: "asc" | "desc";
   paymentMethod?: string;
   paymentLinkId?: string;
+  subscriptionId?: string;
   customerId?: string;
   userId?: string;
   date?: string;

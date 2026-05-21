@@ -5,7 +5,7 @@ export type TransactionStatus = "PENDING" | "COMPLETED" | "FAILED";
 export type TransactionToken = "USDC" | "BTC" | "ETH" | "EUR" | "USD";
 export type TransactionCurrency = "NGN" | "USD" | "EUR" | "GBP" | "GHS" | "KES";
 export type TransactionNetwork = "SUI" | "SOLANA" | "ETHEREUM" | "BASE" | "POLYGON";
-export type PaymentMethod = "PAYMENT_LINK" | "HOSTED_CHECKOUT";
+export type PaymentMethod = "PAYMENT_LINK" | "HOSTED_CHECKOUT" | "SUBSCRIPTION";
 export type DatePresetInterval =
   | "today"
   | "yesterday"
@@ -99,6 +99,7 @@ export const transactionNetworkOptions: FilterOption<TransactionNetwork>[] = [
 export const paymentMethodOptions: FilterOption<PaymentMethod>[] = [
   { label: "Payment Link", value: "PAYMENT_LINK" },
   { label: "Hosted Checkout", value: "HOSTED_CHECKOUT" },
+  { label: "Subscription", value: "SUBSCRIPTION" },
 ];
 
 export const datePresetOptions: FilterOption<DatePresetInterval>[] = [

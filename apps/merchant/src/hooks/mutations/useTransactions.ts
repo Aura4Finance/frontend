@@ -7,6 +7,33 @@ import type {
   TransactionsResponse,
 } from "@orafi/transactions";
 
+export type SupportedToken = {
+  name: string;
+  symbol: string;
+  logoUrl: string;
+  decimals: string;
+  mainnet: {
+    coinType: string;
+  };
+  testnet: {
+    coinType: string;
+  };
+};
+
+export type SupportedNetwork = {
+  code: string;
+  name: string;
+  symbol: string;
+  isActive: boolean;
+  supportedTokens: SupportedToken[];
+  smartContractPackageId: {
+    testnet: string;
+    mainnet: string;
+  };
+  explorerUrl: string;
+  logoUrl: string;
+};
+
 export const useTransactions = (params: TransactionsParams = {}) => {
   return useQuery<TransactionsResponse>({
     queryKey: ["transactions", params],
@@ -227,21 +254,11 @@ export const useCreateFiatPayout = () => {
 };
 
 export const useGetSupoortedNetworks = () => {
-
-  type Networks = {
-    code: number;
-    name: string;
-    symbol: string;
-    isActie: boolean;
-    supportedTokens: string[];
-    logoUrl: string
-  } 
-
   return useQuery({
     queryKey: ["supportedNetworks"],
     queryFn: async () => {
       const response = await client.get(`/networks`);
-      return response.data.data as  Networks[];
+      return response.data.data as SupportedNetwork[];
     }
   })
 }

@@ -23,6 +23,11 @@ import {
 import { useBalance } from "../hooks/mutations/useDashboard";
 import { useGetCryptoSettlements, useGetALLFiatSettlements, useListFiatBanks, useResolveFiatAccount } from "../hooks/mutations/useSettlements";
 
+type AssetBadge = {
+  symbol?: string;
+  logo?: string | null;
+};
+
 const TRANSACTION_QUERY_KEYS = [
   "type",
   "status",
@@ -31,6 +36,7 @@ const TRANSACTION_QUERY_KEYS = [
   "network",
   "paymentMethod",
   "paymentLinkId",
+  "subscriptionId",
   "customerId",
   "userId",
   "search",
@@ -298,6 +304,21 @@ const Transactions = () => {
       default:
         return "bg-gray-100 text-gray-600";
     }
+  };
+
+  const renderAssetBadge = (asset: AssetBadge | undefined, toneClasses: string, fallback = "N/A") => {
+    if (!asset) {
+      return <span className="text-xs text-gray-400">{fallback}</span>;
+    }
+
+    return (
+      <span className={`inline-flex items-center gap-2 rounded-full px-2 py-0.5 text-[10px] font-medium ${toneClasses}`}>
+        {asset.logo && (
+          <img src={asset.logo} alt={asset.symbol || fallback} className="h-3 w-3 rounded-full object-cover" />
+        )}
+        {asset.symbol || fallback}
+      </span>
+    );
   };
 
   const handleRefund = () => {
@@ -729,6 +750,7 @@ const Transactions = () => {
                       <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase text-gray-600">Customer</th>
                       <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase text-gray-600">Amount</th>
                       <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase text-gray-600">Currency</th>
+                      <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase text-gray-600">Token</th>
                       <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase text-gray-600">Network</th>
                       <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase text-gray-600">Type</th>
                       <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase text-gray-600">Status</th>
@@ -768,17 +790,9 @@ const Transactions = () => {
                             {tx.amount?.toLocaleString() || 0}
                           </td>
                           <td className="px-4 py-2.5 text-xs text-gray-600">{tx.currency || "N/A"}</td>
+                          <td className="px-4 py-2.5">{renderAssetBadge(tx.token, "bg-emerald-100 text-emerald-700")}</td>
                           <td className="px-4 py-2.5">
-                            {tx.network ? (
-                              <span className="inline-flex items-center gap-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-medium text-indigo-700">
-                                {tx.network.logo && (
-                                  <img src={tx.network.logo} alt={tx.network.symbol} className="w-3 h-3 rounded-full" />
-                                )}
-                                {tx.network.symbol}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-gray-400">N/A</span>
-                            )}
+                            {renderAssetBadge(tx.network, "bg-indigo-100 text-indigo-700")}
                           </td>
                           <td className="px-4 py-2.5">
                             <span
@@ -929,17 +943,12 @@ const Transactions = () => {
                 <p className="text-sm font-semibold text-gray-900">{selectedTransaction.currency || "N/A"}</p>
               </div>
               <div className="rounded-lg bg-gray-50 p-3">
+                <p className="text-[11px] text-gray-500">Token</p>
+                {renderAssetBadge(selectedTransaction.token, "bg-emerald-100 text-emerald-700")}
+              </div>
+              <div className="rounded-lg bg-gray-50 p-3">
                 <p className="text-[11px] text-gray-500">Network</p>
-                {selectedTransaction.network ? (
-                  <span className="inline-flex items-center gap-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-medium text-indigo-700">
-                    {selectedTransaction.network.logo && (
-                      <img src={selectedTransaction.network.logo} alt={selectedTransaction.network.symbol} className="w-3 h-3 rounded-full" />
-                    )}
-                    {selectedTransaction.network.symbol}
-                  </span>
-                ) : (
-                  <p className="text-sm font-semibold text-gray-400">N/A</p>
-                )}
+                {renderAssetBadge(selectedTransaction.network, "bg-indigo-100 text-indigo-700")}
               </div>
               <div className="rounded-lg bg-gray-50 p-3">
                 <p className="text-[11px] text-gray-500">Mode</p>

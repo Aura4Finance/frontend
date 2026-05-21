@@ -161,7 +161,7 @@ export const toggleNotification = () => {
     })
 }
 
-type Currencies = {
+export type SupportedCurrency = {
     id: string;
     name:  string;
     symbol: string;
@@ -174,7 +174,7 @@ export const getSupportedCurrencies = () => {
         queryKey: ["supported-currencies"],
         queryFn: async () => {
             const response = await client.get("/currencies");
-            return response.data.data.fiats as Currencies[];
+            return (response.data.data?.fiats ?? response.data.data) as SupportedCurrency[];
         }
     })
 }

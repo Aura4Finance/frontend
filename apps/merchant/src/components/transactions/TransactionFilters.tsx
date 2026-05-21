@@ -1,12 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { FiCalendar, FiChevronDown, FiFilter, FiSearch, FiX } from "react-icons/fi";
 import {
   datePresetOptions,
   paymentMethodOptions,
-  transactionCurrencyOptions,
-  transactionNetworkOptions,
   transactionStatusOptions,
-  transactionTokenOptions,
   transactionTypeOptions,
   type DateFilter,
   type DatePresetInterval,
@@ -18,15 +15,24 @@ import {
   type TransactionToken,
   type TransactionType,
 } from "@orafi/transactions";
+import { useGetSupoortedNetworks, type SupportedNetwork } from "../../hooks/mutations/useTransactions";
+import { getSupportedCurrencies, type SupportedCurrency } from "../../hooks/mutations/useSettings";
 import { useTransactionFilters } from "../../store/transactionFilters";
 import { useQueryState } from "../../hooks/useQueryState";
+
+type VisualFilterOption<T extends string> = FilterOption<T> & {
+  iconUrl?: string;
+  searchText?: string;
+};
 
 interface DropdownProps<T extends string> {
   label: string;
   value?: T;
-  options: FilterOption<T>[];
+  options: VisualFilterOption<T>[];
   onChange: (value?: T) => void;
   placeholder?: string;
+  searchable?: boolean;
+  searchPlaceholder?: string;
 }
 
 function Dropdown<T extends string>({
@@ -35,8 +41,11 @@ function Dropdown<T extends string>({
   options,
   onChange,
   placeholder = "All",
+  searchable = false,
+  searchPlaceholder,
 }: DropdownProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -50,7 +59,30 @@ function Dropdown<T extends string>({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (!isOpen) {
+      setSearchQuery("");
+    }
+  }, [isOpen]);
+
   const selectedOption = options.find((option) => option.value === value);
+  const filteredOptions = useMemo(() => {
+    if (!searchable) {
+      return options;
+    }
+
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) {
+      return options;
+    }
+
+    return options.filter((option) => {
+      const haystack = [option.label, option.value, option.searchText].filter(Boolean).join(" ").toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [options, searchQuery, searchable]);
+
+  const dropdownWidthClass = searchable ? "w-72" : "w-56";
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -63,15 +95,40 @@ function Dropdown<T extends string>({
         }`}
       >
         <span>{label}:</span>
-        <span className={value ? "text-blue-800" : "text-gray-400"}>{selectedOption?.label || placeholder}</span>
+        <span className={`inline-flex items-center gap-1.5 ${value ? "text-blue-800" : "text-gray-400"}`}>
+          {selectedOption?.iconUrl && (
+            <img
+              src={selectedOption.iconUrl}
+              alt={selectedOption.label}
+              className="h-3.5 w-3.5 rounded-full object-cover"
+            />
+          )}
+          <span>{selectedOption?.label || placeholder}</span>
+        </span>
         <FiChevronDown className={`h-3 w-3 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-40 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+        <div className={`absolute z-50 mt-1 max-h-72 ${dropdownWidthClass} overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg`}>
+          {searchable && (
+            <div className="border-b border-gray-100 p-2">
+              <div className="relative">
+                <FiSearch className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+                <input
+                  autoFocus
+                  type="text"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder={searchPlaceholder || `Search ${label.toLowerCase()}...`}
+                  className="w-full rounded-md border border-gray-200 py-1.5 pl-7 pr-2 text-xs text-gray-700 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+            </div>
+          )}
           <button
             onClick={() => {
               onChange(undefined);
+              setSearchQuery("");
               setIsOpen(false);
             }}
             className={`w-full px-3 py-1.5 text-left text-xs hover:bg-gray-50 ${
@@ -80,20 +137,34 @@ function Dropdown<T extends string>({
           >
             All
           </button>
-          {options.map((option) => (
+          {filteredOptions.length > 0 ? (
+            filteredOptions.map((option) => (
             <button
               key={option.value}
               onClick={() => {
                 onChange(option.value);
+                setSearchQuery("");
                 setIsOpen(false);
               }}
-              className={`w-full px-3 py-1.5 text-left text-xs hover:bg-gray-50 ${
+              className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs hover:bg-gray-50 ${
                 value === option.value ? "bg-blue-50 text-blue-700" : "text-gray-600"
               }`}
             >
+              {option.iconUrl && (
+                <img
+                  src={option.iconUrl}
+                  alt={option.label}
+                  className="h-4 w-4 flex-shrink-0 rounded-full object-cover"
+                />
+              )}
               {option.label}
             </button>
-          ))}
+            ))
+          ) : (
+            <div className="px-3 py-2 text-xs text-gray-400">
+              {searchable && searchQuery.trim() ? "No matching options" : "No options available"}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -278,6 +349,8 @@ export default function TransactionFilters({ onApply, onSearch, searchLoading }:
     history: "replace",
     debounceMs: 400,
   });
+  const { data: supportedNetworks = [], isLoading: supportedNetworksLoading } = useGetSupoortedNetworks();
+  const { data: supportedCurrencies = [], isLoading: supportedCurrenciesLoading } = getSupportedCurrencies();
 
   const storeFilters = useTransactionFilters();
   const {
@@ -304,6 +377,76 @@ export default function TransactionFilters({ onApply, onSearch, searchLoading }:
     resetFilters,
   } = storeFilters;
 
+  const networkOptions = useMemo<VisualFilterOption<TransactionNetwork>[]>(
+    () =>
+      supportedNetworks.map((supportedNetwork: SupportedNetwork) => ({
+        label: supportedNetwork.name,
+        value: supportedNetwork.symbol as TransactionNetwork,
+        iconUrl: supportedNetwork.logoUrl,
+      })),
+    [supportedNetworks]
+  );
+
+  const allTokenOptions = useMemo<VisualFilterOption<TransactionToken>[]>(() => {
+    const tokenMap = new Map<string, VisualFilterOption<TransactionToken>>();
+
+    supportedNetworks.forEach((supportedNetwork: SupportedNetwork) => {
+      supportedNetwork.supportedTokens.forEach((token) => {
+        if (!tokenMap.has(token.symbol)) {
+          tokenMap.set(token.symbol, {
+            label: token.name ? `${token.name} (${token.symbol})` : token.symbol,
+            value: token.symbol as TransactionToken,
+            iconUrl: token.logoUrl,
+            searchText: `${token.name} ${token.symbol}`,
+          });
+        }
+      });
+    });
+
+    return Array.from(tokenMap.values());
+  }, [supportedNetworks]);
+
+  const selectedSupportedNetwork = useMemo(
+    () => supportedNetworks.find((supportedNetwork) => supportedNetwork.symbol === network),
+    [supportedNetworks, network]
+  );
+
+  const tokenOptions = useMemo<VisualFilterOption<TransactionToken>[]>(() => {
+    if (selectedSupportedNetwork) {
+      return selectedSupportedNetwork.supportedTokens.map((token) => ({
+        label: token.name ? `${token.name} (${token.symbol})` : token.symbol,
+        value: token.symbol as TransactionToken,
+        iconUrl: token.logoUrl,
+        searchText: `${token.name} ${token.symbol}`,
+      }));
+    }
+
+    return allTokenOptions;
+  }, [allTokenOptions, selectedSupportedNetwork]);
+
+  const currencyOptions = useMemo<VisualFilterOption<TransactionCurrency>[]>(
+    () =>
+      supportedCurrencies
+        .filter((supportedCurrency: SupportedCurrency) => supportedCurrency.isActive)
+        .map((supportedCurrency: SupportedCurrency) => ({
+          label: `${supportedCurrency.name} (${supportedCurrency.symbol})`,
+          value: supportedCurrency.symbol as TransactionCurrency,
+          searchText: `${supportedCurrency.name} ${supportedCurrency.symbol} ${supportedCurrency.sign}`,
+        })),
+    [supportedCurrencies]
+  );
+
+  useEffect(() => {
+    if (supportedNetworksLoading || !token) {
+      return;
+    }
+
+    const tokenIsAvailable = tokenOptions.some((option) => option.value === token);
+    if (!tokenIsAvailable) {
+      setToken(undefined);
+    }
+  }, [supportedNetworksLoading, setToken, token, tokenOptions]);
+
   useEffect(() => {
     const trimmed = localSearch.trim();
     const timer = setTimeout(() => {
@@ -328,13 +471,15 @@ export default function TransactionFilters({ onApply, onSearch, searchLoading }:
       filters.push({ label: `Status: ${option?.label}`, onRemove: () => setStatus(undefined) });
     }
     if (token) {
-      filters.push({ label: `Token: ${token}`, onRemove: () => setToken(undefined) });
+      const option = allTokenOptions.find((value) => value.value === token);
+      filters.push({ label: `Token: ${option?.label || token}`, onRemove: () => setToken(undefined) });
     }
     if (currency) {
-      filters.push({ label: `Currency: ${currency}`, onRemove: () => setCurrency(undefined) });
+      const option = currencyOptions.find((value) => value.value === currency);
+      filters.push({ label: `Currency: ${option?.label || currency}`, onRemove: () => setCurrency(undefined) });
     }
     if (network) {
-      const option = transactionNetworkOptions.find((value) => value.value === network);
+      const option = networkOptions.find((value) => value.value === network);
       filters.push({ label: `Network: ${option?.label}`, onRemove: () => setNetwork(undefined) });
     }
     if (date) {
@@ -409,9 +554,31 @@ export default function TransactionFilters({ onApply, onSearch, searchLoading }:
 
         <Dropdown label="Type" value={type as TransactionType | undefined} options={transactionTypeOptions} onChange={setType} />
         <Dropdown label="Status" value={status as TransactionStatus | undefined} options={transactionStatusOptions} onChange={setStatus} />
-        <Dropdown label="Token" value={token as TransactionToken | undefined} options={transactionTokenOptions} onChange={setToken} />
-        <Dropdown label="Currency" value={currency as TransactionCurrency | undefined} options={transactionCurrencyOptions} onChange={setCurrency} />
-        <Dropdown label="Network" value={network as TransactionNetwork | undefined} options={transactionNetworkOptions} onChange={setNetwork} />
+        <Dropdown
+          label="Token"
+          value={token as TransactionToken | undefined}
+          options={tokenOptions}
+          onChange={setToken}
+          placeholder={supportedNetworksLoading ? "Loading..." : "All"}
+          searchable
+          searchPlaceholder="Search tokens..."
+        />
+        <Dropdown
+          label="Currency"
+          value={currency as TransactionCurrency | undefined}
+          options={currencyOptions}
+          onChange={setCurrency}
+          placeholder={supportedCurrenciesLoading ? "Loading..." : "All"}
+          searchable
+          searchPlaceholder="Search currencies..."
+        />
+        <Dropdown
+          label="Network"
+          value={network as TransactionNetwork | undefined}
+          options={networkOptions}
+          onChange={setNetwork}
+          placeholder={supportedNetworksLoading ? "Loading..." : "All"}
+        />
         <DatePicker date={date} onChange={setDate} />
 
         <button
