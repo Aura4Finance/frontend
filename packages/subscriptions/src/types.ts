@@ -1,34 +1,47 @@
+export interface Customer {
+  id: string;
+  firstname?: string;
+  lastname?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  name?: string;
+  [key: string]: unknown;
+}
+
 export type SubscriptionStatus =
   | "ACTIVE"
   | "ABANDONDED"
   | "ABANDONED"
+  | "TRAILING"
   | "PENDING"
   | "CANCELLED"
   | "PAST_DUE";
 
-export interface SubscriptionCustomer {
-  id?: string;
-  firstName?: string;
-  lastName?: string;
-  firstname?: string;
-  lastname?: string;
-  name?: string;
-  email?: string;
-  [key: string]: unknown;
-}
+export type SubscriptionDuration = 
+  | "WEEKLY"
+  | "MONTHLY"
+  | "SIX_MONTH"
+  | "YEARLY"
+
 
 export interface Subscription {
   id: string;
-  planId?: string;
-  customerId?: string;
-  network?: string;
+  mode: string;
+  network: string;
+  customerId: string;
+  customer?: Customer;
+  planId: string;
   status: SubscriptionStatus | string;
-  customer?: SubscriptionCustomer;
   amount?: number;
   currency?: string;
+  startsAt?: string;
   startDate?: string;
   startedAt?: string;
   nextBillingAt?: string;
+  nextChargeAt?: string;
+  trialEndsAt?: string;
+  endsAt?: string;
   canceledAt?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -37,35 +50,30 @@ export interface Subscription {
 
 export interface SubscriptionPlan {
   id: string;
-  name?: string;
+  name: string;
+  duration?: SubscriptionDuration | string;
+  amount: number;
+  currency: string;
+  trialDays?: number;
+  trailDays?: number;
   title?: string;
   planName?: string;
-  duration?: string;
-  amount?: number;
   price?: number;
   amountInUSDC?: number;
   value?: number;
-  currency?: string;
   token?: string;
-  trialDays?: number;
-  trailDays?: number;
   isActive?: boolean;
   status?: string;
-  subscriptions?: Subscription[];
   subscriptionCount?: number;
   createdAt?: string;
   updatedAt?: string;
+  subscriptions: Subscription[];
   [key: string]: unknown;
 }
 
 export interface SubscriptionPlansResponse {
   plans: SubscriptionPlan[];
   count?: number;
-}
-
-export interface SubscriptionPlanResponse {
-  plan: SubscriptionPlan;
-  subscriptions?: Subscription[];
 }
 
 export interface SubscriptionsResponse {
@@ -75,12 +83,12 @@ export interface SubscriptionsResponse {
 
 export interface CreateSubscriptionPlanRequest {
   name: string;
-  amount?: number;
-  currency?: string;
+  amount: number;
+  currency: string;
+  duration?: SubscriptionDuration | string;
   trialDays?: number;
   trailDays?: number;
   isActive?: boolean;
-  [key: string]: unknown;
 }
 
 export interface UpdateSubscriptionPlanRequest extends Partial<CreateSubscriptionPlanRequest> {}
@@ -89,7 +97,4 @@ export interface CreateSubscriptionRequest {
   planId: string;
   customerId: string;
   network: string;
-  status?: SubscriptionStatus | string;
-  startDate?: string;
-  [key: string]: unknown;
 }

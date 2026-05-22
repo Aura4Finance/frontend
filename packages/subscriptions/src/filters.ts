@@ -5,19 +5,10 @@ export interface FilterOption<T extends string> {
   value: T;
 }
 
-const subscriptionStatusLabelMap: Record<SubscriptionStatus, string> = {
-  ACTIVE: "Active",
-  ABANDONDED: "Abandoned",
-  ABANDONED: "Abandoned",
-  PENDING: "Pending",
-  CANCELLED: "Cancelled",
-  PAST_DUE: "Past Due",
-};
-
-const subscriptionStatusAliasMap: Record<string, SubscriptionStatus> = {
+const subscriptionStatusLabelMap: Record<string, SubscriptionStatus> = {
   ACTIVE: "ACTIVE",
   ABANDONDED: "ABANDONDED",
-  ABANDONED: "ABANDONDED",
+  TRAILING: "TRAILING",
   PENDING: "PENDING",
   CANCELLED: "CANCELLED",
   PAST_DUE: "PAST_DUE",
@@ -36,7 +27,7 @@ export const normalizeSubscriptionStatus = (value?: string | null): Subscription
     return undefined;
   }
 
-  return subscriptionStatusAliasMap[value.trim().toUpperCase()];
+  return subscriptionStatusLabelMap[value.trim().toUpperCase()];
 };
 
 export const formatSubscriptionStatus = (value?: string | null) => {

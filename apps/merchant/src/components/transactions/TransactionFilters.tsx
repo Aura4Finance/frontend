@@ -90,14 +90,14 @@ function Dropdown<T extends string>({
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+        className={`flex min-w-0 max-w-full items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
           value
             ? "border-blue-200 bg-blue-50 text-blue-700"
             : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
         }`}
       >
         <span>{label}:</span>
-        <span className={`inline-flex items-center gap-1.5 ${value ? "text-blue-800" : "text-gray-400"}`}>
+        <span className={`inline-flex min-w-0 items-center gap-1.5 ${value ? "text-blue-800" : "text-gray-400"}`}>
           {selectedOption?.iconUrl && (
             <img
               src={selectedOption.iconUrl}
@@ -105,7 +105,7 @@ function Dropdown<T extends string>({
               className="h-3.5 w-3.5 rounded-full object-cover"
             />
           )}
-          <span>{selectedOption?.label || placeholder}</span>
+          <span className="min-w-0 truncate">{selectedOption?.label || placeholder}</span>
         </span>
         <FiChevronDown className={`h-3 w-3 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
@@ -539,7 +539,7 @@ export default function TransactionFilters({ onApply, onSearch, searchLoading }:
   const activeFilters = getActiveFilters();
 
   return (
-    <div className="mb-4 space-y-3">
+    <div className="mb-4 space-y-3 overflow-x-hidden">
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-[200px] max-w-[300px] flex-1">
           <FiSearch className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />

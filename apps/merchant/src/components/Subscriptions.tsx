@@ -193,7 +193,7 @@ const readSubscriptionCurrency = (subscription: Subscription, fallbackCurrency =
 const readSubscriptionCustomerName = (subscription: Subscription) => {
   const customer = subscription.customer;
   if (customer) {
-    const fullName = [customer.firstName ?? customer.firstname, customer.lastName ?? customer.lastname].filter(Boolean).join(" ").trim();
+    const fullName = [customer.firstname ?? customer.firstname, customer.lastName ?? customer.lastname].filter(Boolean).join(" ").trim();
     if (fullName) {
       return fullName;
     }
@@ -598,7 +598,7 @@ const Subscriptions = () => {
     if (planModalMode === "create") {
       createPlan(payload, {
         onSuccess: (result) => {
-          setSelectedPlanId(result.data.id);
+          setSelectedPlanId(result.id);
           setShowPlanModal(false);
           setPlanForm(emptyPlanForm());
         },

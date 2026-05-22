@@ -54,7 +54,7 @@ export interface EditPaylinkPayload {
 export const useGeneratePaylinkDescription = () => {
   return useMutation({
     mutationFn: async (payload: MarkdownDraftInput) => {
-      const response = await client.post("/user/paylink/ai-description", payload);
+      const response = await client.post("/user/paylinks/ai-description", payload);
       return response.data as PaylinkAIDescriptionResponse;
     },
   });
@@ -65,7 +65,7 @@ export const useGetPaylinks = (mode: string) => {
   return useQuery({
     queryKey: ["paylinks", mode],
     queryFn: async () => {
-      const response = await client.get("/user/paylink");
+      const response = await client.get("/user/paylinks");
       return response.data.data as Paylink[];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -78,7 +78,7 @@ export const useGetPaylink = (paylinkId: string, enabled: boolean = true) => {
   return useQuery({
     queryKey: ["paylink", paylinkId],
     queryFn: async () => {
-      const response = await client.get(`/user/paylink/${paylinkId}`);
+      const response = await client.get(`/user/paylinks/${paylinkId}`);
       return response.data.data as Paylink;
     },
     enabled: enabled && !!paylinkId,
@@ -106,7 +106,7 @@ export const useCreatePaylink = () => {
         formData.append("images", image);
       });
 
-      const response = await client.post("/user/paylink", formData, {
+      const response = await client.post("/user/paylinks", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -148,7 +148,7 @@ export const useEditPaylink = () => {
         });
       }
 
-      const response = await client.patch(`/user/paylink/${paylinkId}`, formData, {
+      const response = await client.patch(`/user/paylinks/${paylinkId}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -174,7 +174,7 @@ export const useDeletePaylink = () => {
 
   return useMutation({
     mutationFn: async (paylinkId: string) => {
-      const response = await client.delete(`/user/paylink/${paylinkId}`);
+      const response = await client.delete(`/user/paylinks/${paylinkId}`);
       toast.info("Deleting image from payment link", { duration: 3000 });
       return response.data.data;
     },
@@ -195,7 +195,7 @@ export const deleteImageFromPaylink = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ imageId }: { imageId: string }) => {
-      const response = await client.delete(`/user/paylink/images/${imageId}`);
+      const response = await client.delete(`/user/paylinks/images/${imageId}`);
       return response.data.data;
     },
     onSuccess: (_, paylinkId) => {
