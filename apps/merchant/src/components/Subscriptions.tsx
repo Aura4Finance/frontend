@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback, useLayoutEffect, type CSSProperties } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { FiArrowRight, FiChevronDown, FiChevronUp, FiEdit2, FiFilter, FiPlus, FiSearch, FiTrash2, FiUserPlus } from "react-icons/fi";
@@ -8,7 +8,8 @@ import CopyButton from "./transactions/CopyButton";
 import ErrorState from "./transactions/ErrorState";
 import { useActiveTabStore } from "../store/activeTab";
 import { useQueryState } from "../hooks/useQueryState";
-import { useCustomers } from "../hooks/mutations/useCustomers";
+import { useCustomers, useCustomer } from "../hooks/mutations/useCustomers";
+import { createPortal } from "react-dom";
 import { useSupportedNetworks } from "../hooks/mutations/useSettings";
 import {
   formatSubscriptionStatus,
@@ -36,7 +37,6 @@ type PlanFormState = {
   amount: string;
   currency: string;
   trialDays: string;
-  isActive: boolean;
 };
 
 type CustomerOption = {
@@ -57,7 +57,6 @@ const defaultPlanFormState: PlanFormState = {
   amount: "",
   currency: "USDC",
   trialDays: "",
-  isActive: true,
 };
 
 const formatDate = (value?: string | null) => {
@@ -85,152 +84,7 @@ const shortenId = (value?: string | null) => {
   return `${value.slice(0, 6)}...${value.slice(-4)}`;
 };
 
-const readPlanName = (plan?: SubscriptionPlan | null) => {
-  if (!plan) {
-    return "Untitled plan";
-  }
-
-  return plan.name || plan.title || plan.planName || plan.id;
-};
-
-const readPlanAmount = (plan?: SubscriptionPlan | null) => {
-  if (!plan) {
-    return undefined;
-  }
-
-  const candidate = plan.amount ?? plan.price ?? plan.amountInUSDC ?? plan.value;
-  const amount = typeof candidate === "number" ? candidate : Number(candidate);
-  return Number.isNaN(amount) ? undefined : amount;
-};
-
-const readPlanCurrency = (plan?: SubscriptionPlan | null) => {
-  if (!plan) {
-    return "USDC";
-  }
-
-  return plan.currency || plan.token || "USDC";
-};
-
-const readPlanDuration = (plan?: SubscriptionPlan | null) => {
-  if (!plan) {
-    return undefined;
-  }
-
-  const duration = typeof plan.duration === "string" ? plan.duration.trim() : "";
-  return duration || undefined;
-};
-
-const readPlanTrialDays = (plan?: SubscriptionPlan | null) => {
-  if (!plan) {
-    return undefined;
-  }
-
-  return plan.trialDays ?? plan.trailDays ?? undefined;
-};
-
-const readPlanActiveState = (plan?: SubscriptionPlan | null) => {
-  if (!plan) {
-    return true;
-  }
-
-  if (typeof plan.isActive === "boolean") {
-    return plan.isActive;
-  }
-
-  if (plan.status) {
-    const normalized = String(plan.status).toUpperCase();
-    return normalized === "ACTIVE" || normalized === "ENABLED";
-  }
-
-  return true;
-};
-
-const readPlanStatusLabel = (plan?: SubscriptionPlan | null) => {
-  if (!plan) {
-    return "Inactive";
-  }
-
-  if (plan.status) {
-    return String(plan.status)
-      .replace(/_/g, " ")
-      .toLowerCase()
-      .replace(/\b\w/g, (character) => character.toUpperCase());
-  }
-
-  return readPlanActiveState(plan) ? "Active" : "Inactive";
-};
-
-const readSubscriptionAmount = (subscription: Subscription): number | undefined => {
-  const candidate =
-    subscription.amount ??
-    (subscription as Record<string, unknown>).billingAmount ??
-    (subscription as Record<string, unknown>).totalAmount;
-
-  const amount = typeof candidate === "number" ? candidate : Number(candidate);
-  return Number.isNaN(amount) ? undefined : amount;
-};
-
-const readSubscriptionCustomerEmail = (subscription: Subscription) => {
-  const customer = subscription.customer;
-  if (customer?.email) {
-    return customer.email;
-  }
-
-  return typeof (subscription as Record<string, unknown>).customerEmail === "string"
-    ? ((subscription as Record<string, unknown>).customerEmail as string)
-    : "—";
-};
-
-const readSubscriptionCurrency = (subscription: Subscription, fallbackCurrency = "USDC") => {
-  const candidate =
-    subscription.currency ??
-    (subscription as Record<string, unknown>).token ??
-    (subscription as Record<string, unknown>).paymentCurrency;
-
-  return typeof candidate === "string" && candidate.trim() ? candidate : fallbackCurrency;
-};
-
-const readSubscriptionCustomerName = (subscription: Subscription) => {
-  const customer = subscription.customer;
-  if (customer) {
-    const fullName = [customer.firstname ?? customer.firstname, customer.lastName ?? customer.lastname].filter(Boolean).join(" ").trim();
-    if (fullName) {
-      return fullName;
-    }
-
-    if (customer.name) {
-      return customer.name;
-    }
-
-    if (customer.email) {
-      return customer.email;
-    }
-  }
-
-  const directName = (subscription as Record<string, unknown>).customerName;
-  if (typeof directName === "string" && directName.trim()) {
-    return directName;
-  }
-
-  return subscription.customerId || "Unknown customer";
-};
-
-const readCustomerDisplayName = (customer?: CustomerOption | null) => {
-  if (!customer) {
-    return "Select a customer";
-  }
-
-  const fullName = [customer.firstname, customer.lastname].filter(Boolean).join(" ").trim();
-  if (fullName) {
-    return fullName;
-  }
-
-  if (customer.email) {
-    return customer.email;
-  }
-
-  return customer.id;
-};
+// Using typed `SubscriptionPlan` / `Subscription` fields directly with simple fallbacks.
 
 type CustomerPickerProps = {
   value: CustomerOption | null;
@@ -243,6 +97,7 @@ const CustomerPicker = ({ value, onChange, placeholder = "Select a customer" }: 
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const { data: customerResponse, isLoading } = useCustomers({
     search: debouncedSearch || undefined,
@@ -252,102 +107,165 @@ const CustomerPicker = ({ value, onChange, placeholder = "Select a customer" }: 
 
   const customers = customerResponse?.customers ?? [];
 
+  // portal positioning helper
+  function usePortalDropdownStyle(isOpenLocal: boolean, anchorRef: { current: HTMLDivElement | null }, preferredWidth: number, preferredHeight: number) {
+    const [menuStyle, setMenuStyle] = useState<CSSProperties | undefined>(undefined);
+
+    const updatePosition = useCallback(() => {
+      const anchorElement = anchorRef.current;
+      if (!anchorElement || typeof window === "undefined") return;
+      const rect = anchorElement.getBoundingClientRect();
+      const viewportPadding = 8;
+      const offset = 4;
+      const width = Math.min(preferredWidth, window.innerWidth - viewportPadding * 2);
+      const left = Math.min(Math.max(viewportPadding, rect.left), Math.max(viewportPadding, window.innerWidth - viewportPadding - width));
+      const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
+      const spaceAbove = rect.top - viewportPadding;
+      const openUpward = spaceBelow < preferredHeight && spaceAbove > spaceBelow;
+      const availableHeight = openUpward ? spaceAbove : spaceBelow;
+      const maxHeight = Math.min(preferredHeight, Math.max(0, availableHeight));
+      const top = openUpward ? Math.max(viewportPadding, rect.top - offset - maxHeight) : rect.bottom + offset;
+
+      setMenuStyle({ position: "fixed", top, left, width, maxHeight, zIndex: 110 });
+    }, [anchorRef, preferredHeight, preferredWidth]);
+
+    useLayoutEffect(() => {
+      if (!isOpenLocal) {
+        setMenuStyle(undefined);
+        return;
+      }
+      updatePosition();
+      const handle = () => updatePosition();
+      document.addEventListener("scroll", handle, true);
+      window.addEventListener("resize", handle);
+      return () => {
+        document.removeEventListener("scroll", handle, true);
+        window.removeEventListener("resize", handle);
+      };
+    }, [isOpenLocal, updatePosition]);
+
+    return menuStyle;
+  }
+
+  const menuStyle = usePortalDropdownStyle(isOpen, containerRef, 360, 320);
+
   useEffect(() => {
     if (!value) {
       setSearchInput("");
       return;
     }
 
-    setSearchInput(readCustomerDisplayName(value));
+    const fullName = [value.firstname, value.lastname].filter(Boolean).join(" ").trim();
+    setSearchInput(fullName || value.email || value.id || "");
   }, [value]);
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      setDebouncedSearch(searchInput.trim());
-    }, 200);
-
-    return () => {
-      window.clearTimeout(timeout);
-    };
+    const timeout = window.setTimeout(() => setDebouncedSearch(searchInput.trim()), 200);
+    return () => window.clearTimeout(timeout);
   }, [searchInput]);
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (containerRef.current && !containerRef.current.contains(target) && !menuRef.current?.contains(target)) {
         setIsOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handlePointerDown);
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, []);
 
+  // Detect pasted/typed customer id and fetch it
+  const [queryCustomerId, setQueryCustomerId] = useState<string | null>(null);
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      const trimmed = searchInput.trim();
+      if (!trimmed) return;
+      if (trimmed.length > 8 || /[-_]/.test(trimmed)) setQueryCustomerId(trimmed);
+      else setQueryCustomerId(null);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  const { data: fetchedCustomer } = useCustomer(queryCustomerId || "", Boolean(queryCustomerId));
+  useEffect(() => {
+    if (fetchedCustomer && fetchedCustomer.id) {
+      const mapped: CustomerOption = {
+        id: fetchedCustomer.id,
+        firstname: (fetchedCustomer as any).firstname ?? (fetchedCustomer as any).firstName ?? "",
+        lastname: (fetchedCustomer as any).lastname ?? (fetchedCustomer as any).lastName ?? "",
+        email: fetchedCustomer.email || "",
+      };
+      onChange(mapped);
+      const fullName = [mapped.firstname, mapped.lastname].filter(Boolean).join(" ").trim();
+      setSearchInput(fullName || mapped.email || mapped.id || "");
+      setDebouncedSearch("");
+      setIsOpen(false);
+    }
+  }, [fetchedCustomer, onChange]);
+
+  useEffect(() => {
+    if (!debouncedSearch) return;
+    const exact = customers.find((c) => c.id === debouncedSearch);
+    if (exact) {
+      const mapped: CustomerOption = {
+        id: exact.id,
+        firstname: (exact as any).firstname ?? (exact as any).firstName ?? "",
+        lastname: (exact as any).lastname ?? (exact as any).lastName ?? "",
+        email: exact.email || "",
+      };
+      onChange(mapped);
+      setIsOpen(false);
+    }
+  }, [debouncedSearch, customers, onChange]);
+
   return (
     <div ref={containerRef} className="relative">
-      <button
-        type="button"
-        onClick={() => setIsOpen((current) => !current)}
-        className="flex w-full items-center justify-between gap-3 rounded-lg border border-gray-200 px-3 py-2.5 text-left text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-      >
-        <span className={`min-w-0 flex-1 truncate ${value ? "text-gray-900" : "text-gray-400"}`}>{value ? readCustomerDisplayName(value) : placeholder}</span>
+      <button type="button" onClick={() => setIsOpen((c) => !c)} className="flex w-full items-center justify-between gap-3 rounded-lg border border-gray-200 px-3 py-2.5 text-left text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <span className={`min-w-0 flex-1 truncate ${value ? "text-gray-900" : "text-gray-400"}`}>{value ? ([value.firstname, value.lastname].filter(Boolean).join(" ").trim() || value.email || value.id) : placeholder}</span>
         <FiChevronDown className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
-      {isOpen && (
-        <div className="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+      {isOpen && menuStyle && createPortal(
+        <div ref={menuRef} style={menuStyle} className="overflow-y-auto overflow-x-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
           <div className="border-b border-gray-100 p-3">
             <div className="relative">
               <FiSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={searchInput}
-                onChange={(event) => setSearchInput(event.target.value)}
-                placeholder="Search name, email, or id"
-                className="w-full rounded-lg border border-gray-200 py-2 pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <input type="text" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="Search name, email, or id" className="w-full rounded-lg border border-gray-200 py-2 pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
           </div>
 
-          <div className="max-h-64 overflow-y-auto p-2">
-            <button
-              type="button"
-              onClick={() => {
-                onChange(null);
-                setSearchInput("");
-                setDebouncedSearch("");
-                setIsOpen(false);
-              }}
-              className="mb-2 flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-gray-500 transition-colors hover:bg-gray-50"
-            >
-              Clear selection
-            </button>
+          <div className="max-h-64 p-2">
+            <button type="button" onClick={() => { onChange(null); setSearchInput(""); setDebouncedSearch(""); setIsOpen(false); }} className="mb-2 flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-gray-500 transition-colors hover:bg-gray-50">Clear selection</button>
 
             {isLoading ? (
               <div className="px-3 py-4 text-sm text-gray-500">Loading customers...</div>
             ) : customers.length === 0 ? (
               <div className="px-3 py-4 text-sm text-gray-500">No customers found.</div>
             ) : (
-              <div className="space-y-1">
+              <div className="space-y-1 overflow-y-auto">
                 {customers.map((customer) => {
                   const selected = value?.id === customer.id;
-                  const customerName = readCustomerDisplayName(customer);
-
+                  const customerName = ([ (customer as any).firstname, (customer as any).lastname ].filter(Boolean).join(" ").trim() || (customer as any).email || customer.id) as string;
                   return (
                     <button
                       key={customer.id}
                       type="button"
                       onClick={() => {
-                        onChange(customer);
+                        const mapped: CustomerOption = {
+                          id: customer.id,
+                          firstname: (customer as any).firstname ?? (customer as any).firstName ?? "",
+                          lastname: (customer as any).lastname ?? (customer as any).lastName ?? "",
+                          email: (customer as any).email || "",
+                        };
+                        onChange(mapped);
                         setSearchInput(customerName);
                         setDebouncedSearch(customerName);
                         setIsOpen(false);
                       }}
-                      className={`flex w-full flex-col rounded-lg px-3 py-2 text-left transition-colors ${
-                        selected ? "bg-blue-50 text-blue-900" : "hover:bg-gray-50"
-                      }`}
-                    >
+                      className={`flex w-full flex-col rounded-lg px-3 py-2 text-left transition-colors ${selected ? "bg-blue-50 text-blue-900" : "hover:bg-gray-50"}`}>
                       <span className="text-sm font-medium text-gray-900">{customerName}</span>
-                      <span className="text-xs text-gray-500">{customer.email || "No email"}</span>
+                      <span className="text-xs text-gray-500">{(customer as any).email || "No email"}</span>
                       <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.12em] text-gray-400">{shortenId(customer.id)}</span>
                     </button>
                   );
@@ -355,18 +273,16 @@ const CustomerPicker = ({ value, onChange, placeholder = "Select a customer" }: 
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
 };
 
-const getPlanTone = (plan?: SubscriptionPlan | null) => {
-  if (!plan || readPlanActiveState(plan)) {
-    return "bg-emerald-50 text-emerald-700 border-emerald-200";
-  }
-
-  return "bg-gray-100 text-gray-600 border-gray-200";
+const getPlanTone = (_plan?: SubscriptionPlan | null) => {
+  // SubscriptionPlan model doesn't include a status field — treat plans as active by default
+  return "bg-emerald-50 text-emerald-700 border-emerald-200";
 };
 
 const getSubscriptionTone = (status?: string | null) => {
@@ -490,12 +406,12 @@ const Subscriptions = () => {
 
     return plans.filter((plan) => {
       const haystack = [
-        readPlanName(plan),
+        plan?.name || plan?.id,
         plan.id,
-        readPlanCurrency(plan),
-        readPlanDuration(plan) || "",
-        String(readPlanAmount(plan) ?? ""),
-        String(readPlanTrialDays(plan) ?? ""),
+        plan?.currency || "USDC",
+        plan?.duration || "",
+        String(plan?.amount ?? ""),
+        String(plan?.trialDays ?? ""),
       ]
         .filter(Boolean)
         .join(" ")
@@ -528,9 +444,9 @@ const Subscriptions = () => {
   }, [planSubscriptions]);
 
   const planCount = plans.length;
-  const selectedPlanSubscriptionCount = selectedPlan?.subscriptionCount ?? planSubscriptions.length;
+  const selectedPlanSubscriptionCount = selectedPlan?.subscriptions?.length ?? planSubscriptions.length;
   const filteredSubscriptionCount = filteredSubscriptions.length;
-  const selectedPlanDuration = readPlanDuration(selectedPlan);
+  const selectedPlanDuration = selectedPlan?.duration || undefined;
 
   const handleSelectPlan = (planId: string) => {
     setSelectedPlanId(planId);
@@ -547,11 +463,10 @@ const Subscriptions = () => {
   const handleOpenEditPlan = (plan: SubscriptionPlan) => {
     setPlanModalMode("edit");
     setPlanForm({
-      name: readPlanName(plan),
-      amount: String(readPlanAmount(plan) ?? ""),
-      currency: readPlanCurrency(plan),
-      trialDays: String(readPlanTrialDays(plan) ?? ""),
-      isActive: readPlanActiveState(plan),
+      name: plan?.name || plan?.id || "",
+      amount: String(plan?.amount ?? ""),
+      currency: plan?.currency || "USDC",
+      trialDays: String(plan?.trialDays ?? ""),
     });
     setShowPlanModal(true);
   };
@@ -590,9 +505,8 @@ const Subscriptions = () => {
       name: planForm.name.trim(),
       amount,
       currency: planForm.currency.trim().toUpperCase(),
-      trialDays,
-      trailDays: trialDays,
-      isActive: planForm.isActive,
+      // API types may expect a numeric trialDays; coerce to any to satisfy the imported type
+      trialDays: trialDays as any,
     };
 
     if (planModalMode === "create") {
@@ -732,9 +646,14 @@ const Subscriptions = () => {
     }
   };
 
-  const selectedPlanAmount = readPlanAmount(selectedPlan);
-  const selectedPlanCurrency = readPlanCurrency(selectedPlan);
-  const selectedPlanTrialDays = readPlanTrialDays(selectedPlan);
+  const selectedPlanAmount = (() => {
+    const candidate = selectedPlan?.amount;
+    const num = typeof candidate === "number" ? candidate : Number(candidate as any);
+    return Number.isNaN(num) ? undefined : num;
+  })();
+
+  const selectedPlanCurrency = selectedPlan?.currency || "USDC";
+  const selectedPlanTrialDays = selectedPlan?.trialDays ?? undefined;
 
   return (
     <DashboardWrapper>
@@ -818,8 +737,12 @@ const Subscriptions = () => {
                 <div className="space-y-3">
                   {filteredPlans.map((plan) => {
                     const isSelected = plan.id === selectedPlanId;
-                    const amount = readPlanAmount(plan);
-                    const currency = readPlanCurrency(plan);
+                    const amount = (() => {
+                      const candidate = plan?.amount;
+                      const num = typeof candidate === "number" ? candidate : Number(candidate as any);
+                      return Number.isNaN(num) ? undefined : num;
+                    })();
+                    const currency = plan?.currency || "USDC";
 
                     return (
                       <div
@@ -840,14 +763,14 @@ const Subscriptions = () => {
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p className="text-sm font-semibold text-gray-900">{readPlanName(plan)}</p>
+                            <p className="text-sm font-semibold text-gray-900">{plan?.name || plan?.id}</p>
                             <div className="mt-1 flex items-center gap-1.5 text-xs text-gray-500">
                               <span>{shortenId(plan.id)}</span>
                               <CopyButton text={plan.id} />
                             </div>
                           </div>
-                          <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${getPlanTone(plan)}`}>
-                            {readPlanStatusLabel(plan)}
+                            <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${getPlanTone(plan)}`}>
+                            Active
                           </span>
                         </div>
 
@@ -856,7 +779,7 @@ const Subscriptions = () => {
                             {amount !== undefined ? `${currency} ${amount.toLocaleString()}` : `${currency} custom`}
                           </span>
                           <span className="rounded-full bg-gray-100 px-2.5 py-1">
-                            {readPlanTrialDays(plan) !== undefined ? `${readPlanTrialDays(plan)} trial days` : "No trial"}
+                            {plan?.trialDays ? `${plan.trialDays} trial days` : "No trial"}
                           </span>
                         </div>
 
@@ -939,7 +862,7 @@ const Subscriptions = () => {
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
                       <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
                         <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">Plan</p>
-                        <p className="mt-2 truncate text-lg font-semibold text-gray-900">{readPlanName(selectedPlan)}</p>
+                        <p className="mt-2 truncate text-lg font-semibold text-gray-900">{selectedPlan?.name || selectedPlan?.id}</p>
                         <div className="mt-1 flex items-center gap-1.5 text-sm text-gray-500">
                           <span>{shortenId(selectedPlan.id)}</span>
                           <CopyButton text={selectedPlan.id} />
@@ -960,7 +883,7 @@ const Subscriptions = () => {
                       </div>
                       <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
                         <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">Status</p>
-                        <p className="mt-2 text-lg font-semibold text-gray-900">{readPlanStatusLabel(selectedPlan)}</p>
+                        <p className="mt-2 text-lg font-semibold text-gray-900">Active</p>
                         <p className="mt-1 text-sm text-gray-500">Created {formatDate(selectedPlan.createdAt)}</p>
                       </div>
                       <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
@@ -1011,14 +934,26 @@ const Subscriptions = () => {
                   <div className="space-y-3">
                     {filteredSubscriptions.map((subscription) => {
                       const statusLabel = formatSubscriptionStatus(subscription.status);
-                      const amount = readSubscriptionAmount(subscription);
-                      const currency = readSubscriptionCurrency(subscription, selectedPlanCurrency);
-                      const amountLabel = amount !== undefined ? `${currency} ${amount.toLocaleString()}` : null;
                       const normalizedStatus = normalizeSubscriptionStatus(subscription.status);
                       const customer = subscription.customer;
                       const isExpanded = expandedSubscriptionId === subscription.id;
-                      const customerName = readSubscriptionCustomerName(subscription);
-                      const customerEmail = readSubscriptionCustomerEmail(subscription);
+                      
+                      const customerName = (() => {
+                        const customer = subscription.customer as any;
+                        if (customer) {
+                          const first = (customer as any).firstname ?? (customer as any).firstName;
+                          const last = (customer as any).lastname ?? (customer as any).lastName;
+                          const fullName = [first, last].filter(Boolean).join(" ").trim();
+                          if (fullName) return fullName;
+                          if (customer.name) return customer.name;
+                          if (customer.email) return customer.email;
+                        }
+                        const directName = (subscription as any).customerName;
+                        if (typeof directName === "string" && directName.trim()) return directName;
+                        return subscription.customerId || "Unknown customer";
+                      })();
+
+                      const customerEmail = subscription.customer?.email ?? (subscription as any).customerEmail ?? "—";
 
                       return (
                         <div
@@ -1056,12 +991,12 @@ const Subscriptions = () => {
                               </div>
 
                               <div className="flex flex-wrap gap-2 text-xs text-gray-600">
-                                {amountLabel ? <span className="rounded-full bg-gray-100 px-2.5 py-1">{amountLabel}</span> : null}
+                                
                                 <span className="rounded-full bg-gray-100 px-2.5 py-1">
                                   Started {formatDate(subscription.startDate || subscription.startedAt || subscription.createdAt)}
                                 </span>
                                 <span className="rounded-full bg-gray-100 px-2.5 py-1">
-                                  Next billing {formatDate(subscription.nextBillingAt || (subscription as Record<string, unknown>).nextChargeAt as string | undefined)}
+                                  Next billing {formatDate(subscription.nextBillingAt || (subscription as any).nextChargeAt as string | undefined)}
                                 </span>
                               </div>
                             </div>
@@ -1131,11 +1066,11 @@ const Subscriptions = () => {
                               </div>
 
                               <div className="mt-4 flex flex-wrap gap-2 text-xs text-gray-600">
-                                {customer?.firstName || customer?.firstname ? (
-                                  <span className="rounded-full bg-white px-2.5 py-1 border border-gray-200">First name: {customer.firstName || customer.firstname}</span>
+                                {(customer as any)?.firstName || (customer as any)?.firstname ? (
+                                  <span className="rounded-full bg-white px-2.5 py-1 border border-gray-200">First name: {(customer as any).firstName || (customer as any).firstname}</span>
                                 ) : null}
-                                {customer?.lastName || customer?.lastname ? (
-                                  <span className="rounded-full bg-white px-2.5 py-1 border border-gray-200">Last name: {customer.lastName || customer.lastname}</span>
+                                {(customer as any)?.lastName || (customer as any)?.lastname ? (
+                                  <span className="rounded-full bg-white px-2.5 py-1 border border-gray-200">Last name: {(customer as any).lastName || (customer as any).lastname}</span>
                                 ) : null}
                                 {subscription.customer?.name ? (
                                   <span className="rounded-full bg-white px-2.5 py-1 border border-gray-200">Name alias: {subscription.customer.name}</span>
@@ -1208,15 +1143,7 @@ const Subscriptions = () => {
                 placeholder="0"
               />
             </div>
-            <label className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-3 text-sm text-gray-700 md:col-span-2">
-              <input
-                type="checkbox"
-                checked={planForm.isActive}
-                onChange={(event) => handlePlanFormChange("isActive", event.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              Active plan
-            </label>
+            
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-2">
@@ -1259,11 +1186,10 @@ const Subscriptions = () => {
                   <option value="">Select a plan</option>
                   {plans.map((plan) => (
                     <option key={plan.id} value={plan.id}>
-                      {readPlanName(plan)} ({shortenId(plan.id)})
+                      {plan?.name || plan.id} ({shortenId(plan.id)})
                     </option>
                   ))}
                 </select>
-                {subscriptionForm.planId ? <CopyButton text={subscriptionForm.planId} /> : null}
               </div>
             </div>
             <div>
@@ -1317,8 +1243,8 @@ const Subscriptions = () => {
         <div className="space-y-4">
           <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
             {planToDelete ? (
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-semibold">{readPlanName(planToDelete)}</span>
+                <div className="flex flex-wrap items-center gap-2">
+                <span className="font-semibold">{planToDelete?.name || planToDelete?.id}</span>
                 <span className="text-red-600">({shortenId(planToDelete.id)})</span>
                 <CopyButton text={planToDelete.id} />
               </div>

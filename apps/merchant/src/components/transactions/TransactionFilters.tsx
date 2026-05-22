@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
+import { useState, useEffect, useCallback, useLayoutEffect, useMemo, useRef, type CSSProperties } from "react";
 import { FiCalendar, FiChevronDown, FiFilter, FiSearch, FiX } from "react-icons/fi";
 import {
   datePresetOptions,
@@ -25,6 +26,68 @@ type VisualFilterOption<T extends string> = FilterOption<T> & {
   searchText?: string;
 };
 
+function usePortalDropdownStyle(
+  isOpen: boolean,
+  anchorRef: { current: HTMLDivElement | null },
+  preferredWidth: number,
+  preferredHeight: number
+) {
+  const [menuStyle, setMenuStyle] = useState<CSSProperties | undefined>(undefined);
+
+  const updatePosition = useCallback(() => {
+    const anchorElement = anchorRef.current;
+    if (!anchorElement || typeof window === "undefined") {
+      return;
+    }
+
+    const rect = anchorElement.getBoundingClientRect();
+    const viewportPadding = 8;
+    const offset = 4;
+    const width = Math.min(preferredWidth, window.innerWidth - viewportPadding * 2);
+    const left = Math.min(
+      Math.max(viewportPadding, rect.left),
+      Math.max(viewportPadding, window.innerWidth - viewportPadding - width)
+    );
+
+    const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
+    const spaceAbove = rect.top - viewportPadding;
+    const openUpward = spaceBelow < preferredHeight && spaceAbove > spaceBelow;
+    const availableHeight = openUpward ? spaceAbove : spaceBelow;
+    const maxHeight = Math.min(preferredHeight, Math.max(0, availableHeight));
+    const top = openUpward ? Math.max(viewportPadding, rect.top - offset - maxHeight) : rect.bottom + offset;
+
+    setMenuStyle({
+      position: "fixed",
+      top,
+      left,
+      width,
+      maxHeight,
+      zIndex: 70,
+    });
+  }, [anchorRef, preferredHeight, preferredWidth]);
+
+  useLayoutEffect(() => {
+    if (!isOpen) {
+      setMenuStyle(undefined);
+      return;
+    }
+
+    updatePosition();
+
+    const handlePositionUpdate = () => updatePosition();
+
+    document.addEventListener("scroll", handlePositionUpdate, true);
+    window.addEventListener("resize", handlePositionUpdate);
+
+    return () => {
+      document.removeEventListener("scroll", handlePositionUpdate, true);
+      window.removeEventListener("resize", handlePositionUpdate);
+    };
+  }, [isOpen, updatePosition]);
+
+  return menuStyle;
+}
+
 interface DropdownProps<T extends string> {
   label: string;
   value?: T;
@@ -47,10 +110,12 @@ function Dropdown<T extends string>({
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (dropdownRef.current && !dropdownRef.current.contains(target) && !menuRef.current?.contains(target)) {
         setIsOpen(false);
       }
     };
@@ -66,6 +131,7 @@ function Dropdown<T extends string>({
   }, [isOpen]);
 
   const selectedOption = options.find((option) => option.value === value);
+  const menuStyle = usePortalDropdownStyle(isOpen, dropdownRef, searchable ? 288 : 224, searchable ? 320 : 288);
   const filteredOptions = useMemo(() => {
     if (!searchable) {
       return options;
@@ -81,10 +147,6 @@ function Dropdown<T extends string>({
       return haystack.includes(query);
     });
   }, [options, searchQuery, searchable]);
-
-  const dropdownWidthClass = searchable
-    ? "w-[min(18rem,calc(100vw-1rem))]"
-    : "w-[min(14rem,calc(100vw-1rem))]";
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -110,65 +172,71 @@ function Dropdown<T extends string>({
         <FiChevronDown className={`h-3 w-3 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
-      {isOpen && (
-        <div className={`absolute z-50 mt-1 max-h-72 max-w-[calc(100vw-1rem)] overflow-x-hidden overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg ${dropdownWidthClass}`}>
-          {searchable && (
-            <div className="border-b border-gray-100 p-2">
-              <div className="relative">
-                <FiSearch className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
-                <input
-                  autoFocus
-                  type="text"
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  placeholder={searchPlaceholder || `Search ${label.toLowerCase()}...`}
-                  className="w-full rounded-md border border-gray-200 py-1.5 pl-7 pr-2 text-xs text-gray-700 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                />
-              </div>
-            </div>
-          )}
-          <button
-            onClick={() => {
-              onChange(undefined);
-              setSearchQuery("");
-              setIsOpen(false);
-            }}
-            className={`w-full px-3 py-1.5 text-left text-xs hover:bg-gray-50 ${
-              !value ? "bg-blue-50 text-blue-700" : "text-gray-600"
-            }`}
+      {isOpen && menuStyle &&
+        createPortal(
+          <div
+            ref={menuRef}
+            style={menuStyle}
+            className="overflow-y-auto overflow-x-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
           >
-            All
-          </button>
-          {filteredOptions.length > 0 ? (
-            filteredOptions.map((option) => (
+            {searchable && (
+              <div className="border-b border-gray-100 p-2">
+                <div className="relative">
+                  <FiSearch className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
+                  <input
+                    autoFocus
+                    type="text"
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    placeholder={searchPlaceholder || `Search ${label.toLowerCase()}...`}
+                    className="w-full rounded-md border border-gray-200 py-1.5 pl-7 pr-2 text-xs text-gray-700 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  />
+                </div>
+              </div>
+            )}
             <button
-              key={option.value}
               onClick={() => {
-                onChange(option.value);
+                onChange(undefined);
                 setSearchQuery("");
                 setIsOpen(false);
               }}
-              className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs hover:bg-gray-50 ${
-                value === option.value ? "bg-blue-50 text-blue-700" : "text-gray-600"
+              className={`w-full px-3 py-1.5 text-left text-xs hover:bg-gray-50 ${
+                !value ? "bg-blue-50 text-blue-700" : "text-gray-600"
               }`}
             >
-              {option.iconUrl && (
-                <img
-                  src={option.iconUrl}
-                  alt={option.label}
-                  className="h-4 w-4 flex-shrink-0 rounded-full object-cover"
-                />
-              )}
-              {option.label}
+              All
             </button>
-            ))
-          ) : (
-            <div className="px-3 py-2 text-xs text-gray-400">
-              {searchable && searchQuery.trim() ? "No matching options" : "No options available"}
-            </div>
-          )}
-        </div>
-      )}
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => {
+                    onChange(option.value);
+                    setSearchQuery("");
+                    setIsOpen(false);
+                  }}
+                  className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs hover:bg-gray-50 ${
+                    value === option.value ? "bg-blue-50 text-blue-700" : "text-gray-600"
+                  }`}
+                >
+                  {option.iconUrl && (
+                    <img
+                      src={option.iconUrl}
+                      alt={option.label}
+                      className="h-4 w-4 flex-shrink-0 rounded-full object-cover"
+                    />
+                  )}
+                  {option.label}
+                </button>
+              ))
+            ) : (
+              <div className="px-3 py-2 text-xs text-gray-400">
+                {searchable && searchQuery.trim() ? "No matching options" : "No options available"}
+              </div>
+            )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
@@ -184,10 +252,13 @@ function DatePicker({ date, onChange }: DatePickerProps) {
   const [startDate, setStartDate] = useState(date?.startDate || "");
   const [endDate, setEndDate] = useState(date?.endDate || "");
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuStyle = usePortalDropdownStyle(isOpen, dropdownRef, 256, 320);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (dropdownRef.current && !dropdownRef.current.contains(target) && !menuRef.current?.contains(target)) {
         setIsOpen(false);
       }
     };
@@ -236,89 +307,95 @@ function DatePicker({ date, onChange }: DatePickerProps) {
         <FiChevronDown className={`h-3 w-3 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
-      {isOpen && (
-        <div className="absolute z-50 mt-1 w-[min(16rem,calc(100vw-1rem))] max-w-[calc(100vw-1rem)] rounded-lg border border-gray-200 bg-white p-3 shadow-lg">
-          <div className="mb-3 flex gap-1">
-            <button
-              onClick={() => setActiveTab("preset")}
-              className={`flex-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
-                activeTab === "preset"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              Preset
-            </button>
-            <button
-              onClick={() => setActiveTab("range")}
-              className={`flex-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
-                activeTab === "range"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              Custom Range
-            </button>
-          </div>
-
-          {activeTab === "preset" ? (
-            <div className="space-y-1">
+      {isOpen && menuStyle &&
+        createPortal(
+          <div
+            ref={menuRef}
+            style={menuStyle}
+            className="overflow-y-auto overflow-x-hidden rounded-lg border border-gray-200 bg-white p-3 shadow-lg"
+          >
+            <div className="mb-3 flex gap-1">
               <button
-                onClick={() => {
-                  onChange(undefined);
-                  setIsOpen(false);
-                }}
-                className={`w-full rounded px-2 py-1.5 text-left text-xs hover:bg-gray-50 ${
-                  !date ? "bg-blue-50 text-blue-700" : "text-gray-600"
+                onClick={() => setActiveTab("preset")}
+                className={`flex-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
+                  activeTab === "preset"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
-                All Time
+                Preset
               </button>
-              {datePresetOptions.map((option) => (
+              <button
+                onClick={() => setActiveTab("range")}
+                className={`flex-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
+                  activeTab === "range"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                Custom Range
+              </button>
+            </div>
+
+            {activeTab === "preset" ? (
+              <div className="space-y-1">
                 <button
-                  key={option.value}
-                  onClick={() => handlePresetSelect(option.value)}
+                  onClick={() => {
+                    onChange(undefined);
+                    setIsOpen(false);
+                  }}
                   className={`w-full rounded px-2 py-1.5 text-left text-xs hover:bg-gray-50 ${
-                    date?.type === "preset" && date.interval === option.value
-                      ? "bg-blue-50 text-blue-700"
-                      : "text-gray-600"
+                    !date ? "bg-blue-50 text-blue-700" : "text-gray-600"
                   }`}
                 >
-                  {option.label}
+                  All Time
                 </button>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div>
-                <label className="mb-1 block text-[10px] font-medium text-gray-500">Start Date</label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(event) => setStartDate(event.target.value)}
-                  className="w-full rounded border border-gray-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                {datePresetOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => handlePresetSelect(option.value)}
+                    className={`w-full rounded px-2 py-1.5 text-left text-xs hover:bg-gray-50 ${
+                      date?.type === "preset" && date.interval === option.value
+                        ? "bg-blue-50 text-blue-700"
+                        : "text-gray-600"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
               </div>
-              <div>
-                <label className="mb-1 block text-[10px] font-medium text-gray-500">End Date</label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(event) => setEndDate(event.target.value)}
-                  className="w-full rounded border border-gray-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+            ) : (
+              <div className="space-y-3">
+                <div>
+                  <label className="mb-1 block text-[10px] font-medium text-gray-500">Start Date</label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(event) => setStartDate(event.target.value)}
+                    className="w-full rounded border border-gray-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[10px] font-medium text-gray-500">End Date</label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(event) => setEndDate(event.target.value)}
+                    className="w-full rounded border border-gray-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <button
+                  onClick={handleRangeApply}
+                  disabled={!startDate || !endDate}
+                  className="w-full rounded bg-blue-600 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Apply Range
+                </button>
               </div>
-              <button
-                onClick={handleRangeApply}
-                disabled={!startDate || !endDate}
-                className="w-full rounded bg-blue-600 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Apply Range
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+            )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

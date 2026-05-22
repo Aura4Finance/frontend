@@ -33,8 +33,6 @@ export interface Subscription {
   customer?: Customer;
   planId: string;
   status: SubscriptionStatus | string;
-  amount?: number;
-  currency?: string;
   startsAt?: string;
   startDate?: string;
   startedAt?: string;
@@ -45,7 +43,6 @@ export interface Subscription {
   canceledAt?: string;
   createdAt?: string;
   updatedAt?: string;
-  [key: string]: unknown;
 }
 
 export interface SubscriptionPlan {
@@ -54,21 +51,10 @@ export interface SubscriptionPlan {
   duration?: SubscriptionDuration | string;
   amount: number;
   currency: string;
-  trialDays?: number;
-  trailDays?: number;
-  title?: string;
-  planName?: string;
-  price?: number;
-  amountInUSDC?: number;
-  value?: number;
-  token?: string;
-  isActive?: boolean;
-  status?: string;
-  subscriptionCount?: number;
+  trialDays: string
   createdAt?: string;
   updatedAt?: string;
   subscriptions: Subscription[];
-  [key: string]: unknown;
 }
 
 export interface SubscriptionPlansResponse {
@@ -85,10 +71,8 @@ export interface CreateSubscriptionPlanRequest {
   name: string;
   amount: number;
   currency: string;
-  duration?: SubscriptionDuration | string;
-  trialDays?: number;
-  trailDays?: number;
-  isActive?: boolean;
+  duration?: SubscriptionDuration;
+  trialDays?: string
 }
 
 export interface UpdateSubscriptionPlanRequest extends Partial<CreateSubscriptionPlanRequest> {}
