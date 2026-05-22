@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { FiArrowRight, FiChevronDown, FiChevronUp, FiEdit2, FiFilter, FiPlus, FiSearch, FiTrash2, FiUserPlus } from "react-icons/fi";
@@ -8,9 +8,10 @@ import CopyButton from "./transactions/CopyButton";
 import ErrorState from "./transactions/ErrorState";
 import { useActiveTabStore } from "../store/activeTab";
 import { useQueryState } from "../hooks/useQueryState";
+import { useCustomers } from "../hooks/mutations/useCustomers";
+import { useSupportedNetworks } from "../hooks/mutations/useSettings";
 import {
   formatSubscriptionStatus,
-  isSubscriptionStatus,
   normalizeSubscriptionStatus,
   subscriptionStatusOptions,
   type CreateSubscriptionPlanRequest,
@@ -38,11 +39,17 @@ type PlanFormState = {
   isActive: boolean;
 };
 
-type SubscriptionFormState = {
+type CustomerOption = {
+  id: string;
+  firstname: string;
+  lastname: string;
+  email: string;
+};
+
+type SubscriptionDraftState = {
   planId: string;
   customerId: string;
-  status: SubscriptionStatus | "";
-  startDate: string;
+  network: string;
 };
 
 const defaultPlanFormState: PlanFormState = {
@@ -51,13 +58,6 @@ const defaultPlanFormState: PlanFormState = {
   currency: "USDC",
   trialDays: "",
   isActive: true,
-};
-
-const defaultSubscriptionFormState: SubscriptionFormState = {
-  planId: "",
-  customerId: "",
-  status: "PENDING",
-  startDate: "",
 };
 
 const formatDate = (value?: string | null) => {
@@ -111,6 +111,15 @@ const readPlanCurrency = (plan?: SubscriptionPlan | null) => {
   return plan.currency || plan.token || "USDC";
 };
 
+const readPlanDuration = (plan?: SubscriptionPlan | null) => {
+  if (!plan) {
+    return undefined;
+  }
+
+  const duration = typeof plan.duration === "string" ? plan.duration.trim() : "";
+  return duration || undefined;
+};
+
 const readPlanTrialDays = (plan?: SubscriptionPlan | null) => {
   if (!plan) {
     return undefined;
@@ -151,7 +160,7 @@ const readPlanStatusLabel = (plan?: SubscriptionPlan | null) => {
   return readPlanActiveState(plan) ? "Active" : "Inactive";
 };
 
-const readSubscriptionAmount = (subscription: Subscription) => {
+const readSubscriptionAmount = (subscription: Subscription): number | undefined => {
   const candidate =
     subscription.amount ??
     (subscription as Record<string, unknown>).billingAmount ??
@@ -173,12 +182,12 @@ const readSubscriptionCustomerEmail = (subscription: Subscription) => {
 };
 
 const readSubscriptionCurrency = (subscription: Subscription, fallbackCurrency = "USDC") => {
-  return (
-    subscription.currency ||
-    (subscription as Record<string, unknown>).token ||
-    (subscription as Record<string, unknown>).paymentCurrency ||
-    fallbackCurrency
-  );
+  const candidate =
+    subscription.currency ??
+    (subscription as Record<string, unknown>).token ??
+    (subscription as Record<string, unknown>).paymentCurrency;
+
+  return typeof candidate === "string" && candidate.trim() ? candidate : fallbackCurrency;
 };
 
 const readSubscriptionCustomerName = (subscription: Subscription) => {
@@ -204,6 +213,152 @@ const readSubscriptionCustomerName = (subscription: Subscription) => {
   }
 
   return subscription.customerId || "Unknown customer";
+};
+
+const readCustomerDisplayName = (customer?: CustomerOption | null) => {
+  if (!customer) {
+    return "Select a customer";
+  }
+
+  const fullName = [customer.firstname, customer.lastname].filter(Boolean).join(" ").trim();
+  if (fullName) {
+    return fullName;
+  }
+
+  if (customer.email) {
+    return customer.email;
+  }
+
+  return customer.id;
+};
+
+type CustomerPickerProps = {
+  value: CustomerOption | null;
+  onChange: (customer: CustomerOption | null) => void;
+  placeholder?: string;
+};
+
+const CustomerPicker = ({ value, onChange, placeholder = "Select a customer" }: CustomerPickerProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const { data: customerResponse, isLoading } = useCustomers({
+    search: debouncedSearch || undefined,
+    limit: 25,
+    sortOrder: "desc",
+  });
+
+  const customers = customerResponse?.customers ?? [];
+
+  useEffect(() => {
+    if (!value) {
+      setSearchInput("");
+      return;
+    }
+
+    setSearchInput(readCustomerDisplayName(value));
+  }, [value]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setDebouncedSearch(searchInput.trim());
+    }, 200);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [searchInput]);
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen((current) => !current)}
+        className="flex w-full items-center justify-between gap-3 rounded-lg border border-gray-200 px-3 py-2.5 text-left text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <span className={`min-w-0 flex-1 truncate ${value ? "text-gray-900" : "text-gray-400"}`}>{value ? readCustomerDisplayName(value) : placeholder}</span>
+        <FiChevronDown className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+          <div className="border-b border-gray-100 p-3">
+            <div className="relative">
+              <FiSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder="Search name, email, or id"
+                className="w-full rounded-lg border border-gray-200 py-2 pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          <div className="max-h-64 overflow-y-auto p-2">
+            <button
+              type="button"
+              onClick={() => {
+                onChange(null);
+                setSearchInput("");
+                setDebouncedSearch("");
+                setIsOpen(false);
+              }}
+              className="mb-2 flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-gray-500 transition-colors hover:bg-gray-50"
+            >
+              Clear selection
+            </button>
+
+            {isLoading ? (
+              <div className="px-3 py-4 text-sm text-gray-500">Loading customers...</div>
+            ) : customers.length === 0 ? (
+              <div className="px-3 py-4 text-sm text-gray-500">No customers found.</div>
+            ) : (
+              <div className="space-y-1">
+                {customers.map((customer) => {
+                  const selected = value?.id === customer.id;
+                  const customerName = readCustomerDisplayName(customer);
+
+                  return (
+                    <button
+                      key={customer.id}
+                      type="button"
+                      onClick={() => {
+                        onChange(customer);
+                        setSearchInput(customerName);
+                        setDebouncedSearch(customerName);
+                        setIsOpen(false);
+                      }}
+                      className={`flex w-full flex-col rounded-lg px-3 py-2 text-left transition-colors ${
+                        selected ? "bg-blue-50 text-blue-900" : "hover:bg-gray-50"
+                      }`}
+                    >
+                      <span className="text-sm font-medium text-gray-900">{customerName}</span>
+                      <span className="text-xs text-gray-500">{customer.email || "No email"}</span>
+                      <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.12em] text-gray-400">{shortenId(customer.id)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 const getPlanTone = (plan?: SubscriptionPlan | null) => {
@@ -234,7 +389,11 @@ const getSubscriptionTone = (status?: string | null) => {
 };
 
 const emptyPlanForm = () => ({ ...defaultPlanFormState });
-const emptySubscriptionForm = () => ({ ...defaultSubscriptionFormState });
+const emptySubscriptionForm = (): SubscriptionDraftState => ({
+  planId: "",
+  customerId: "",
+  network: "",
+});
 
 const Subscriptions = () => {
   const [, setLocation] = useLocation();
@@ -269,10 +428,12 @@ const Subscriptions = () => {
   const [planToDelete, setPlanToDelete] = useState<SubscriptionPlan | null>(null);
   const [showDeletePlanModal, setShowDeletePlanModal] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-  const [subscriptionForm, setSubscriptionForm] = useState<SubscriptionFormState>(emptySubscriptionForm());
+  const [subscriptionForm, setSubscriptionForm] = useState<SubscriptionDraftState>(emptySubscriptionForm());
+  const [selectedSubscriptionCustomer, setSelectedSubscriptionCustomer] = useState<CustomerOption | null>(null);
   const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<string | null>(null);
 
   const { data: plans = [], isLoading: plansLoading, error: plansError, refetch: refetchPlans } = useSubscriptionPlans();
+  const { data: supportedNetworks = [] } = useSupportedNetworks();
   const {
     data: selectedPlanDetail,
     isLoading: planLoading,
@@ -285,6 +446,9 @@ const Subscriptions = () => {
   const { mutate: deletePlan, isPending: isDeletingPlan } = useDeleteSubscriptionPlan();
   const { mutate: createSubscription, isPending: isCreatingSubscription } = useCreateSubscription();
   const { mutate: cancelSubscription, isPending: isCancelingSubscription } = useCancelSubscription();
+
+  const activeNetworks = useMemo(() => supportedNetworks.filter((network) => network.isActive), [supportedNetworks]);
+  const defaultSubscriptionNetwork = activeNetworks[0]?.symbol || "";
 
   useEffect(() => {
     setActiveTab("Subscriptions");
@@ -304,6 +468,17 @@ const Subscriptions = () => {
     }
   }, [plans, selectedPlanId, setSelectedPlanId]);
 
+  useEffect(() => {
+    if (!showSubscriptionModal || subscriptionForm.network || !defaultSubscriptionNetwork) {
+      return;
+    }
+
+    setSubscriptionForm((current) => ({
+      ...current,
+      network: defaultSubscriptionNetwork,
+    }));
+  }, [defaultSubscriptionNetwork, showSubscriptionModal, subscriptionForm.network]);
+
   const selectedPlan = selectedPlanDetail ?? plans.find((plan) => plan.id === selectedPlanId) ?? null;
   const planSubscriptions = selectedPlan?.subscriptions ?? [];
 
@@ -318,6 +493,7 @@ const Subscriptions = () => {
         readPlanName(plan),
         plan.id,
         readPlanCurrency(plan),
+        readPlanDuration(plan) || "",
         String(readPlanAmount(plan) ?? ""),
         String(readPlanTrialDays(plan) ?? ""),
       ]
@@ -352,8 +528,9 @@ const Subscriptions = () => {
   }, [planSubscriptions]);
 
   const planCount = plans.length;
-  const selectedPlanSubscriptionCount = planSubscriptions.length;
+  const selectedPlanSubscriptionCount = selectedPlan?.subscriptionCount ?? planSubscriptions.length;
   const filteredSubscriptionCount = filteredSubscriptions.length;
+  const selectedPlanDuration = readPlanDuration(selectedPlan);
 
   const handleSelectPlan = (planId: string) => {
     setSelectedPlanId(planId);
@@ -473,12 +650,13 @@ const Subscriptions = () => {
     setSubscriptionForm({
       ...emptySubscriptionForm(),
       planId: selectedPlan?.id || plans[0]?.id || "",
-      status: "PENDING",
+      network: defaultSubscriptionNetwork,
     });
+    setSelectedSubscriptionCustomer(null);
     setShowSubscriptionModal(true);
   };
 
-  const handleSubscriptionFormChange = <K extends keyof SubscriptionFormState>(key: K, value: SubscriptionFormState[K]) => {
+  const handleSubscriptionFormChange = <K extends keyof SubscriptionDraftState>(key: K, value: SubscriptionDraftState[K]) => {
     setSubscriptionForm((current) => ({ ...current, [key]: value }));
   };
 
@@ -491,32 +669,42 @@ const Subscriptions = () => {
     }
 
     if (!subscriptionForm.customerId.trim()) {
-      toast.error("Customer ID is required");
+      toast.error("Select a customer");
       return;
     }
 
-    if (subscriptionForm.status && !isSubscriptionStatus(subscriptionForm.status)) {
-      toast.error("Select a valid subscription status");
+    if (!subscriptionForm.network.trim()) {
+      toast.error("Select a network");
       return;
     }
 
     const payload: CreateSubscriptionRequest = {
       planId: subscriptionForm.planId.trim(),
       customerId: subscriptionForm.customerId.trim(),
-      status: subscriptionForm.status || undefined,
-      startDate: subscriptionForm.startDate || undefined,
+      network: subscriptionForm.network.trim(),
     };
 
     createSubscription(payload, {
       onSuccess: () => {
         setShowSubscriptionModal(false);
-        setSubscriptionForm({
-          ...emptySubscriptionForm(),
-          planId: selectedPlan?.id || plans[0]?.id || "",
-          status: "PENDING",
-        });
+        setSelectedSubscriptionCustomer(null);
+        setSubscriptionForm(emptySubscriptionForm());
       },
     });
+  };
+
+  const handleCustomerSelection = (customer: CustomerOption | null) => {
+    setSelectedSubscriptionCustomer(customer);
+    setSubscriptionForm((current) => ({
+      ...current,
+      customerId: customer?.id || "",
+    }));
+  };
+
+  const handleCloseSubscriptionModal = () => {
+    setShowSubscriptionModal(false);
+    setSelectedSubscriptionCustomer(null);
+    setSubscriptionForm(emptySubscriptionForm());
   };
 
   const handleNavigateToTransactions = (subscriptionId: string) => {
@@ -555,22 +743,18 @@ const Subscriptions = () => {
           <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
             <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">Plans</p>
             <p className="mt-3 text-2xl font-semibold text-gray-900">{planCount.toLocaleString()}</p>
-            <p className="mt-1 text-sm text-gray-500">Manage your subscription plans</p>
           </div>
           <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
             <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">Selected plan subscriptions</p>
             <p className="mt-3 text-2xl font-semibold text-gray-900">{selectedPlanSubscriptionCount.toLocaleString()}</p>
-            <p className="mt-1 text-sm text-gray-500">Returned by the plan detail endpoint</p>
           </div>
           <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
             <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">Visible subscriptions</p>
             <p className="mt-3 text-2xl font-semibold text-gray-900">{filteredSubscriptionCount.toLocaleString()}</p>
-            <p className="mt-1 text-sm text-gray-500">After the status filter is applied</p>
           </div>
           <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
             <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">Active subscriptions</p>
             <p className="mt-3 text-2xl font-semibold text-gray-900">{activeSubscriptions.toLocaleString()}</p>
-            <p className="mt-1 text-sm text-gray-500">Currently active in the selected plan</p>
           </div>
         </section>
 
@@ -634,7 +818,6 @@ const Subscriptions = () => {
                 <div className="space-y-3">
                   {filteredPlans.map((plan) => {
                     const isSelected = plan.id === selectedPlanId;
-                    const subscriptionCount = plan.subscriptionCount ?? plan.subscriptions?.length ?? 0;
                     const amount = readPlanAmount(plan);
                     const currency = readPlanCurrency(plan);
 
@@ -675,7 +858,6 @@ const Subscriptions = () => {
                           <span className="rounded-full bg-gray-100 px-2.5 py-1">
                             {readPlanTrialDays(plan) !== undefined ? `${readPlanTrialDays(plan)} trial days` : "No trial"}
                           </span>
-                          <span className="rounded-full bg-gray-100 px-2.5 py-1">{subscriptionCount} subscriptions</span>
                         </div>
 
                         <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -713,7 +895,7 @@ const Subscriptions = () => {
               <div className="flex flex-col gap-4 border-b border-gray-100 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <h2 className="text-base font-semibold text-gray-900">Plan details</h2>
-                  <p className="mt-1 text-sm text-gray-500">Review the selected plan and the subscriptions returned for it.</p>
+                  <p className="mt-1 text-sm text-gray-500">Review the selected plan and the subscriptions attached to it.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-700">
@@ -740,14 +922,6 @@ const Subscriptions = () => {
                     <FiUserPlus className="h-4 w-4" />
                     Create subscription
                   </button>
-                  <button
-                    onClick={() => selectedPlan && handleOpenEditPlan(selectedPlan)}
-                    disabled={!selectedPlan}
-                    className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <FiEdit2 className="h-4 w-4" />
-                    Edit plan
-                  </button>
                 </div>
               </div>
 
@@ -762,13 +936,10 @@ const Subscriptions = () => {
                   <ErrorState message="Failed to load the selected plan" onRetry={handleRefresh} />
                 ) : selectedPlan ? (
                   <div className="space-y-4">
-                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
                       <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
                         <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">Plan</p>
-                        <div className="mt-2 flex items-center gap-1.5 text-lg font-semibold text-gray-900">
-                          <span className="truncate">{readPlanName(selectedPlan)}</span>
-                          <CopyButton text={selectedPlan.id} />
-                        </div>
+                        <p className="mt-2 truncate text-lg font-semibold text-gray-900">{readPlanName(selectedPlan)}</p>
                         <div className="mt-1 flex items-center gap-1.5 text-sm text-gray-500">
                           <span>{shortenId(selectedPlan.id)}</span>
                           <CopyButton text={selectedPlan.id} />
@@ -779,19 +950,22 @@ const Subscriptions = () => {
                         <p className="mt-2 text-lg font-semibold text-gray-900">
                           {selectedPlanAmount !== undefined ? `${selectedPlanCurrency} ${selectedPlanAmount.toLocaleString()}` : `${selectedPlanCurrency} custom`}
                         </p>
-                        <p className="mt-1 text-sm text-gray-500">No billing interval is stored for plans</p>
+                        <p className="mt-1 text-sm text-gray-500">Duration: {selectedPlanDuration || "—"}</p>
                       </div>
                       <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
                         <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">Trial</p>
                         <p className="mt-2 text-lg font-semibold text-gray-900">
                           {selectedPlanTrialDays !== undefined ? `${selectedPlanTrialDays} days` : "No trial"}
                         </p>
-                        <p className="mt-1 text-sm text-gray-500">Trial days are optional</p>
                       </div>
                       <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
                         <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">Status</p>
                         <p className="mt-2 text-lg font-semibold text-gray-900">{readPlanStatusLabel(selectedPlan)}</p>
                         <p className="mt-1 text-sm text-gray-500">Created {formatDate(selectedPlan.createdAt)}</p>
+                      </div>
+                      <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                        <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">Subscriptions</p>
+                        <p className="mt-2 text-lg font-semibold text-gray-900">{selectedPlanSubscriptionCount.toLocaleString()}</p>
                       </div>
                     </div>
                   </div>
@@ -839,6 +1013,7 @@ const Subscriptions = () => {
                       const statusLabel = formatSubscriptionStatus(subscription.status);
                       const amount = readSubscriptionAmount(subscription);
                       const currency = readSubscriptionCurrency(subscription, selectedPlanCurrency);
+                      const amountLabel = amount !== undefined ? `${currency} ${amount.toLocaleString()}` : null;
                       const normalizedStatus = normalizeSubscriptionStatus(subscription.status);
                       const customer = subscription.customer;
                       const isExpanded = expandedSubscriptionId === subscription.id;
@@ -881,9 +1056,7 @@ const Subscriptions = () => {
                               </div>
 
                               <div className="flex flex-wrap gap-2 text-xs text-gray-600">
-                                <span className="rounded-full bg-gray-100 px-2.5 py-1">
-                                  {amount !== undefined ? `${currency} ${amount.toLocaleString()}` : `${currency} amount unavailable`}
-                                </span>
+                                {amountLabel ? <span className="rounded-full bg-gray-100 px-2.5 py-1">{amountLabel}</span> : null}
                                 <span className="rounded-full bg-gray-100 px-2.5 py-1">
                                   Started {formatDate(subscription.startDate || subscription.startedAt || subscription.createdAt)}
                                 </span>
@@ -1067,7 +1240,7 @@ const Subscriptions = () => {
 
       <Modal
         isOpen={showSubscriptionModal}
-        onClose={() => setShowSubscriptionModal(false)}
+        onClose={handleCloseSubscriptionModal}
         title="Create subscription"
         description="Attach a customer to one of your subscription plans."
         icon={<FiUserPlus className="h-5 w-5 text-blue-600" />}
@@ -1094,53 +1267,30 @@ const Subscriptions = () => {
               </div>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Customer ID</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={subscriptionForm.customerId}
-                  onChange={(event) => handleSubscriptionFormChange("customerId", event.target.value)}
-                  className="min-w-0 flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="customer_123"
-                />
-                {subscriptionForm.customerId ? <CopyButton text={subscriptionForm.customerId} /> : null}
-              </div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Customer</label>
+              <CustomerPicker value={selectedSubscriptionCustomer} onChange={handleCustomerSelection} placeholder="Search active customers" />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Status</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Network</label>
               <select
-                value={subscriptionForm.status}
-                onChange={(event) =>
-                  handleSubscriptionFormChange(
-                    "status",
-                    event.target.value ? (event.target.value as SubscriptionStatus) : ""
-                  )
-                }
+                value={subscriptionForm.network}
+                onChange={(event) => handleSubscriptionFormChange("network", event.target.value)}
                 className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Select status</option>
-                {subscriptionStatusOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
+                <option value="">Select network</option>
+                {activeNetworks.map((network) => (
+                  <option key={network.code} value={network.symbol}>
+                    {network.name} ({network.symbol})
                   </option>
                 ))}
               </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Start date</label>
-              <input
-                type="date"
-                value={subscriptionForm.startDate}
-                onChange={(event) => handleSubscriptionFormChange("startDate", event.target.value)}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
             </div>
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-2">
             <button
               type="button"
-              onClick={() => setShowSubscriptionModal(false)}
+              onClick={handleCloseSubscriptionModal}
               className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
             >
               Cancel

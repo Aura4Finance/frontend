@@ -169,12 +169,41 @@ export type SupportedCurrency = {
     isActive: boolean
 }
 
+export type SupportedNetwork = {
+    code: string;
+    name: string;
+    symbol: string;
+    isActive: boolean;
+    supportedTokens: {
+        name: string;
+        symbol: string;
+        logoUrl: string;
+        decimals: string;
+    }[];
+    smartContractPackageId: {
+        testnet: string;
+        mainnet: string;
+    };
+    explorerUrl: string;
+    logoUrl: string;
+}
+
 export const getSupportedCurrencies = () => {
     return useQuery({
         queryKey: ["supported-currencies"],
         queryFn: async () => {
             const response = await client.get("/currencies");
             return (response.data.data?.fiats ?? response.data.data) as SupportedCurrency[];
+        }
+    })
+}
+
+export const useSupportedNetworks = () => {
+    return useQuery({
+        queryKey: ["supported-networks"],
+        queryFn: async () => {
+            const response = await client.get("/networks");
+            return response.data.data as SupportedNetwork[];
         }
     })
 }

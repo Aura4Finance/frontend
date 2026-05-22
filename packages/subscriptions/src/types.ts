@@ -21,6 +21,7 @@ export interface Subscription {
   id: string;
   planId?: string;
   customerId?: string;
+  network?: string;
   status: SubscriptionStatus | string;
   customer?: SubscriptionCustomer;
   amount?: number;
@@ -39,6 +40,7 @@ export interface SubscriptionPlan {
   name?: string;
   title?: string;
   planName?: string;
+  duration?: string;
   amount?: number;
   price?: number;
   amountInUSDC?: number;
@@ -86,6 +88,7 @@ export interface UpdateSubscriptionPlanRequest extends Partial<CreateSubscriptio
 export interface CreateSubscriptionRequest {
   planId: string;
   customerId: string;
+  network: string;
   status?: SubscriptionStatus | string;
   startDate?: string;
   [key: string]: unknown;
