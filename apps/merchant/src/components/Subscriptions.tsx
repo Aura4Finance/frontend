@@ -1004,6 +1004,7 @@ const Subscriptions = () => {
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [subscriptionForm, setSubscriptionForm] = useState<SubscriptionDraftState>(emptySubscriptionForm());
   const [selectedSubscriptionCustomer, setSelectedSubscriptionCustomer] = useState<CustomerOption | null>(null);
+  const [subscriptionToCancel, setSubscriptionToCancel] = useState<Subscription | null>(null);
   const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<string | null>(null);
 
   const { data: plans = [], isLoading: plansLoading, error: plansError, refetch: refetchPlans } = useSubscriptionPlans();
@@ -1291,15 +1292,20 @@ const Subscriptions = () => {
   };
 
   const handleCancelSubscription = (subscription: Subscription) => {
-    if (!window.confirm(`Cancel subscription ${subscription.id}?`)) {
+    setSubscriptionToCancel(subscription);
+  };
+
+  const confirmCancelSubscription = () => {
+    if (!subscriptionToCancel) {
       return;
     }
 
-    cancelSubscription(subscription.id, {
+    cancelSubscription(subscriptionToCancel.id, {
       onSuccess: () => {
         if (selectedPlanId) {
           refetchPlan();
         }
+        setSubscriptionToCancel(null);
       },
     });
   };
@@ -1898,6 +1904,53 @@ const Subscriptions = () => {
             </button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        isOpen={Boolean(subscriptionToCancel)}
+        onClose={() => setSubscriptionToCancel(null)}
+        title="Cancel subscription"
+        description="This will stop future billing for the selected customer subscription."
+        icon={<FiTrash2 className="h-5 w-5 text-red-600" />}
+        variant="danger"
+      >
+        <div className="space-y-4">
+          <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {subscriptionToCancel ? (
+              <div className="space-y-2">
+                <p>
+                  Are you sure you want to cancel the subscription for <span className="font-semibold">{subscriptionToCancel.customer?.name || subscriptionToCancel.customer?.email || subscriptionToCancel.customerId || "this customer"}</span>?
+                </p>
+                <div className="flex flex-wrap items-center gap-2 text-xs text-red-700">
+                  <span className="rounded-full bg-white px-2.5 py-1 font-medium ring-1 ring-red-100">
+                    Subscription: {subscriptionToCancel.id}
+                  </span>
+                  <span className="rounded-full bg-white px-2.5 py-1 font-medium ring-1 ring-red-100">
+                    Status: {formatSubscriptionStatus(subscriptionToCancel.status)}
+                  </span>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setSubscriptionToCancel(null)}
+              className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            >
+              No, keep subscription
+            </button>
+            <button
+              type="button"
+              onClick={confirmCancelSubscription}
+              disabled={isCancelingSubscription}
+              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isCancelingSubscription ? "Cancelling..." : "Yes, cancel subscription"}
+            </button>
+          </div>
+        </div>
       </Modal>
 
       <Modal
