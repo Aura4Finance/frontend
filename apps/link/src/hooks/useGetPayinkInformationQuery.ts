@@ -41,7 +41,7 @@ export const useGetPayLinkInformationQuery = (payLinkId?: string) => {
     queryKey: ["paylink-information", payLinkId],
     queryFn: async () => {
       const { data } = await client.get(
-        `/paylink/${payLinkId}`,
+        `/paylinks/${payLinkId}`,
       );
       return data.data;
     },

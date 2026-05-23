@@ -11,18 +11,17 @@ export interface Customer {
 
 export type SubscriptionStatus =
   | "ACTIVE"
-  | "ABANDONDED"
-  | "ABANDONED"
-  | "TRAILING"
   | "PENDING"
+  | "TRIALING"
+  | "ABANDONED"
   | "CANCELLED"
   | "PAST_DUE";
 
 export type SubscriptionDuration = 
   | "WEEKLY"
   | "MONTHLY"
-  | "SIX_MONTH"
-  | "YEARLY"
+  | "SIX_MONTHS"
+  | "YEARLY";
 
 
 export interface Subscription {

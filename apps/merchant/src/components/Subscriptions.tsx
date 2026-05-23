@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback, useLayoutEffect, type CSSProperties } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
-import { FiArrowRight, FiChevronDown, FiChevronUp, FiEdit2, FiFilter, FiPlus, FiSearch, FiTrash2, FiUserPlus } from "react-icons/fi";
+import { FiActivity, FiArrowRight, FiChevronDown, FiChevronUp, FiEdit2, FiEye, FiFilter, FiGlobe, FiLayers, FiPlus, FiSearch, FiTrash2, FiUserPlus, FiUsers } from "react-icons/fi";
 import DashboardWrapper from "./DashboardWrapper";
 import Modal from "./transactions/Modal";
 import CopyButton from "./transactions/CopyButton";
@@ -10,7 +10,7 @@ import { useActiveTabStore } from "../store/activeTab";
 import { useQueryState } from "../hooks/useQueryState";
 import { useCustomers, useCustomer } from "../hooks/mutations/useCustomers";
 import { createPortal } from "react-dom";
-import { useSupportedNetworks } from "../hooks/mutations/useSettings";
+import { getSupportedCurrencies, useSupportedNetworks } from "../hooks/mutations/useSettings";
 import {
   formatSubscriptionStatus,
   normalizeSubscriptionStatus,
@@ -20,6 +20,7 @@ import {
   type Subscription,
   type SubscriptionPlan,
   type SubscriptionStatus,
+  type SubscriptionDuration,
   type UpdateSubscriptionPlanRequest,
 } from "@orafi/subscriptions";
 import {
@@ -37,6 +38,7 @@ type PlanFormState = {
   amount: string;
   currency: string;
   trialDays: string;
+  duration: SubscriptionDuration | "";
 };
 
 type CustomerOption = {
@@ -45,6 +47,15 @@ type CustomerOption = {
   lastname: string;
   email: string;
 };
+
+type NetworkOption = {
+  code: string;
+  name: string;
+  symbol: string;
+  logoUrl?: string | null;
+};
+
+type PlanOption = SubscriptionPlan;
 
 type SubscriptionDraftState = {
   planId: string;
@@ -57,7 +68,43 @@ const defaultPlanFormState: PlanFormState = {
   amount: "",
   currency: "USDC",
   trialDays: "",
+  duration: "",
 };
+
+const subscriptionDurationOptions: Array<{
+  value: SubscriptionDuration;
+  label: string;
+  description: string;
+  cadence: string;
+}> = [
+  {
+    value: "WEEKLY",
+    label: "Weekly",
+    description: "A short billing cycle for trials, weekly access, or high-frequency plans.",
+    cadence: "Bills every 7 days",
+  },
+  {
+    value: "MONTHLY",
+    label: "Monthly",
+    description: "The common subscription cadence for recurring services and memberships.",
+    cadence: "Bills every 30 days",
+  },
+  {
+    value: "SIX_MONTHS",
+    label: "Every 6 months",
+    description: "A longer commitment with fewer renewals and a lower admin overhead.",
+    cadence: "Bills twice a year",
+  },
+  {
+    value: "YEARLY",
+    label: "Yearly",
+    description: "Best for annual plans, premium tiers, and customers who prefer one payment.",
+    cadence: "Bills once a year",
+  },
+];
+
+const getDurationOption = (duration?: string | null) =>
+  subscriptionDurationOptions.find((option) => option.value === duration);
 
 const formatDate = (value?: string | null) => {
   if (!value) {
@@ -84,6 +131,60 @@ const shortenId = (value?: string | null) => {
   return `${value.slice(0, 6)}...${value.slice(-4)}`;
 };
 
+function usePortalDropdownStyle(
+  isOpen: boolean,
+  anchorRef: { current: HTMLDivElement | null },
+  preferredWidth: number,
+  preferredHeight: number,
+  zIndex = 110
+) {
+  const [menuStyle, setMenuStyle] = useState<CSSProperties | undefined>(undefined);
+
+  const updatePosition = useCallback(() => {
+    const anchorElement = anchorRef.current;
+    if (!anchorElement || typeof window === "undefined") {
+      return;
+    }
+
+    const rect = anchorElement.getBoundingClientRect();
+    const viewportPadding = 8;
+    const offset = 4;
+    const width = Math.min(preferredWidth, window.innerWidth - viewportPadding * 2);
+    const left = Math.min(
+      Math.max(viewportPadding, rect.left),
+      Math.max(viewportPadding, window.innerWidth - viewportPadding - width)
+    );
+    const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
+    const spaceAbove = rect.top - viewportPadding;
+    const openUpward = spaceBelow < Math.min(preferredHeight, 160) && spaceAbove > spaceBelow;
+    const availableHeight = openUpward ? spaceAbove : spaceBelow;
+    const maxHeight = Math.min(preferredHeight, Math.max(0, availableHeight));
+    const top = openUpward ? Math.max(viewportPadding, rect.top - offset - maxHeight) : rect.bottom + offset;
+
+    setMenuStyle({ position: "fixed", top, left, width, maxHeight, zIndex });
+  }, [anchorRef, preferredHeight, preferredWidth, zIndex]);
+
+  useLayoutEffect(() => {
+    if (!isOpen) {
+      setMenuStyle(undefined);
+      return;
+    }
+
+    updatePosition();
+    const handlePositionUpdate = () => updatePosition();
+
+    document.addEventListener("scroll", handlePositionUpdate, true);
+    window.addEventListener("resize", handlePositionUpdate);
+
+    return () => {
+      document.removeEventListener("scroll", handlePositionUpdate, true);
+      window.removeEventListener("resize", handlePositionUpdate);
+    };
+  }, [isOpen, updatePosition]);
+
+  return menuStyle;
+}
+
 // Using typed `SubscriptionPlan` / `Subscription` fields directly with simple fallbacks.
 
 type CustomerPickerProps = {
@@ -106,46 +207,6 @@ const CustomerPicker = ({ value, onChange, placeholder = "Select a customer" }: 
   });
 
   const customers = customerResponse?.customers ?? [];
-
-  // portal positioning helper
-  function usePortalDropdownStyle(isOpenLocal: boolean, anchorRef: { current: HTMLDivElement | null }, preferredWidth: number, preferredHeight: number) {
-    const [menuStyle, setMenuStyle] = useState<CSSProperties | undefined>(undefined);
-
-    const updatePosition = useCallback(() => {
-      const anchorElement = anchorRef.current;
-      if (!anchorElement || typeof window === "undefined") return;
-      const rect = anchorElement.getBoundingClientRect();
-      const viewportPadding = 8;
-      const offset = 4;
-      const width = Math.min(preferredWidth, window.innerWidth - viewportPadding * 2);
-      const left = Math.min(Math.max(viewportPadding, rect.left), Math.max(viewportPadding, window.innerWidth - viewportPadding - width));
-      const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
-      const spaceAbove = rect.top - viewportPadding;
-      const openUpward = spaceBelow < preferredHeight && spaceAbove > spaceBelow;
-      const availableHeight = openUpward ? spaceAbove : spaceBelow;
-      const maxHeight = Math.min(preferredHeight, Math.max(0, availableHeight));
-      const top = openUpward ? Math.max(viewportPadding, rect.top - offset - maxHeight) : rect.bottom + offset;
-
-      setMenuStyle({ position: "fixed", top, left, width, maxHeight, zIndex: 110 });
-    }, [anchorRef, preferredHeight, preferredWidth]);
-
-    useLayoutEffect(() => {
-      if (!isOpenLocal) {
-        setMenuStyle(undefined);
-        return;
-      }
-      updatePosition();
-      const handle = () => updatePosition();
-      document.addEventListener("scroll", handle, true);
-      window.addEventListener("resize", handle);
-      return () => {
-        document.removeEventListener("scroll", handle, true);
-        window.removeEventListener("resize", handle);
-      };
-    }, [isOpenLocal, updatePosition]);
-
-    return menuStyle;
-  }
 
   const menuStyle = usePortalDropdownStyle(isOpen, containerRef, 360, 320);
 
@@ -280,6 +341,498 @@ const CustomerPicker = ({ value, onChange, placeholder = "Select a customer" }: 
   );
 };
 
+type NetworkPickerProps = {
+  value: string;
+  onChange: (network: string) => void;
+  options: NetworkOption[];
+  placeholder?: string;
+};
+
+const NetworkPicker = ({ value, onChange, options, placeholder = "Select network" }: NetworkPickerProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const menuStyle = usePortalDropdownStyle(isOpen, containerRef, 360, 320);
+  const selectedNetwork = options.find((network) => network.symbol === value);
+
+  useEffect(() => {
+    setSearchInput(selectedNetwork ? `${selectedNetwork.name} - ${selectedNetwork.symbol}` : value || "");
+  }, [selectedNetwork, value]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setDebouncedSearch(searchInput.trim()), 200);
+    return () => window.clearTimeout(timeout);
+  }, [searchInput]);
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (containerRef.current && !containerRef.current.contains(target) && !menuRef.current?.contains(target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, []);
+
+  const filteredOptions = useMemo(() => {
+    const query = debouncedSearch.toLowerCase();
+    if (!query) {
+      return options;
+    }
+
+    return options.filter((network) => {
+      const haystack = [network.name, network.symbol, network.code].filter(Boolean).join(" ").toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [debouncedSearch, options]);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen((current) => !current)}
+        className="flex w-full items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-left text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <div className="flex min-w-0 items-center gap-2">
+          <FiGlobe className="h-4 w-4 shrink-0 text-gray-400" />
+          {selectedNetwork ? (
+            <>
+              {selectedNetwork.logoUrl ? (
+                <img src={selectedNetwork.logoUrl} alt={selectedNetwork.symbol} className="h-4 w-4 shrink-0 rounded-full object-contain" />
+              ) : null}
+              <span className="truncate text-gray-900">{selectedNetwork.name} ({selectedNetwork.symbol})</span>
+            </>
+          ) : (
+            <span className="text-gray-400">{placeholder}</span>
+          )}
+        </div>
+        <FiChevronDown className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+      </button>
+
+      {isOpen && menuStyle && createPortal(
+        <div ref={menuRef} style={menuStyle} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+          <div className="border-b border-gray-100 bg-gradient-to-r from-blue-50 via-white to-indigo-50 px-4 py-3">
+            <p className="text-sm font-semibold text-gray-900">Choose a network</p>
+            <p className="mt-1 text-xs text-gray-600">Select the blockchain network for this subscription.</p>
+          </div>
+
+          <div className="border-b border-gray-100 p-3">
+            <div className="relative">
+              <FiSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                autoFocus
+                type="text"
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder="Search network"
+                className="w-full rounded-lg border border-gray-200 py-2 pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          <div className="max-h-72 overflow-y-auto p-2">
+            {filteredOptions.length === 0 ? (
+              <div className="px-3 py-4 text-sm text-gray-500">No networks found.</div>
+            ) : (
+              <div className="space-y-1">
+                {filteredOptions.map((network) => {
+                  const isSelected = network.symbol === value;
+
+                  return (
+                    <button
+                      key={network.code}
+                      type="button"
+                      onClick={() => {
+                        onChange(network.symbol);
+                        setSearchInput(`${network.name} - ${network.symbol}`);
+                        setDebouncedSearch("");
+                        setIsOpen(false);
+                      }}
+                      className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left transition-all ${
+                        isSelected ? "border-blue-200 bg-blue-50 shadow-sm" : "border-transparent hover:border-gray-200 hover:bg-gray-50"
+                      }`}
+                    >
+                      <div className="flex min-w-0 items-center gap-2">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white ring-1 ring-gray-200">
+                          {network.logoUrl ? (
+                            <img src={network.logoUrl} alt={network.symbol} className="h-5 w-5 rounded-full object-contain" />
+                          ) : (
+                            <FiGlobe className="h-4 w-4 text-gray-400" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-medium text-gray-900">{network.name}</div>
+                          <div className="text-xs text-gray-500">{network.symbol}</div>
+                        </div>
+                      </div>
+                      {isSelected ? <span className="text-xs font-semibold text-blue-700">Selected</span> : null}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+};
+
+type PlanPickerProps = {
+  value: string;
+  onChange: (planId: string) => void;
+  options: PlanOption[];
+  placeholder?: string;
+};
+
+const PlanPicker = ({ value, onChange, options, placeholder = "Select a plan" }: PlanPickerProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const menuStyle = usePortalDropdownStyle(isOpen, containerRef, 420, 340);
+  const selectedPlan = options.find((plan) => plan.id === value);
+
+  useEffect(() => {
+    setSearchInput(selectedPlan ? `${selectedPlan.name || selectedPlan.id} - ${shortenId(selectedPlan.id)}` : value || "");
+  }, [selectedPlan, value]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setDebouncedSearch(searchInput.trim()), 200);
+    return () => window.clearTimeout(timeout);
+  }, [searchInput]);
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (containerRef.current && !containerRef.current.contains(target) && !menuRef.current?.contains(target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, []);
+
+  const filteredOptions = useMemo(() => {
+    const query = debouncedSearch.toLowerCase();
+    if (!query) {
+      return options;
+    }
+
+    return options.filter((plan) => {
+      const haystack = [plan.name, plan.id, plan.currency, String(plan.amount), plan.duration, String(plan.trialDays)].filter(Boolean).join(" ").toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [debouncedSearch, options]);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen((current) => !current)}
+        className="flex w-full items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-left text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <div className="flex min-w-0 items-center gap-2">
+          <FiLayers className="h-4 w-4 shrink-0 text-gray-400" />
+          {selectedPlan ? (
+            <span className="truncate text-gray-900">
+              {selectedPlan.name || selectedPlan.id} ({shortenId(selectedPlan.id)})
+            </span>
+          ) : (
+            <span className="text-gray-400">{placeholder}</span>
+          )}
+        </div>
+        <FiChevronDown className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+      </button>
+
+      {isOpen && menuStyle && createPortal(
+        <div ref={menuRef} style={menuStyle} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+          <div className="border-b border-gray-100 bg-gradient-to-r from-blue-50 via-white to-indigo-50 px-4 py-3">
+            <p className="text-sm font-semibold text-gray-900">Choose a plan</p>
+            <p className="mt-1 text-xs text-gray-600">Pick the subscription plan for this customer.</p>
+          </div>
+
+          <div className="border-b border-gray-100 p-3">
+            <div className="relative">
+              <FiSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                autoFocus
+                type="text"
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder="Search plan"
+                className="w-full rounded-lg border border-gray-200 py-2 pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          <div className="max-h-72 overflow-y-auto p-2">
+            {filteredOptions.length === 0 ? (
+              <div className="px-3 py-4 text-sm text-gray-500">No plans found.</div>
+            ) : (
+              <div className="space-y-1">
+                {filteredOptions.map((plan) => {
+                  const isSelected = plan.id === value;
+                  const amount = typeof plan.amount === "number" ? plan.amount : Number(plan.amount as any);
+
+                  return (
+                    <button
+                      key={plan.id}
+                      type="button"
+                      onClick={() => {
+                        onChange(plan.id);
+                        setSearchInput(`${plan.name || plan.id} - ${shortenId(plan.id)}`);
+                        setDebouncedSearch("");
+                        setIsOpen(false);
+                      }}
+                      className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left transition-all ${
+                        isSelected ? "border-blue-200 bg-blue-50 shadow-sm" : "border-transparent hover:border-gray-200 hover:bg-gray-50"
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-medium text-gray-900">{plan.name || plan.id}</div>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                          <span>{plan.currency || "—"} {Number.isNaN(amount) ? "—" : amount.toLocaleString()}</span>
+                          <span>•</span>
+                          <span>{plan.duration || "—"}</span>
+                          <span>•</span>
+                          <span>{shortenId(plan.id)}</span>
+                        </div>
+                      </div>
+                      {isSelected ? <span className="text-xs font-semibold text-blue-700">Selected</span> : null}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+};
+
+type CurrencyPickerProps = {
+  value: string;
+  onChange: (currency: string) => void;
+  placeholder?: string;
+};
+
+const CurrencyPicker = ({ value, onChange, placeholder = "Select currency" }: CurrencyPickerProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const { data: supportedCurrencies = [] } = getSupportedCurrencies();
+  const menuStyle = usePortalDropdownStyle(isOpen, containerRef, 360, 320);
+
+  useEffect(() => {
+    const selectedCurrency = supportedCurrencies.find((currency) => currency.symbol === value);
+    setSearchInput(selectedCurrency ? `${selectedCurrency.name} - ${selectedCurrency.symbol}` : value || "");
+  }, [supportedCurrencies, value]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setDebouncedSearch(searchInput.trim()), 200);
+    return () => window.clearTimeout(timeout);
+  }, [searchInput]);
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (containerRef.current && !containerRef.current.contains(target) && !menuRef.current?.contains(target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, []);
+
+  const filteredCurrencies = useMemo(() => {
+    const query = debouncedSearch.toLowerCase();
+    if (!query) {
+      return supportedCurrencies;
+    }
+
+    return supportedCurrencies.filter((currency) => {
+      const haystack = [currency.name, currency.symbol, currency.sign, currency.id].filter(Boolean).join(" ").toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [debouncedSearch, supportedCurrencies]);
+
+  const selectedCurrency = supportedCurrencies.find((currency) => currency.symbol === value);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen((current) => !current)}
+        className="flex w-full items-center justify-between gap-3 rounded-lg border border-gray-200 px-3 py-2.5 text-left text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <span className={`min-w-0 flex-1 truncate ${value ? "text-gray-900" : "text-gray-400"}`}>
+          {selectedCurrency ? `${selectedCurrency.name} - ${selectedCurrency.symbol} (${selectedCurrency.sign})` : value || placeholder}
+        </span>
+        <FiChevronDown className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+      </button>
+
+      {isOpen && menuStyle &&
+        createPortal(
+          <div ref={menuRef} style={menuStyle} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+            <div className="border-b border-gray-100 p-3">
+              <div className="relative">
+                <FiSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  autoFocus
+                  type="text"
+                  value={searchInput}
+                  onChange={(event) => setSearchInput(event.target.value)}
+                  placeholder="Search currency"
+                  className="w-full rounded-lg border border-gray-200 py-2 pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="max-h-64 overflow-y-auto p-2">
+              {filteredCurrencies.length === 0 ? (
+                <div className="px-3 py-4 text-sm text-gray-500">No currencies found.</div>
+              ) : (
+                <div className="space-y-1">
+                  {filteredCurrencies.map((currency) => {
+                    const isSelected = currency.symbol === value;
+                    return (
+                      <button
+                        key={currency.id}
+                        type="button"
+                        onClick={() => {
+                          onChange(currency.symbol);
+                          setSearchInput(`${currency.name} - ${currency.symbol}`);
+                          setDebouncedSearch("");
+                          setIsOpen(false);
+                        }}
+                        className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors ${
+                          isSelected ? "bg-blue-50 text-blue-900" : "hover:bg-gray-50"
+                        }`}
+                      >
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-medium text-gray-900">
+                            {currency.name} - {currency.symbol}
+                          </div>
+                          <div className="text-xs text-gray-500">{currency.sign}</div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>,
+          document.body
+        )}
+    </div>
+  );
+};
+
+type DurationPickerProps = {
+  value: SubscriptionDuration | "";
+  onChange: (duration: SubscriptionDuration) => void;
+  placeholder?: string;
+};
+
+const DurationPicker = ({ value, onChange, placeholder = "Select duration" }: DurationPickerProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuStyle = usePortalDropdownStyle(isOpen, containerRef, 420, 340);
+  const selectedOption = getDurationOption(value);
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (containerRef.current && !containerRef.current.contains(target) && !menuRef.current?.contains(target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen((current) => !current)}
+        className="flex w-full items-center justify-between gap-3 rounded-lg border border-gray-200 px-3 py-2.5 text-left text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <span className={`min-w-0 flex-1 truncate ${selectedOption ? "text-gray-900" : "text-gray-400"}`}>
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <FiChevronDown className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+      </button>
+
+      {isOpen && menuStyle &&
+        createPortal(
+          <div ref={menuRef} style={menuStyle} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+            <div className="border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-3">
+              <p className="text-sm font-semibold text-gray-900">Choose a billing rhythm</p>
+              <p className="mt-1 text-xs text-gray-600">Pick the cadence that best matches how often customers should renew.</p>
+            </div>
+
+            <div className="max-h-72 overflow-y-auto p-2">
+              <div className="space-y-1">
+                {subscriptionDurationOptions.map((durationOption: (typeof subscriptionDurationOptions)[number]) => {
+                  const isSelected = durationOption.value === value;
+
+                  return (
+                    <button
+                      key={String(durationOption.value)}
+                      type="button"
+                      onClick={() => {
+                        onChange(durationOption.value);
+                        setIsOpen(false);
+                      }}
+                      className={`w-full rounded-xl border px-3 py-3 text-left transition-all ${
+                        isSelected
+                          ? "border-blue-200 bg-blue-50 shadow-sm"
+                          : "border-transparent hover:border-gray-200 hover:bg-gray-50"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-gray-900">{durationOption.label}</span>
+                            <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500 ring-1 ring-gray-200">
+                              {durationOption.cadence}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-xs leading-5 text-gray-600">{durationOption.description}</p>
+                        </div>
+                        {isSelected ? <span className="mt-0.5 text-xs font-semibold text-blue-700">Selected</span> : null}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+    </div>
+  );
+};
+
 const getPlanTone = (_plan?: SubscriptionPlan | null) => {
   // SubscriptionPlan model doesn't include a status field — treat plans as active by default
   return "bg-emerald-50 text-emerald-700 border-emerald-200";
@@ -290,18 +843,123 @@ const getSubscriptionTone = (status?: string | null) => {
 
   switch (normalized) {
     case "ACTIVE":
-      return "bg-emerald-50 text-emerald-700 border-emerald-200";
+      return "bg-green-100 text-green-700 border-green-200";
     case "PENDING":
-      return "bg-amber-50 text-amber-700 border-amber-200";
+      return "bg-yellow-100 text-yellow-700 border-yellow-200";
+    case "TRIALING":
+      return "bg-blue-100 text-blue-700 border-blue-200";
     case "CANCELLED":
       return "bg-gray-100 text-gray-600 border-gray-200";
     case "PAST_DUE":
-      return "bg-rose-50 text-rose-700 border-rose-200";
-    case "ABANDONDED":
-      return "bg-orange-50 text-orange-700 border-orange-200";
+      return "bg-red-100 text-red-700 border-red-200";
+    case "ABANDONED":
+      return "bg-orange-100 text-orange-700 border-orange-200";
     default:
       return "bg-gray-100 text-gray-600 border-gray-200";
   }
+};
+
+const SubscriptionStatusDropdown = ({
+  value,
+  onChange,
+}: {
+  value: SubscriptionStatus | "";
+  onChange: (status: SubscriptionStatus | "") => void;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuStyle = usePortalDropdownStyle(isOpen, containerRef, 320, 320, 120);
+  const selectedOption = subscriptionStatusOptions.find((option) => option.value === value);
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (containerRef.current && !containerRef.current.contains(target) && !menuRef.current?.contains(target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen((current) => !current)}
+        className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+          value
+            ? "border-blue-200 bg-white text-gray-700 hover:border-blue-300 hover:shadow"
+            : "border-gray-200 bg-gray-50 text-gray-600 hover:bg-white"
+        }`}
+      >
+        <FiFilter className={`h-3.5 w-3.5 ${value ? "text-blue-600" : "text-gray-500"}`} />
+        <span>Status</span>
+        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] ${getSubscriptionTone(value || null)}`}>
+          {selectedOption?.label || "All"}
+        </span>
+        <FiChevronDown className={`h-3.5 w-3.5 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+      </button>
+
+      {isOpen && menuStyle &&
+        createPortal(
+          <div ref={menuRef} style={menuStyle} className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl ring-1 ring-black/5">
+            <div className="border-b border-gray-100 bg-gradient-to-r from-blue-50 via-white to-indigo-50 px-4 py-3">
+              <p className="text-sm font-semibold text-gray-900">Filter by status</p>
+              <p className="mt-1 text-xs text-gray-600">Pick one to narrow the plan's subscriptions.</p>
+            </div>
+
+            <div className="max-h-72 overflow-y-auto p-2">
+              <button
+                type="button"
+                onClick={() => {
+                  onChange("");
+                  setIsOpen(false);
+                }}
+                className={`mb-1 flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm transition-colors ${
+                  !value ? "bg-blue-50 text-blue-800" : "hover:bg-gray-50"
+                }`}
+              >
+                <span className="font-medium">All statuses</span>
+                {!value ? <span className="text-xs font-semibold text-blue-700">Selected</span> : null}
+              </button>
+
+              <div className="space-y-1">
+                {subscriptionStatusOptions.map((option) => {
+                  const isSelected = option.value === value;
+
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => {
+                        onChange(option.value);
+                        setIsOpen(false);
+                      }}
+                      className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left transition-all ${
+                        isSelected ? "border-blue-200 bg-blue-50 shadow-sm" : "border-transparent hover:border-gray-200 hover:bg-gray-50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={`h-2.5 w-2.5 rounded-full ${getSubscriptionTone(option.value).split(" ")[0]}`} />
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{option.label}</div>
+                          <div className="text-xs text-gray-500">{option.value.replace(/_/g, " ").toLowerCase()}</div>
+                        </div>
+                      </div>
+                      {isSelected ? <span className="text-xs font-semibold text-blue-700">Selected</span> : null}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+    </div>
+  );
 };
 
 const emptyPlanForm = () => ({ ...defaultPlanFormState });
@@ -467,6 +1125,7 @@ const Subscriptions = () => {
       amount: String(plan?.amount ?? ""),
       currency: plan?.currency || "USDC",
       trialDays: String(plan?.trialDays ?? ""),
+      duration: (plan?.duration as SubscriptionDuration | undefined) || "",
     });
     setShowPlanModal(true);
   };
@@ -488,6 +1147,11 @@ const Subscriptions = () => {
       return;
     }
 
+    if (!planForm.duration) {
+      toast.error("Select a duration");
+      return;
+    }
+
     const amount = Number(planForm.amount);
     const trialDays = planForm.trialDays.trim() ? Number(planForm.trialDays) : undefined;
 
@@ -505,6 +1169,7 @@ const Subscriptions = () => {
       name: planForm.name.trim(),
       amount,
       currency: planForm.currency.trim().toUpperCase(),
+      duration: planForm.duration,
       // API types may expect a numeric trialDays; coerce to any to satisfy the imported type
       trialDays: trialDays as any,
     };
@@ -660,20 +1325,48 @@ const Subscriptions = () => {
       <div className="space-y-6 p-4 sm:p-6">
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">Plans</p>
-            <p className="mt-3 text-2xl font-semibold text-gray-900">{planCount.toLocaleString()}</p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">Plans</p>
+                <p className="mt-3 text-2xl font-semibold text-gray-900">{planCount.toLocaleString()}</p>
+              </div>
+              <div className="rounded-xl bg-blue-50 p-2 text-blue-600 ring-1 ring-inset ring-blue-100">
+                <FiLayers className="h-4 w-4" />
+              </div>
+            </div>
           </div>
           <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">Selected plan subscriptions</p>
-            <p className="mt-3 text-2xl font-semibold text-gray-900">{selectedPlanSubscriptionCount.toLocaleString()}</p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">Selected plan subscriptions</p>
+                <p className="mt-3 text-2xl font-semibold text-gray-900">{selectedPlanSubscriptionCount.toLocaleString()}</p>
+              </div>
+              <div className="rounded-xl bg-emerald-50 p-2 text-emerald-600 ring-1 ring-inset ring-emerald-100">
+                <FiUsers className="h-4 w-4" />
+              </div>
+            </div>
           </div>
           <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">Visible subscriptions</p>
-            <p className="mt-3 text-2xl font-semibold text-gray-900">{filteredSubscriptionCount.toLocaleString()}</p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">Visible subscriptions</p>
+                <p className="mt-3 text-2xl font-semibold text-gray-900">{filteredSubscriptionCount.toLocaleString()}</p>
+              </div>
+              <div className="rounded-xl bg-violet-50 p-2 text-violet-600 ring-1 ring-inset ring-violet-100">
+                <FiEye className="h-4 w-4" />
+              </div>
+            </div>
           </div>
           <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">Active subscriptions</p>
-            <p className="mt-3 text-2xl font-semibold text-gray-900">{activeSubscriptions.toLocaleString()}</p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">Active subscriptions</p>
+                <p className="mt-3 text-2xl font-semibold text-gray-900">{activeSubscriptions.toLocaleString()}</p>
+              </div>
+              <div className="rounded-xl bg-amber-50 p-2 text-amber-600 ring-1 ring-inset ring-amber-100">
+                <FiActivity className="h-4 w-4" />
+              </div>
+            </div>
           </div>
         </section>
 
@@ -821,22 +1514,7 @@ const Subscriptions = () => {
                   <p className="mt-1 text-sm text-gray-500">Review the selected plan and the subscriptions attached to it.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <div className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-700">
-                    <FiFilter className="h-4 w-4 text-gray-500" />
-                    <span>Status</span>
-                    <select
-                      value={subscriptionStatus}
-                      onChange={(event) => setSubscriptionStatus(event.target.value as SubscriptionStatus | "")}
-                      className="bg-transparent text-xs font-medium text-gray-700 outline-none"
-                    >
-                      <option value="">All</option>
-                      {subscriptionStatusOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <SubscriptionStatusDropdown value={subscriptionStatus} onChange={setSubscriptionStatus} />
                   <button
                     onClick={handleOpenSubscriptionModal}
                     disabled={!selectedPlan}
@@ -1122,13 +1800,19 @@ const Subscriptions = () => {
               />
             </div>
             <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Duration</label>
+              <DurationPicker
+                value={planForm.duration}
+                onChange={(duration) => handlePlanFormChange("duration", duration)}
+                placeholder="Choose duration"
+              />
+            </div>
+            <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">Currency</label>
-              <input
-                type="text"
+              <CurrencyPicker
                 value={planForm.currency}
-                onChange={(event) => handlePlanFormChange("currency", event.target.value.toUpperCase())}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="USDC"
+                onChange={(currency) => handlePlanFormChange("currency", currency)}
+                placeholder="Search currencies"
               />
             </div>
             <div>
@@ -1177,20 +1861,11 @@ const Subscriptions = () => {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
               <label className="mb-1 block text-sm font-medium text-gray-700">Plan</label>
-              <div className="flex items-center gap-2">
-                <select
-                  value={subscriptionForm.planId}
-                  onChange={(event) => handleSubscriptionFormChange("planId", event.target.value)}
-                  className="min-w-0 flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select a plan</option>
-                  {plans.map((plan) => (
-                    <option key={plan.id} value={plan.id}>
-                      {plan?.name || plan.id} ({shortenId(plan.id)})
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <PlanPicker
+                value={subscriptionForm.planId}
+                onChange={(planId) => handleSubscriptionFormChange("planId", planId)}
+                options={plans}
+              />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">Customer</label>
@@ -1198,18 +1873,11 @@ const Subscriptions = () => {
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">Network</label>
-              <select
+              <NetworkPicker
                 value={subscriptionForm.network}
-                onChange={(event) => handleSubscriptionFormChange("network", event.target.value)}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select network</option>
-                {activeNetworks.map((network) => (
-                  <option key={network.code} value={network.symbol}>
-                    {network.name} ({network.symbol})
-                  </option>
-                ))}
-              </select>
+                onChange={(network) => handleSubscriptionFormChange("network", network)}
+                options={activeNetworks}
+              />
             </div>
           </div>
 

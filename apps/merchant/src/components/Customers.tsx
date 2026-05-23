@@ -13,6 +13,7 @@ import { useCustomerFilters, buildCustomerParams } from "../store/customerFilter
 import { useActiveTabStore } from "../store/activeTab";
 import { tokenStore } from "../store/client";
 import { isBrowser, parseNumberParam, updateQueryParams } from "../lib/queryState";
+import { useCustomerSubscriptions } from "../hooks/mutations/useSubscriptions";
 
 const CUSTOMER_QUERY_KEYS = ["amountSpent", "limit", "cursor", "page"];
 
@@ -113,6 +114,10 @@ const Customers = () => {
   
   const { mutate: deleteCustomer, isPending: isDeletingCustomer } = useDeleteCustomer();
   const { mutate: createCustomer, isPending: isCreatingCustomer } = useCreateCustomer();
+  const { data: selectedCustomerSubscriptions = [], isLoading: isLoadingCustomerSubscriptions } = useCustomerSubscriptions(
+    selectedCustomer?.id || "",
+    Boolean(selectedCustomer)
+  );
 
   // Handle next page
   const handleNextPage = useCallback(() => {
@@ -467,16 +472,33 @@ const Customers = () => {
 
             {/* Action Buttons */}
             <div className="pt-4 border-t border-gray-100">
-              <button
-                onClick={() => {
-                  setLocation(`/transactions?customerId=${selectedCustomer.id}`);
-                  setSelectedCustomer(null);
-                }}
-                className="w-full px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg flex items-center justify-center gap-2 transition-all duration-200 active:scale-95"
-              >
-                <FiArrowRight size={16} />
-                View All Transactions
-              </button>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <button
+                  onClick={() => {
+                    setLocation(`/subscriptions?customerId=${selectedCustomer.id}`);
+                    setSelectedCustomer(null);
+                  }}
+                  disabled={isLoadingCustomerSubscriptions}
+                  className="flex-1 px-4 py-2.5 border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded-lg flex items-center justify-center gap-2 transition-all duration-200 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <FiArrowRight size={16} />
+                  Show Subscriptions
+                  <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-700 ring-1 ring-blue-100">
+                    {selectedCustomerSubscriptions.length}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setLocation(`/transactions?customerId=${selectedCustomer.id}`);
+                    setSelectedCustomer(null);
+                  }}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg flex items-center justify-center gap-2 transition-all duration-200 active:scale-95"
+                >
+                  <FiArrowRight size={16} />
+                  View All Transactions
+                </button>
+              </div>
             </div>
           </div>
         )}

@@ -7,17 +7,18 @@ export interface FilterOption<T extends string> {
 
 const subscriptionStatusLabelMap: Record<string, SubscriptionStatus> = {
   ACTIVE: "ACTIVE",
-  ABANDONDED: "ABANDONDED",
-  TRAILING: "TRAILING",
   PENDING: "PENDING",
+  TRIALING: "TRIALING",
+  ABANDONED: "ABANDONED",
   CANCELLED: "CANCELLED",
   PAST_DUE: "PAST_DUE",
 };
 
 export const subscriptionStatusOptions: FilterOption<SubscriptionStatus>[] = [
   { label: "Active", value: "ACTIVE" },
-  { label: "Abandoned", value: "ABANDONDED" },
   { label: "Pending", value: "PENDING" },
+  { label: "Trialing", value: "TRIALING" },
+  { label: "Abandoned", value: "ABANDONED" },
   { label: "Cancelled", value: "CANCELLED" },
   { label: "Past Due", value: "PAST_DUE" },
 ];

@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { useState, useEffect, useLayoutEffect, useMemo, useRef, type CSSProperties } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
-import { FiTrash2, FiPlus, FiEdit2, FiLink2, FiImage, FiX, FiSearch, FiArrowRight, FiEye } from "react-icons/fi";
+import { FiTrash2, FiPlus, FiEdit2, FiLink2, FiImage, FiX, FiSearch, FiArrowRight, FiEye, FiChevronDown } from "react-icons/fi";
 import DashboardWrapper from "./DashboardWrapper";
 import MarkdownEditor from "./MarkdownEditor";
 import Modal from "./transactions/Modal";
@@ -26,6 +27,191 @@ const WALRUS_GATEWAY_TESTNET ="https://aggregator.walrus-testnet.walrus.space/v1
 const WALRUS_GATEWAY_MAINNET ="https://aggregator.walrus-mainnet.walrus.space/v1/blobs";
 const MIN_UPLOAD_IMAGES = 1;
 const MAX_UPLOAD_IMAGES = 4;
+
+function usePortalDropdownStyle(
+  isOpen: boolean,
+  anchorRef: { current: HTMLDivElement | null },
+  preferredWidth: number,
+  preferredHeight: number,
+  zIndex = 110
+) {
+  const [menuStyle, setMenuStyle] = useState<CSSProperties | undefined>(undefined);
+
+  const updatePosition = () => {
+    const anchorElement = anchorRef.current;
+    if (!anchorElement || typeof window === "undefined") {
+      return;
+    }
+
+    const rect = anchorElement.getBoundingClientRect();
+    const viewportPadding = 8;
+    const offset = 4;
+    const width = Math.min(preferredWidth, window.innerWidth - viewportPadding * 2);
+    const left = Math.min(
+      Math.max(viewportPadding, rect.left),
+      Math.max(viewportPadding, window.innerWidth - viewportPadding - width)
+    );
+    const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
+    const maxHeight = Math.min(preferredHeight, Math.max(0, spaceBelow));
+    const top = rect.bottom + offset;
+
+    setMenuStyle({ position: "fixed", top, left, width, maxHeight, zIndex });
+  };
+
+  useLayoutEffect(() => {
+    if (!isOpen) {
+      setMenuStyle(undefined);
+      return;
+    }
+
+    updatePosition();
+    const handlePositionUpdate = () => updatePosition();
+
+    document.addEventListener("scroll", handlePositionUpdate, true);
+    window.addEventListener("resize", handlePositionUpdate);
+
+    return () => {
+      document.removeEventListener("scroll", handlePositionUpdate, true);
+      window.removeEventListener("resize", handlePositionUpdate);
+    };
+  }, [isOpen]);
+
+  return menuStyle;
+}
+
+type CurrencyOption = {
+  id: string;
+  name: string;
+  symbol: string;
+  sign?: string | null;
+};
+
+type CurrencyPickerProps = {
+  value: string;
+  onChange: (currency: string) => void;
+  options: CurrencyOption[];
+  placeholder?: string;
+};
+
+const CurrencyPicker = ({ value, onChange, options, placeholder = "Select currency" }: CurrencyPickerProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const menuStyle = usePortalDropdownStyle(isOpen, containerRef, 360, 320);
+
+  useEffect(() => {
+    const selectedCurrency = options.find((currency) => currency.symbol === value);
+    setSearchInput(selectedCurrency ? `${selectedCurrency.name} - ${selectedCurrency.symbol}` : value || "");
+  }, [options, value]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setDebouncedSearch(searchInput.trim()), 200);
+    return () => window.clearTimeout(timeout);
+  }, [searchInput]);
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (containerRef.current && !containerRef.current.contains(target) && !menuRef.current?.contains(target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, []);
+
+  const filteredOptions = useMemo(() => {
+    const query = debouncedSearch.toLowerCase();
+    if (!query) {
+      return options;
+    }
+
+    return options.filter((currency) => {
+      const haystack = [currency.name, currency.symbol, currency.sign, currency.id].filter(Boolean).join(" ").toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [debouncedSearch, options]);
+
+  const selectedCurrency = options.find((currency) => currency.symbol === value);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen((current) => !current)}
+        className="flex w-full items-center justify-between gap-3 rounded-lg border border-gray-200 px-3 py-2.5 text-left text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <span className={`min-w-0 flex-1 truncate ${value ? "text-gray-900" : "text-gray-400"}`}>
+          {selectedCurrency ? `${selectedCurrency.name} - ${selectedCurrency.symbol}${selectedCurrency.sign ? ` (${selectedCurrency.sign})` : ""}` : placeholder}
+        </span>
+        <FiChevronDown className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+      </button>
+
+      {isOpen && menuStyle && createPortal(
+        <div ref={menuRef} style={menuStyle} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+          <div className="border-b border-gray-100 bg-gradient-to-r from-blue-50 via-white to-indigo-50 px-4 py-3">
+            <p className="text-sm font-semibold text-gray-900">Choose a currency</p>
+            <p className="mt-1 text-xs text-gray-600">Pick the billing currency for this payment link.</p>
+          </div>
+
+          <div className="border-b border-gray-100 p-3">
+            <div className="relative">
+              <FiSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                autoFocus
+                type="text"
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder="Search currency"
+                className="w-full rounded-lg border border-gray-200 py-2 pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          <div className="max-h-72 overflow-y-auto p-2">
+            {filteredOptions.length === 0 ? (
+              <div className="px-3 py-4 text-sm text-gray-500">No currencies found.</div>
+            ) : (
+              <div className="space-y-1">
+                {filteredOptions.map((currency) => {
+                  const isSelected = currency.symbol === value;
+                  return (
+                    <button
+                      key={currency.id}
+                      type="button"
+                      onClick={() => {
+                        onChange(currency.symbol);
+                        setSearchInput(`${currency.name} - ${currency.symbol}`);
+                        setDebouncedSearch("");
+                        setIsOpen(false);
+                      }}
+                      className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-left transition-all ${
+                        isSelected ? "border-blue-200 bg-blue-50 shadow-sm" : "border-transparent hover:border-gray-200 hover:bg-gray-50"
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-medium text-gray-900">
+                          {currency.name} - {currency.symbol}
+                        </div>
+                        <div className="text-xs text-gray-500">{currency.sign ?? ""}</div>
+                      </div>
+                      {isSelected ? <span className="text-xs font-semibold text-blue-700">Selected</span> : null}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+};
 
 const PaymentLink = () => {
   const [, setLocation] = useLocation();
@@ -454,21 +640,13 @@ const PaymentLink = () => {
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700">Currency *</label>
-              <select
-                value={formData.currency}
-                onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                {supportedCurrencies.length > 0 ? (
-                  supportedCurrencies.map((curr) => (
-                    <option key={curr.id} value={curr.symbol}>
-                      {curr.name} - {curr.symbol} ({curr.sign})
-                    </option>
-                  ))
-                ) : (
-                  <option value={formData.currency}>{formData.currency}</option>
-                )}
-              </select>
+              <div className="mt-1">
+                <CurrencyPicker
+                  value={formData.currency}
+                  onChange={(currency) => setFormData({ ...formData, currency })}
+                  options={supportedCurrencies}
+                />
+              </div>
             </div>
           </div>
 
@@ -590,21 +768,13 @@ const PaymentLink = () => {
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700">Currency *</label>
-              <select
-                value={formData.currency}
-                onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                {supportedCurrencies.length > 0 ? (
-                  supportedCurrencies.map((curr) => (
-                    <option key={curr.id} value={curr.symbol}>
-                      {curr.name} - {curr.symbol} ({curr.sign})
-                    </option>
-                  ))
-                ) : (
-                  <option value={formData.currency}>{formData.currency}</option>
-                )}
-              </select>
+              <div className="mt-1">
+                <CurrencyPicker
+                  value={formData.currency}
+                  onChange={(currency) => setFormData({ ...formData, currency })}
+                  options={supportedCurrencies}
+                />
+              </div>
             </div>
           </div>
 
