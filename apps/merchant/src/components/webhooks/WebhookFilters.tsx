@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { FiCalendar, FiChevronDown, FiSearch, FiX } from "react-icons/fi";
 import { useWebhookFilters } from "../../store/webhookFilters";
+import type { Event, FilterOptions } from "../../hooks/mutations/useWehbooks";
 import { useQueryState } from "../../hooks/useQueryState";
 
 interface DropdownProps<T extends string> {
   label: string;
   value?: T;
+  isLoading: boolean;
   options: { label: string; value: T }[];
   onChange: (value?: T) => void;
   placeholder?: string;
@@ -14,13 +16,13 @@ interface DropdownProps<T extends string> {
 function Dropdown<T extends string>({
   label,
   value,
+  isLoading,
   options,
   onChange,
   placeholder = "All",
 }: DropdownProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -45,7 +47,7 @@ function Dropdown<T extends string>({
         }`}
       >
         <span>{label}:</span>
-        <span className={value ? "text-blue-800" : "text-gray-400"}>{selectedOption?.label || placeholder}</span>
+        <span className={value ? "text-blue-800" : "text-gray-400"}>{isLoading ? "loading..." : selectedOption?.label || placeholder}</span>
         <FiChevronDown className={`h-3 w-3 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
@@ -66,7 +68,7 @@ function Dropdown<T extends string>({
             <button
               key={option.value}
               onClick={() => {
-                onChange(option.value);
+                onChange(option.value as T);
                 setIsOpen(false);
               }}
               className={`w-full px-3 py-1.5 text-left text-xs hover:bg-gray-50 ${
@@ -187,7 +189,10 @@ interface ActiveFilterProps {
   onRemove: () => void;
 }
 
-function ActiveFilter({ label, onRemove }: ActiveFilterProps) {
+function ActiveFilter({ 
+  label, 
+  onRemove 
+}: ActiveFilterProps) {
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700">
       {label}
@@ -199,20 +204,16 @@ function ActiveFilter({ label, onRemove }: ActiveFilterProps) {
 }
 
 interface WebhookFiltersProps {
+  eventOptions: FilterOptions<Event>,
+  isLoading: boolean,
   onApply?: () => void;
 }
 
-const statusOptions = [
-  { label: "Success", value: "payment.success" },
-  { label: "Failed", value: "payment.failed" }
-];
-
-const eventOptions = [
-  { label: "Payment Success", value: "payment.success" as const },
-  { label: "Payment Failed", value: "payment.failed" as const },
-];
-
-export default function WebhookFilters({ onApply }: WebhookFiltersProps) {
+export default function WebhookFilters({ 
+  eventOptions,
+  isLoading,
+  onApply 
+}: WebhookFiltersProps) {
   const {
     status,
     transactionId,
@@ -247,11 +248,6 @@ export default function WebhookFilters({ onApply }: WebhookFiltersProps) {
 
   const getActiveFilters = useCallback(() => {
     const filters: { label: string; onRemove: () => void }[] = [];
-
-    if (status) {
-      const option = statusOptions.find((value) => value.value === status);
-      filters.push({ label: `Status: ${option?.label}`, onRemove: () => setStatus(undefined) });
-    }
     if (transactionId) {
       filters.push({ label: `Transaction: ${transactionId.slice(0, 8)}...`, onRemove: () => setTransactionId(undefined) });
     }
@@ -281,7 +277,7 @@ export default function WebhookFilters({ onApply }: WebhookFiltersProps) {
             className="w-full rounded-lg border border-gray-200 py-1.5 pl-9 pr-8 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        <Dropdown label="Event" value={event as "payment.success" | "payment.failed" | undefined} options={eventOptions} onChange={setEvent} />
+        <Dropdown label="Event" isLoading={isLoading} value={event as Event | undefined} options={eventOptions} onChange={setEvent} />
         <DatePicker date={date} onChange={setDate} />
 
         <button

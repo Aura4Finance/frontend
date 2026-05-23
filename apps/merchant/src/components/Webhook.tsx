@@ -1,5 +1,5 @@
 import DashboardWrapper from "./DashboardWrapper";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useActiveTabStore } from "../store/activeTab";
 import { toast } from "sonner";
 import {
@@ -8,12 +8,13 @@ import {
   useGetWebhookEventTypes,
   useSubcribeToWebhookEvent,
   useRetrieveWebhookDeliveries,
+  type FilterOptions
 } from "../hooks/mutations/useWehbooks";
 import Modal from "./transactions/Modal";
 import CopyButton from "./transactions/CopyButton";
 import WebhookFilters from "./webhooks/WebhookFilters";
 import { FiCopy, FiCheck, FiAlertTriangle, FiEye, FiEyeOff } from "react-icons/fi";
-import type { WebhookDelivery, WebhookDeliveryQueryParams } from "../hooks/mutations/useWehbooks";
+import type { WebhookDelivery, WebhookDeliveryQueryParams, EventType, Event } from "../hooks/mutations/useWehbooks";
 import { buildWebhookParams, useWebhookFilters } from "../store/webhookFilters";
 import { isBrowser, updateQueryParams } from "../lib/queryState";
 
@@ -33,6 +34,15 @@ const Webhook = () => {
   const [showDeliveryModal, setShowDeliveryModal] = useState(false);
   const [appliedParams, setAppliedParams] = useState<WebhookDeliveryQueryParams | undefined>(undefined);
 
+   const { data: webhookEvents, isLoading: webhookEventLoading } = useGetWebhookEventTypes();
+  const webhookOptions = useMemo<FilterOptions<Event>>(
+    () =>
+      (webhookEvents as EventType[]).map((event: EventType) => ({
+        label: event.name,
+        value: event.type
+      })),
+    [webhookEvents]
+  )
   // Filter store
   const filters = useWebhookFilters();
   const setFromQueryParams = useWebhookFilters((state) => state.setFromQueryParams);
@@ -221,11 +231,10 @@ const Webhook = () => {
                           key={event.type}
                           onClick={() => handleSubscribeEvent(event.type)}
                           disabled={isSubscribing || isSubscribed}
-                          className={`w-full px-4 py-3 rounded-lg border-2 transition-all text-left ${
-                            isSubscribed
+                          className={`w-full px-4 py-3 rounded-lg border-2 transition-all text-left ${isSubscribed
                               ? "bg-blue-50 border-blue-300 cursor-default"
                               : "bg-white border-gray-200 hover:border-blue-400 hover:bg-blue-50 cursor-pointer"
-                          } disabled:opacity-100`}
+                            } disabled:opacity-100`}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
@@ -305,7 +314,7 @@ const Webhook = () => {
           {showDeliveries && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="p-4 border-b border-gray-100">
-                <WebhookFilters onApply={handleApplyFilters} />
+                <WebhookFilters eventOptions={ webhookOptions } isLoading={ webhookEventLoading } onApply={handleApplyFilters} />
               </div>
               {deliveriesLoading ? (
                 <div className="p-8">
@@ -329,8 +338,8 @@ const Webhook = () => {
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {deliveries.map((delivery) => (
-                        <tr 
-                          key={delivery.id} 
+                        <tr
+                          key={delivery.id}
                           onClick={() => handleDeliveryClick(delivery)}
                           className="hover:bg-gray-50 cursor-pointer transition-colors"
                         >
@@ -459,11 +468,10 @@ const Webhook = () => {
                 </button>
                 <button
                   onClick={handleCopySecret}
-                  className={`p-2 rounded transition-colors ${
-                    secretCopied
+                  className={`p-2 rounded transition-colors ${secretCopied
                       ? "bg-gray-200 text-gray-700"
                       : "text-gray-600 hover:text-gray-900"
-                  }`}
+                    }`}
                   type="button"
                   title="Copy to clipboard"
                 >

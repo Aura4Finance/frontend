@@ -2,6 +2,11 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import client from "../../store/client";
 import { toast } from "sonner";
 
+export type FilterOptions<T extends string> = {
+  label: string;
+  value: T
+}[]
+
 export type WebhookDelivery = {
     id: string;
     event: Event;
@@ -40,12 +45,19 @@ type WebhookDetails = {
     events: Event[];
 }
 
-type Event = "payment.success" | "payment.failed";
-
-type EventType = {
+export type EventType = {
     name: string;
     type: Event
 }
+
+export type Event = 
+    | "payment.success"
+    | "payment.failed"
+    | "payment.create"
+    | "subscription.active"
+    | "subscription.abandonded"
+    | "subscription.not_renew"
+    | "subscription.disable"
 
 export const useRegisterWehbook = () => {
     return useMutation({

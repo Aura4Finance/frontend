@@ -1,11 +1,11 @@
 import { create } from "zustand";
-import type { WebhookDeliveryQueryParams } from "../hooks/mutations/useWehbooks";
+import type { WebhookDeliveryQueryParams, Event } from "../hooks/mutations/useWehbooks";
 import { parseNumberParam } from "../lib/queryState";
 
 export interface WebhookFiltersStore {
   status?: string;
   transactionId?: string;
-  event?: "payment.success" | "payment.failed";
+  event?: Event;
   date?: {
     startDate: string;
     endDate: string;
@@ -15,7 +15,7 @@ export interface WebhookFiltersStore {
 
   setStatus: (status?: string) => void;
   setTransactionId: (transactionId?: string) => void;
-  setEvent: (event?: "payment.success" | "payment.failed") => void;
+  setEvent: (event?: Event) => void;
   setDate: (date?: { startDate: string; endDate: string }) => void;
   setLimit: (limit: number) => void;
   setCursor: (cursor?: string) => void;

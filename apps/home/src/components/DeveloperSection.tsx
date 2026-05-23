@@ -6,70 +6,73 @@ const tabs = [
   {
     label: "Create Payment",
     language: "TypeScript",
-    code: `// Create a checkout for the customer
-const response = await fetch('https://api.orafi.app/transactions/payment', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'x-api-key': 'your_api_key'
-  },
-  body: JSON.stringify({
-    amount: 10000,
-    currency: 'USD',
-    txRef: 'order_12345',
-    customerId: 'cust_abc123',
-    redirectUrl: 'https://yourapp.com/success',
-    network: 'sui'
-  })
-});
+    code: `const response = await fetch(
+  'https://api.orafi.app/transactions/payment',
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': 'your_api_key'
+    },
+    body: JSON.stringify({
+      amount: 10000,
+      currency: 'USD',
+      txRef: 'order_12345',
+      customerId: 'cust_abc123',
+      redirectUrl: 'https://yourapp.com/success',
+      network: 'SUI'
+    })
+  }
+);
 
-const { checkout_url } = await response.json();
+const { data } = await response.json();
 // Redirect customer to checkout
-window.location.href = checkout_url;`,
+window.location.href = data.checkout_url;`,
   },
   {
     label: "Verify Payment",
     language: "TypeScript",
-    code: `// Verify payment by txRef
-const res = await fetch('https://api.orafi.app/transactions/payment/verify?txRef=order_12345', {
-  headers: { 'x-api-key': 'your_api_key' }
-});
+    code: `// Verify payment status
+const txRef = 'order_12345';
+const response = await fetch(
+  'https://api.orafi.app/transactions/payment/verify?txRef=' + txRef,
+  { headers: { 'x-api-key': 'your_api_key' } }
+);
 
-const payment = await res.json();
+const { data: payment } = await response.json();
 
-if (payment.status === 'completed') {
-  // Payment successful
-  console.log('Amount:', payment.amount);
-  console.log('Tx Hash:', payment.transactionHash);
+if (payment?.status === 'completed') {
+  // Payment successful — fulfill the order
   await fulfillOrder(payment.txRef);
+} else {
+  // Not completed yet — handle accordingly
+  console.log('Payment status:', payment?.status);
 }`,
   },
   {
     label: "Webhook Handler",
     language: "TypeScript",
-    code: `// Express webhook handler (ensure raw body is available for signature verification)
-app.post('/webhooks/orafi', express.json({ verify: (req, res, buf) => { req.rawBody = buf } }), async (req, res) => {
-  try {
-    const signature = req.headers['x-orafi-signature'];
+    code: `// Handle webhook notifications
+app.post('/webhooks/orafi', async (req, res) => {
+  const signature = req.headers['x-orafi-signature'];
 
-    // Verify the webhook signature using the raw request body
-    if (!verifySignature(req.rawBody, signature, webhookSecret)) {
-      return res.status(401).json({ error: 'Invalid signature' });
-    }
-
-    const event = req.body;
-
-    if (event.type === 'payment.completed') {
-      await handlePaymentSuccess(event.data);
-    } else if (event.type === 'payment.failed') {
-      await handlePaymentFailure(event.data);
-    }
-
-    res.json({ received: true });
-  } catch (err) {
-    console.error('Webhook error', err);
-    res.status(500).json({ error: 'internal_error' });
+  // Verify the webhook signature
+  if (!verifySignature(req.body, signature, webhookSecret)) {
+    return res.status(401).json({ error: 'Invalid signature' });
   }
+
+  const event = req.body;
+
+  switch (event.type) {
+    case 'payment.completed':
+      await handlePaymentSuccess(event.data);
+      break;
+    case 'payment.failed':
+      await handlePaymentFailure(event.data);
+      break;
+  }
+
+  res.json({ received: true });
 });`,
   },
 ];
@@ -84,14 +87,8 @@ function CodeHighlight({ code }: { code: string }) {
       /('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`)/g,
       '<span class="text-emerald-400">$1</span>'
     )
-    .replace(
-      /(\/\/[^\n]*)/g,
-      '<span class="text-slate-500">$1</span>'
-    )
-    .replace(
-      /\b(\d+)\b/g,
-      '<span class="text-amber-300">$1</span>'
-    );
+    .replace(/(\/\/[^\n]*)/g, '<span class="text-slate-500">$1</span>')
+    .replace(/\b(\d+)\b/g, '<span class="text-amber-300">$1</span>');
 
   return (
     <pre className="p-5 sm:p-6 overflow-x-auto text-[13px] sm:text-sm leading-relaxed font-mono text-slate-300">
