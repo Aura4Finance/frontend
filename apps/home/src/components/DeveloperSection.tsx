@@ -6,77 +6,70 @@ const tabs = [
   {
     label: "Create Payment",
     language: "TypeScript",
-    code: `const response = await fetch(
-  'https://api.orafi.app/transactions/payment/create',
-  {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': 'your_api_key'
-    },
-    body: JSON.stringify({
-      amount: 10000,
-      customer: {
-        fullname: 'John Doe',
-        email: 'john@example.com'
-      },
-      txRef: 'order_12345',
-      type: 'HOSTED_CHECKOUT',
-      redirectUrl: 'https://yourapp.com/success'
-    })
-  }
-);
+    code: `// Create a checkout for the customer
+const response = await fetch('https://api.orafi.app/transactions/payment', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'x-api-key': 'your_api_key'
+  },
+  body: JSON.stringify({
+    amount: 10000,
+    currency: 'USD',
+    txRef: 'order_12345',
+    customerId: 'cust_abc123',
+    redirectUrl: 'https://yourapp.com/success',
+    network: 'sui'
+  })
+});
 
-const { data } = await response.json();
+const { checkout_url } = await response.json();
 // Redirect customer to checkout
-window.location.href = data.checkout_url;`,
+window.location.href = checkout_url;`,
   },
   {
     label: "Verify Payment",
     language: "TypeScript",
-    code: `// Verify payment status
-const response = await fetch(
-  'https://api.orafi.app/transactions/payment/verify/order_12345',
-  {
-    headers: { 'x-api-key': 'your_api_key' }
-  }
-);
+    code: `// Verify payment by txRef
+const res = await fetch('https://api.orafi.app/transactions/payment/verify?txRef=order_12345', {
+  headers: { 'x-api-key': 'your_api_key' }
+});
 
-const { data: payment } = await response.json();
+const payment = await res.json();
 
 if (payment.status === 'completed') {
-  // Payment successful!
+  // Payment successful
   console.log('Amount:', payment.amount);
   console.log('Tx Hash:', payment.transactionHash);
-
-  // Fulfill the order
   await fulfillOrder(payment.txRef);
 }`,
   },
   {
     label: "Webhook Handler",
     language: "TypeScript",
-    code: `// Handle webhook notifications
-app.post('/webhooks/orafi', async (req, res) => {
-  const signature = req.headers['x-orafi-signature'];
+    code: `// Express webhook handler (ensure raw body is available for signature verification)
+app.post('/webhooks/orafi', express.json({ verify: (req, res, buf) => { req.rawBody = buf } }), async (req, res) => {
+  try {
+    const signature = req.headers['x-orafi-signature'];
 
-  // Verify the webhook signature
-  if (!verifySignature(req.body, signature, webhookSecret)) {
-    return res.status(401).json({ error: 'Invalid signature' });
-  }
+    // Verify the webhook signature using the raw request body
+    if (!verifySignature(req.rawBody, signature, webhookSecret)) {
+      return res.status(401).json({ error: 'Invalid signature' });
+    }
 
-  const event = req.body;
+    const event = req.body;
 
-  switch (event.type) {
-    case 'payment.completed':
+    if (event.type === 'payment.completed') {
       await handlePaymentSuccess(event.data);
-      break;
-    case 'payment.failed':
+    } else if (event.type === 'payment.failed') {
       await handlePaymentFailure(event.data);
-      break;
-  }
+    }
 
-  res.json({ received: true });
+    res.json({ received: true });
+  } catch (err) {
+    console.error('Webhook error', err);
+    res.status(500).json({ error: 'internal_error' });
+  }
 });`,
   },
 ];

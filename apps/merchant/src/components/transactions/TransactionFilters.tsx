@@ -30,7 +30,8 @@ function usePortalDropdownStyle(
   isOpen: boolean,
   anchorRef: { current: HTMLDivElement | null },
   preferredWidth: number,
-  preferredHeight: number
+  preferredHeight: number,
+  zIndex = 110
 ) {
   const [menuStyle, setMenuStyle] = useState<CSSProperties | undefined>(undefined);
 
@@ -62,9 +63,9 @@ function usePortalDropdownStyle(
       left,
       width,
       maxHeight,
-      zIndex: 70,
+      zIndex,
     });
-  }, [anchorRef, preferredHeight, preferredWidth]);
+  }, [anchorRef, preferredHeight, preferredWidth, zIndex]);
 
   useLayoutEffect(() => {
     if (!isOpen) {
@@ -96,6 +97,9 @@ interface DropdownProps<T extends string> {
   placeholder?: string;
   searchable?: boolean;
   searchPlaceholder?: string;
+  menuWidth?: number;
+  menuHeight?: number;
+  menuZIndex?: number;
 }
 
 function Dropdown<T extends string>({
@@ -106,6 +110,9 @@ function Dropdown<T extends string>({
   placeholder = "All",
   searchable = false,
   searchPlaceholder,
+  menuWidth,
+  menuHeight,
+  menuZIndex,
 }: DropdownProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -131,7 +138,13 @@ function Dropdown<T extends string>({
   }, [isOpen]);
 
   const selectedOption = options.find((option) => option.value === value);
-  const menuStyle = usePortalDropdownStyle(isOpen, dropdownRef, searchable ? 288 : 224, searchable ? 320 : 288);
+  const menuStyle = usePortalDropdownStyle(
+    isOpen,
+    dropdownRef,
+    menuWidth ?? (searchable ? 288 : 224),
+    menuHeight ?? (searchable ? 320 : 288),
+    menuZIndex
+  );
   const filteredOptions = useMemo(() => {
     if (!searchable) {
       return options;
@@ -151,6 +164,7 @@ function Dropdown<T extends string>({
   return (
     <div className="relative" ref={dropdownRef}>
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={`flex min-w-0 max-w-full items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
           value
@@ -195,6 +209,7 @@ function Dropdown<T extends string>({
               </div>
             )}
             <button
+              type="button"
               onClick={() => {
                 onChange(undefined);
                 setSearchQuery("");
@@ -210,6 +225,7 @@ function Dropdown<T extends string>({
               filteredOptions.map((option) => (
                 <button
                   key={option.value}
+                  type="button"
                   onClick={() => {
                     onChange(option.value);
                     setSearchQuery("");
@@ -295,6 +311,7 @@ function DatePicker({ date, onChange }: DatePickerProps) {
   return (
     <div className="relative" ref={dropdownRef}>
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
           date
@@ -316,6 +333,7 @@ function DatePicker({ date, onChange }: DatePickerProps) {
           >
             <div className="mb-3 flex gap-1">
               <button
+                type="button"
                 onClick={() => setActiveTab("preset")}
                 className={`flex-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
                   activeTab === "preset"
@@ -326,6 +344,7 @@ function DatePicker({ date, onChange }: DatePickerProps) {
                 Preset
               </button>
               <button
+                type="button"
                 onClick={() => setActiveTab("range")}
                 className={`flex-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
                   activeTab === "range"
@@ -340,6 +359,7 @@ function DatePicker({ date, onChange }: DatePickerProps) {
             {activeTab === "preset" ? (
               <div className="space-y-1">
                 <button
+                  type="button"
                   onClick={() => {
                     onChange(undefined);
                     setIsOpen(false);
@@ -353,6 +373,7 @@ function DatePicker({ date, onChange }: DatePickerProps) {
                 {datePresetOptions.map((option) => (
                   <button
                     key={option.value}
+                    type="button"
                     onClick={() => handlePresetSelect(option.value)}
                     className={`w-full rounded px-2 py-1.5 text-left text-xs hover:bg-gray-50 ${
                       date?.type === "preset" && date.interval === option.value
@@ -385,6 +406,7 @@ function DatePicker({ date, onChange }: DatePickerProps) {
                   />
                 </div>
                 <button
+                  type="button"
                   onClick={handleRangeApply}
                   disabled={!startDate || !endDate}
                   className="w-full rounded bg-blue-600 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
@@ -409,7 +431,7 @@ function ActiveFilter({ label, onRemove }: ActiveFilterProps) {
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700">
       {label}
-      <button onClick={onRemove} className="hover:text-blue-900">
+      <button type="button" onClick={onRemove} className="hover:text-blue-900">
         <FiX className="h-3 w-3" />
       </button>
     </span>
@@ -664,6 +686,9 @@ export default function TransactionFilters({ onApply, onSearch, searchLoading }:
           options={networkOptions}
           onChange={setNetwork}
           placeholder={supportedNetworksLoading ? "Loading..." : "All"}
+          menuWidth={288}
+          menuHeight={320}
+          menuZIndex={110}
         />
         <DatePicker date={date} onChange={setDate} />
 
@@ -711,6 +736,9 @@ export default function TransactionFilters({ onApply, onSearch, searchLoading }:
             value={paymentMethod as PaymentMethod | undefined}
             options={paymentMethodOptions}
             onChange={setPaymentMethod}
+            menuWidth={288}
+            menuHeight={320}
+            menuZIndex={110}
           />
 
           <div className="relative">

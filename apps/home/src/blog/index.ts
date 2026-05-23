@@ -1,4 +1,5 @@
 import type { BlogPost } from "./types";
+import cryptoSubscriptions from "./posts/crypto-subscriptions-without-auto-debit";
 import keyManagement from "./posts/key-management-infrastructure";
 import twoFactorAuth from "./posts/two-factor-authentication-infrastructure";
 
@@ -7,7 +8,7 @@ import twoFactorAuth from "./posts/two-factor-authentication-infrastructure";
  * Add new posts here — they'll automatically appear on /blogs
  * and be routable at /blogs/:slug.
  */
-export const blogPosts: BlogPost[] = [keyManagement, twoFactorAuth];
+export const blogPosts: BlogPost[] = [cryptoSubscriptions, keyManagement, twoFactorAuth];
 
 export function getBlogBySlug(slug: string): BlogPost | undefined {
   return blogPosts.find((post) => post.slug === slug);
