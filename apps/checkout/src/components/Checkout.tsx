@@ -390,7 +390,7 @@ const Checkout = () => {
                 </div>
             )}
 
-            <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row lg:items-center lg:justify-center lg:gap-12 p-4 font-sans">
+            <div className="min-h-screen bg-gray-50 flex flex-col items-center lg:flex-row lg:items-center lg:justify-center lg:gap-12 p-4 font-sans">
 
                 {/* Left Side - Payment Summary (shown on top for mobile, left for desktop) */}
                 <div className="mb-8 lg:mb-0 lg:flex-shrink-0 lg:w-auto flex flex-col items-center lg:items-start">
