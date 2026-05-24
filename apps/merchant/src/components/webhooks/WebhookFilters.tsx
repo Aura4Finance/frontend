@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { FiCalendar, FiChevronDown, FiSearch, FiX } from "react-icons/fi";
 import { useWebhookFilters } from "../../store/webhookFilters";
 import type { Event, FilterOptions } from "../../hooks/mutations/useWehbooks";
@@ -23,22 +24,14 @@ function Dropdown<T extends string>({
 }: DropdownProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
 
   const selectedOption = options.find((option) => option.value === value);
 
   return (
     <div className="relative" ref={dropdownRef}>
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
           value
@@ -51,35 +44,40 @@ function Dropdown<T extends string>({
         <FiChevronDown className={`h-3 w-3 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
-      {isOpen && (
-        <div className="absolute z-50 mt-1 w-40 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
-          <button
-            onClick={() => {
-              onChange(undefined);
-              setIsOpen(false);
-            }}
-            className={`w-full px-3 py-1.5 text-left text-xs hover:bg-gray-50 ${
-              !value ? "bg-blue-50 text-blue-700" : "text-gray-600"
-            }`}
-          >
-            All
-          </button>
-          {options.map((option) => (
-            <button
-              key={option.value}
-              onClick={() => {
-                onChange(option.value as T);
-                setIsOpen(false);
-              }}
-              className={`w-full px-3 py-1.5 text-left text-xs hover:bg-gray-50 ${
-                value === option.value ? "bg-blue-50 text-blue-700" : "text-gray-600"
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      )}
+      {isOpen && buttonRef.current && typeof document !== "undefined"
+        ? createPortal(
+            <FloatingMenu anchor={buttonRef.current} onClose={() => setIsOpen(false)}>
+              <div className="w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                <button
+                  onClick={() => {
+                    onChange(undefined);
+                    setIsOpen(false);
+                  }}
+                  className={`w-full px-3 py-1.5 text-left text-xs hover:bg-gray-50 ${
+                    !value ? "bg-blue-50 text-blue-700" : "text-gray-600"
+                  }`}
+                >
+                  All
+                </button>
+                {options.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      onChange(option.value as T);
+                      setIsOpen(false);
+                    }}
+                    className={`w-full px-3 py-1.5 text-left text-xs hover:bg-gray-50 ${
+                      value === option.value ? "bg-blue-50 text-blue-700" : "text-gray-600"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </FloatingMenu>,
+            document.body
+          )
+        : null}
     </div>
   );
 }
@@ -94,17 +92,7 @@ function DatePicker({ date, onChange }: DatePickerProps) {
   const [startDate, setStartDate] = useState(date?.startDate || "");
   const [endDate, setEndDate] = useState(date?.endDate || "");
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
 
   const getDisplayText = () => {
     if (!date) return "All Time";
@@ -126,6 +114,7 @@ function DatePicker({ date, onChange }: DatePickerProps) {
   return (
     <div className="relative" ref={dropdownRef}>
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
           date
@@ -138,48 +127,104 @@ function DatePicker({ date, onChange }: DatePickerProps) {
         <FiChevronDown className={`h-3 w-3 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
-      {isOpen && (
-        <div className="absolute z-50 mt-1 w-64 rounded-lg border border-gray-200 bg-white p-3 shadow-lg">
-          <div className="space-y-3">
-            <div>
-              <label className="mb-1 block text-[10px] font-medium text-gray-500">Start Date</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(event) => setStartDate(event.target.value)}
-                className="w-full rounded border border-gray-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-[10px] font-medium text-gray-500">End Date</label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(event) => setEndDate(event.target.value)}
-                className="w-full rounded border border-gray-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <button
-              onClick={handleRangeApply}
-              disabled={!startDate || !endDate}
-              className="w-full rounded bg-blue-600 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Apply Range
-            </button>
-            <button
-              onClick={() => {
-                onChange(undefined);
-                setStartDate("");
-                setEndDate("");
-                setIsOpen(false);
-              }}
-              className="w-full rounded border border-gray-200 px-2 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
-            >
-              Clear
-            </button>
-          </div>
-        </div>
-      )}
+      {isOpen && buttonRef.current && typeof document !== "undefined"
+        ? createPortal(
+            <FloatingMenu anchor={buttonRef.current} onClose={() => setIsOpen(false)}>
+              <div className="w-64 rounded-lg border border-gray-200 bg-white p-3">
+                <div className="space-y-3">
+                  <div>
+                    <label className="mb-1 block text-[10px] font-medium text-gray-500">Start Date</label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(event) => setStartDate(event.target.value)}
+                      className="w-full rounded border border-gray-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[10px] font-medium text-gray-500">End Date</label>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(event) => setEndDate(event.target.value)}
+                      className="w-full rounded border border-gray-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <button
+                    onClick={handleRangeApply}
+                    disabled={!startDate || !endDate}
+                    className="w-full rounded bg-blue-600 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Apply Range
+                  </button>
+                  <button
+                    onClick={() => {
+                      onChange(undefined);
+                      setStartDate("");
+                      setEndDate("");
+                      setIsOpen(false);
+                    }}
+                    className="w-full rounded border border-gray-200 px-2 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            </FloatingMenu>,
+            document.body
+          )
+        : null}
+    </div>
+  );
+}
+
+function FloatingMenu({
+  anchor,
+  children,
+  onClose,
+}: {
+  anchor: HTMLElement;
+  children: React.ReactNode;
+  onClose: () => void;
+}) {
+  const [style, setStyle] = useState<React.CSSProperties>({});
+  const menuRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const update = () => {
+      const rect = anchor.getBoundingClientRect();
+      setStyle({
+        position: "fixed",
+        left: rect.left + window.scrollX,
+        top: rect.bottom + window.scrollY + 6,
+        zIndex: 9999,
+        /* don't force minWidth to the trigger's width — that caused the menu to match the stretched button */
+        maxWidth: "80vw",
+        width: "auto",
+      });
+    };
+
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    const onDocClick = (e: MouseEvent) => {
+      const target = e.target as Node;
+      const clickedInsideAnchor = anchor.contains(target);
+      const clickedInsideMenu = (menuRef.current && menuRef.current.contains(target)) || false;
+      if (!clickedInsideAnchor && !clickedInsideMenu) onClose();
+    };
+    document.addEventListener("mousedown", onDocClick);
+
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+      document.removeEventListener("mousedown", onDocClick);
+    };
+  }, [anchor, onClose]);
+
+  return (
+    <div style={style} ref={(el) => (menuRef.current = el) as any}>
+      {children}
     </div>
   );
 }

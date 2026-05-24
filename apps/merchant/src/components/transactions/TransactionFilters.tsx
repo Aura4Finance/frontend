@@ -45,10 +45,11 @@ function usePortalDropdownStyle(
     const viewportPadding = 8;
     const offset = 4;
     const width = Math.min(preferredWidth, window.innerWidth - viewportPadding * 2);
-    const left = Math.min(
-      Math.max(viewportPadding, rect.left),
-      Math.max(viewportPadding, window.innerWidth - viewportPadding - width)
-    );
+
+    // Clamp left so the menu is aligned with the anchor when possible,
+    // but never overflows the viewport (classic clamp: min(max(left, min), max)).
+    const maxLeft = Math.max(viewportPadding, window.innerWidth - viewportPadding - width);
+    const left = Math.max(viewportPadding, Math.min(rect.left, maxLeft));
 
     const spaceBelow = window.innerHeight - rect.bottom - viewportPadding;
     const spaceAbove = rect.top - viewportPadding;

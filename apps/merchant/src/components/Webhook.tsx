@@ -36,11 +36,13 @@ const Webhook = () => {
 
    const { data: webhookEvents, isLoading: webhookEventLoading } = useGetWebhookEventTypes();
   const webhookOptions = useMemo<FilterOptions<Event>>(
-    () =>
-      (webhookEvents as EventType[]).map((event: EventType) => ({
+    () => {
+      if (!Array.isArray(webhookEvents)) return [] as FilterOptions<Event>;
+      return (webhookEvents as EventType[]).map((event: EventType) => ({
         label: event.name,
-        value: event.type
-      })),
+        value: event.type,
+      }));
+    },
     [webhookEvents]
   )
   // Filter store
