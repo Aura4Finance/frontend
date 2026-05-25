@@ -66,7 +66,7 @@ type SubscriptionDraftState = {
 const defaultPlanFormState: PlanFormState = {
   name: "",
   amount: "",
-  currency: "USDC",
+  currency: "USD",
   trialDays: "",
   duration: "",
 };
