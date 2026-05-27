@@ -194,7 +194,7 @@ function FloatingMenu({
     const update = () => {
       const rect = anchor.getBoundingClientRect();
       setStyle({
-        position: "fixed",
+        position: "absolute",
         left: rect.left + window.scrollX,
         top: rect.bottom + window.scrollY + 6,
         zIndex: 9999,
