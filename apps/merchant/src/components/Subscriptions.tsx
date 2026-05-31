@@ -1677,10 +1677,10 @@ const Subscriptions = () => {
                               <div className="flex flex-wrap gap-2 text-xs text-gray-600">
                                 
                                 <span className="rounded-full bg-gray-100 px-2.5 py-1">
-                                  Started {formatDate(subscription.startDate || subscription.startedAt || subscription.createdAt)}
+                                  Started {formatDate(subscription.createdAt)}
                                 </span>
                                 <span className="rounded-full bg-gray-100 px-2.5 py-1">
-                                  Next billing {formatDate(subscription.nextBillingAt || (subscription as any).nextChargeAt as string | undefined)}
+                                  Next billing {formatDate(subscription.endsAt)}
                                 </span>
                               </div>
                             </div>

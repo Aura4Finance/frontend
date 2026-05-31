@@ -31,12 +31,8 @@ export interface Subscription {
   customerId: string;
   customer?: Customer;
   planId: string;
-  status: SubscriptionStatus | string;
+  status: SubscriptionStatus;
   startsAt?: string;
-  startDate?: string;
-  startedAt?: string;
-  nextBillingAt?: string;
-  nextChargeAt?: string;
   trialEndsAt?: string;
   endsAt?: string;
   canceledAt?: string;
