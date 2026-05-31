@@ -1092,8 +1092,8 @@ const Subscriptions = () => {
         return normalizeSubscriptionStatus(subscription.status) === normalizedStatus;
       })
       .sort((left, right) => {
-        const leftDate = new Date(left.createdAt || left.startDate || left.startedAt || 0).getTime();
-        const rightDate = new Date(right.createdAt || right.startDate || right.startedAt || 0).getTime();
+        const leftDate = new Date(left.createdAt || left.startsAt || 0).getTime();
+        const rightDate = new Date(right.createdAt || right.startsAt || 0).getTime();
         return rightDate - leftDate;
       });
   }, [planSubscriptions, subscriptionStatus]);
