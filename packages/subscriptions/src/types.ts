@@ -1,12 +1,8 @@
 export interface Customer {
   id: string;
-  firstname?: string;
-  lastname?: string;
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  name?: string;
-  [key: string]: unknown;
+  firstname: string;
+  lastname: string;
+  email: string;
 }
 
 export type SubscriptionStatus =

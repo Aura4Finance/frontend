@@ -1,7 +1,30 @@
-import { useEffect, useMemo, useRef, useState, useCallback, useLayoutEffect, type CSSProperties } from "react";
+import { 
+  useEffect, 
+  useMemo, 
+  useRef, 
+  useState, 
+  useCallback, 
+  useLayoutEffect, 
+  type CSSProperties 
+} from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
-import { FiActivity, FiArrowRight, FiChevronDown, FiChevronUp, FiEdit2, FiEye, FiFilter, FiGlobe, FiLayers, FiPlus, FiSearch, FiTrash2, FiUserPlus, FiUsers } from "react-icons/fi";
+import { 
+  FiActivity, 
+  FiArrowRight, 
+  FiChevronDown, 
+  FiChevronUp, 
+  FiEdit2, 
+  FiEye, 
+  FiFilter, 
+  FiGlobe, 
+  FiLayers, 
+  FiPlus, 
+  FiSearch, 
+  FiTrash2, 
+  FiUserPlus, 
+  FiUsers 
+} from "react-icons/fi";
 import DashboardWrapper from "./DashboardWrapper";
 import Modal from "./transactions/Modal";
 import CopyButton from "./transactions/CopyButton";
@@ -10,7 +33,9 @@ import { useActiveTabStore } from "../store/activeTab";
 import { useQueryState } from "../hooks/useQueryState";
 import { useCustomers, useCustomer } from "../hooks/mutations/useCustomers";
 import { createPortal } from "react-dom";
-import { getSupportedCurrencies, useSupportedNetworks } from "../hooks/mutations/useSettings";
+import { getSupportedCurrencies, 
+  useSupportedNetworks 
+} from "../hooks/mutations/useSettings";
 import {
   formatSubscriptionStatus,
   normalizeSubscriptionStatus,
@@ -253,8 +278,8 @@ const CustomerPicker = ({ value, onChange, placeholder = "Select a customer" }: 
     if (fetchedCustomer && fetchedCustomer.id) {
       const mapped: CustomerOption = {
         id: fetchedCustomer.id,
-        firstname: (fetchedCustomer as any).firstname ?? (fetchedCustomer as any).firstName ?? "",
-        lastname: (fetchedCustomer as any).lastname ?? (fetchedCustomer as any).lastName ?? "",
+        firstname: fetchedCustomer.firstname ?? "",
+        lastname: fetchedCustomer.lastname ?? "",
         email: fetchedCustomer.email || "",
       };
       onChange(mapped);
@@ -271,8 +296,8 @@ const CustomerPicker = ({ value, onChange, placeholder = "Select a customer" }: 
     if (exact) {
       const mapped: CustomerOption = {
         id: exact.id,
-        firstname: (exact as any).firstname ?? (exact as any).firstName ?? "",
-        lastname: (exact as any).lastname ?? (exact as any).lastName ?? "",
+        firstname: exact.firstname ?? "",
+        lastname: exact.lastname ?? "",
         email: exact.email || "",
       };
       onChange(mapped);
@@ -307,7 +332,7 @@ const CustomerPicker = ({ value, onChange, placeholder = "Select a customer" }: 
               <div className="space-y-1 overflow-y-auto">
                 {customers.map((customer) => {
                   const selected = value?.id === customer.id;
-                  const customerName = ([ (customer as any).firstname, (customer as any).lastname ].filter(Boolean).join(" ").trim() || (customer as any).email || customer.id) as string;
+                  const customerName = ([ customer.firstname, customer.lastname ].filter(Boolean).join(" ").trim()) as string;
                   return (
                     <button
                       key={customer.id}
@@ -315,9 +340,9 @@ const CustomerPicker = ({ value, onChange, placeholder = "Select a customer" }: 
                       onClick={() => {
                         const mapped: CustomerOption = {
                           id: customer.id,
-                          firstname: (customer as any).firstname ?? (customer as any).firstName ?? "",
-                          lastname: (customer as any).lastname ?? (customer as any).lastName ?? "",
-                          email: (customer as any).email || "",
+                          firstname: customer.firstname ?? "",
+                          lastname: customer.lastname ?? "",
+                          email: customer.email || "",
                         };
                         onChange(mapped);
                         setSearchInput(customerName);
@@ -326,7 +351,7 @@ const CustomerPicker = ({ value, onChange, placeholder = "Select a customer" }: 
                       }}
                       className={`flex w-full flex-col rounded-lg px-3 py-2 text-left transition-colors ${selected ? "bg-blue-50 text-blue-900" : "hover:bg-gray-50"}`}>
                       <span className="text-sm font-medium text-gray-900">{customerName}</span>
-                      <span className="text-xs text-gray-500">{(customer as any).email || "No email"}</span>
+                      <span className="text-xs text-gray-500">{customer.email || "No email"}</span>
                       <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.12em] text-gray-400">{shortenId(customer.id)}</span>
                     </button>
                   );
@@ -1105,7 +1130,7 @@ const Subscriptions = () => {
   const planCount = plans.length;
   const selectedPlanSubscriptionCount = selectedPlan?.subscriptions?.length ?? planSubscriptions.length;
   const filteredSubscriptionCount = filteredSubscriptions.length;
-  const selectedPlanDuration = selectedPlan?.duration || undefined;
+  const selectedPlanDuration = selectedPlan?.duration;
 
   const handleSelectPlan = (planId: string) => {
     setSelectedPlanId(planId);
@@ -1122,7 +1147,7 @@ const Subscriptions = () => {
   const handleOpenEditPlan = (plan: SubscriptionPlan) => {
     setPlanModalMode("edit");
     setPlanForm({
-      name: plan?.name || plan?.id || "",
+      name: plan?.name || "",
       amount: String(plan?.amount ?? ""),
       currency: plan?.currency || "USDC",
       trialDays: String(plan?.trialDays ?? ""),
@@ -1462,7 +1487,7 @@ const Subscriptions = () => {
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p className="text-sm font-semibold text-gray-900">{plan?.name || plan?.id}</p>
+                            <p className="text-sm font-semibold text-gray-900">{plan.name}</p>
                             <div className="mt-1 flex items-center gap-1.5 text-xs text-gray-500">
                               <span>{shortenId(plan.id)}</span>
                               <CopyButton text={plan.id} />
@@ -1546,7 +1571,7 @@ const Subscriptions = () => {
                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
                       <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
                         <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">Plan</p>
-                        <p className="mt-2 truncate text-lg font-semibold text-gray-900">{selectedPlan?.name || selectedPlan?.id}</p>
+                        <p className="mt-2 truncate text-lg font-semibold text-gray-900">{selectedPlan.name}</p>
                         <div className="mt-1 flex items-center gap-1.5 text-sm text-gray-500">
                           <span>{shortenId(selectedPlan.id)}</span>
                           <CopyButton text={selectedPlan.id} />
@@ -1557,7 +1582,7 @@ const Subscriptions = () => {
                         <p className="mt-2 text-lg font-semibold text-gray-900">
                           {selectedPlanAmount !== undefined ? `${selectedPlanCurrency} ${selectedPlanAmount.toLocaleString()}` : `${selectedPlanCurrency} custom`}
                         </p>
-                        <p className="mt-1 text-sm text-gray-500">Duration: {selectedPlanDuration || "—"}</p>
+                        <p className="mt-1 text-sm text-gray-500">Duration: {selectedPlanDuration}</p>
                       </div>
                       <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
                         <p className="text-xs font-medium uppercase tracking-[0.16em] text-gray-500">Trial</p>
@@ -1621,23 +1646,8 @@ const Subscriptions = () => {
                       const normalizedStatus = normalizeSubscriptionStatus(subscription.status);
                       const customer = subscription.customer;
                       const isExpanded = expandedSubscriptionId === subscription.id;
-                      
-                      const customerName = (() => {
-                        const customer = subscription.customer as any;
-                        if (customer) {
-                          const first = (customer as any).firstname ?? (customer as any).firstName;
-                          const last = (customer as any).lastname ?? (customer as any).lastName;
-                          const fullName = [first, last].filter(Boolean).join(" ").trim();
-                          if (fullName) return fullName;
-                          if (customer.name) return customer.name;
-                          if (customer.email) return customer.email;
-                        }
-                        const directName = (subscription as any).customerName;
-                        if (typeof directName === "string" && directName.trim()) return directName;
-                        return subscription.customerId || "Unknown customer";
-                      })();
-
-                      const customerEmail = subscription.customer?.email ?? (subscription as any).customerEmail ?? "—";
+                      const customerName = [(subscription?.customer?.firstname), (subscription?.customer?.lastname)].filter(Boolean).join(" ").trim() ?? "-";
+                      const customerEmail = subscription.customer?.email ??  "—";
 
                       return (
                         <div
@@ -1741,23 +1751,20 @@ const Subscriptions = () => {
                                 <div>
                                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-500">Customer id</p>
                                   <div className="mt-1 flex items-center gap-1.5 text-sm font-medium text-gray-900">
-                                    <span className="break-all">{subscription.customer?.id || subscription.customerId || "—"}</span>
-                                    {(subscription.customer?.id || subscription.customerId) ? (
-                                      <CopyButton text={String(subscription.customer?.id || subscription.customerId)} />
-                                    ) : null}
+                                    <span className="break-all">{subscription.customer?.id}</span>
+                                    {subscription.customer?.id ? (
+                                      <CopyButton text={String(subscription.customer?.id)}/>
+                                    ): null}
                                   </div>
                                 </div>
                               </div>
 
                               <div className="mt-4 flex flex-wrap gap-2 text-xs text-gray-600">
-                                {(customer as any)?.firstName || (customer as any)?.firstname ? (
-                                  <span className="rounded-full bg-white px-2.5 py-1 border border-gray-200">First name: {(customer as any).firstName || (customer as any).firstname}</span>
+                                { customer?.firstname ? (
+                                  <span className="rounded-full bg-white px-2.5 py-1 border border-gray-200">First name: {customer?.firstname}</span>
                                 ) : null}
-                                {(customer as any)?.lastName || (customer as any)?.lastname ? (
-                                  <span className="rounded-full bg-white px-2.5 py-1 border border-gray-200">Last name: {(customer as any).lastName || (customer as any).lastname}</span>
-                                ) : null}
-                                {subscription.customer?.name ? (
-                                  <span className="rounded-full bg-white px-2.5 py-1 border border-gray-200">Name alias: {subscription.customer.name}</span>
+                                {customer?.lastname ? (
+                                  <span className="rounded-full bg-white px-2.5 py-1 border border-gray-200">Last name: {customer?.lastname}</span>
                                 ) : null}
                               </div>
                             </div>
@@ -1919,7 +1926,7 @@ const Subscriptions = () => {
             {subscriptionToCancel ? (
               <div className="space-y-2">
                 <p>
-                  Are you sure you want to cancel the subscription for <span className="font-semibold">{subscriptionToCancel.customer?.name || subscriptionToCancel.customer?.email || subscriptionToCancel.customerId || "this customer"}</span>?
+                  Are you sure you want to cancel the subscription for <span className="font-semibold">{subscriptionToCancel.customer?.email || "this customer"}</span>?
                 </p>
                 <div className="flex flex-wrap items-center gap-2 text-xs text-red-700">
                   <span className="rounded-full bg-white px-2.5 py-1 font-medium ring-1 ring-red-100">
