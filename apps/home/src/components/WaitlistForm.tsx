@@ -13,7 +13,7 @@ export default function WaitlistForm() {
 
     setStatus("loading");
     try {
-      const response = await fetch("http://localhost:3000/v1/waitlist",
+      const response = await fetch("https://api.orafi.app/v1/waitlist",
         {
           method: "POST",
           headers: {
