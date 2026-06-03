@@ -1,3 +1,4 @@
+
 import { motion } from "framer-motion";
 import { RiArrowRightLine } from "react-icons/ri";
 import WaitlistForm from "./WaitlistForm";
@@ -138,15 +139,32 @@ export default function Hero() {
                   <span className="text-slate-500">,</span>
                   {"\n"}
                   {"      "}
-                  <span className="text-sky-300">type</span>
+                  <span className="text-sky-300">currency</span>
                   <span className="text-slate-500">:</span>{" "}
-                  <span className="text-emerald-400">'HOSTED_CHECKOUT'</span>
+                  <span className="text-emerald-400">'NGN'</span>
+                  <span className="text-slate-500">,</span>
+                  {"\n"}
+                  {"      "}
+                  <span className="text-sky-300">network</span>
+                  <span className="text-slate-500">:</span>{" "}
+                  <span className="text-emerald-400">'SUI'</span>
+                  <span className="text-slate-500">,</span>
+                  {"\n"}
+                  {"      "}
+                  <span className="text-sky-300">customerId</span>
+                  <span className="text-slate-500">:</span>{" "}
+                  <span className="text-emerald-400">'ctxjehhce77ichejnbej'</span>
                   <span className="text-slate-500">,</span>
                   {"\n"}
                   {"      "}
                   <span className="text-sky-300">txRef</span>
                   <span className="text-slate-500">:</span>{" "}
-                  <span className="text-emerald-400">'order_12345'</span>
+                  <span className="text-emerald-400">'order-12345-e3bbd3d-333d3'</span>
+                  {"\n"}
+                  {"    "}
+                  <span className="text-sky-300">redirectUrl</span>
+                  <span className="text-slate-500">:</span>{" "}
+                  <span className="text-emerald-400">'https://redirect.url/orafi'</span>
                   {"\n"}
                   {"    "}
                   <span className="text-slate-500">{"})"}</span>

@@ -12,14 +12,24 @@ export default function WaitlistForm() {
     if (!email || !email.includes("@")) return;
 
     setStatus("loading");
-
-    // Simulate waitlist submission
-    // Replace with actual API call when ready
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      setStatus("success");
-      setMessage("You're on the list! We'll notify you when it's your turn.");
-      setEmail("");
+      const response = await fetch("http://localhost:3000/v1/waitlist",
+        {
+          method: "POST",
+          headers: {
+            "Content-type": "application/json"
+          },
+          body: JSON.stringify({email})
+        }
+      )
+      if(response.ok){
+        response.json().then((res: { success: boolean, message: string })=> {
+          setStatus("success");
+          setMessage(`${res.message}`);
+        }).finally(()=> {
+          setEmail("");
+        })
+      }
     } catch {
       setStatus("error");
       setMessage("Something went wrong. Please try again.");
