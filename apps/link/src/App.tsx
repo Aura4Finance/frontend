@@ -12,7 +12,8 @@ function App() {
       <Switch>
         {/* Route for generic payment link with ID */}
         <Route path="/:id" component={PayLink} />
-        <Route path="*" component = {NotFound}/>
+        <Route path="/404" component={NotFound}/>
+        <Route component = {NotFound}/>
       </Switch>
       <Toaster position="top-right" richColors/>
     </QueryClientProvider>
