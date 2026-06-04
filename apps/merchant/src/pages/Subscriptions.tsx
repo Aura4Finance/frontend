@@ -25,17 +25,17 @@ import {
   FiUserPlus, 
   FiUsers 
 } from "react-icons/fi";
-import DashboardWrapper from "./DashboardWrapper";
-import Modal from "./transactions/Modal";
-import CopyButton from "./transactions/CopyButton";
-import ErrorState from "./transactions/ErrorState";
+import DashboardWrapper from "@/components/DashboardWrapper";
+import Modal from "@/components/utils/Modal";
+import CopyButton from "@/components/utils/CopyButton";
+import ErrorState from "@/components/utils/ErrorState";
 import { useActiveTabStore } from "../store/activeTab";
 import { useQueryState } from "../hooks/useQueryState";
 import { useCustomers, useCustomer } from "../hooks/mutations/useCustomers";
 import { createPortal } from "react-dom";
 import { getSupportedCurrencies, 
   useSupportedNetworks 
-} from "../hooks/mutations/useSettings";
+} from "@/hooks/mutations/useSettings";
 import {
   formatSubscriptionStatus,
   normalizeSubscriptionStatus,
@@ -56,7 +56,8 @@ import {
   useSubscriptionPlan,
   useSubscriptionPlans,
   useUpdateSubscriptionPlan,
-} from "../hooks/mutations/useSubscriptions";
+} from "@/hooks/mutations/useSubscriptions";
+import { Helmet } from "react-helmet-async";
 
 type PlanFormState = {
   name: string;
@@ -1353,6 +1354,10 @@ const Subscriptions = () => {
 
   return (
     <DashboardWrapper>
+      <Helmet>
+        <title>Subscriptions - Dashboard</title>
+        <meta name="description" content="Manage your subscription plans and customer subscriptions." />
+      </Helmet>
       <div className="space-y-6 p-4 sm:p-6">
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">

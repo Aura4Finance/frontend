@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { LuBold, LuCode, LuHeading1, LuItalic, LuLink2, LuList, LuListOrdered, LuMinus, LuQuote, LuSparkles } from "react-icons/lu";
-import { renderMarkdown } from "../lib/markdown";
+import { renderMarkdown } from "../../lib/markdown";
 import MarkdownDraftAssistantModal from "./MarkdownDraftAssistantModal";
 
 type EditorTab = "write" | "preview";

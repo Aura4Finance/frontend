@@ -2,26 +2,38 @@ import { createPortal } from "react-dom";
 import { useState, useEffect, useLayoutEffect, useMemo, useRef, type CSSProperties } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
-import { FiTrash2, FiPlus, FiEdit2, FiLink2, FiImage, FiX, FiSearch, FiArrowRight, FiEye, FiChevronDown } from "react-icons/fi";
-import DashboardWrapper from "./DashboardWrapper";
-import MarkdownEditor from "./MarkdownEditor";
-import Modal from "./transactions/Modal";
-import CopyButton from "./transactions/CopyButton";
-import ErrorState from "./transactions/ErrorState";
-import ImageGallery from "./ImageGallery";
+import { 
+  FiTrash2, 
+  FiPlus, 
+  FiEdit2, 
+  FiLink2, 
+  FiImage, 
+  FiX, 
+  FiSearch, 
+  FiArrowRight, 
+  FiEye, 
+  FiChevronDown
+ } from "react-icons/fi";
+import DashboardWrapper from "@/components/DashboardWrapper";
+import MarkdownEditor from "@/components/paylinks/MarkdownEditor";
+import Modal from "@/components/utils/Modal";
+import CopyButton from "@/components/utils/CopyButton";
+import ErrorState from "@/components/utils/ErrorState";
+import ImageGallery from "@/components/paylinks/ImageGallery";
 import { 
   useGetPaylinks, 
   useCreatePaylink, 
   useEditPaylink, 
   useDeletePaylink, 
   type Paylink 
-} from "../hooks/mutations/usePaylinks";
-import { tokenStore } from "../store/client"
-import { getSupportedCurrencies } from "../hooks/mutations/useSettings";
-import { useActiveTabStore } from "../store/activeTab";
-import { useLoadingStore } from "../store/loading";
-import { renderMarkdown } from "../lib/markdown";
-import { useQueryState } from "../hooks/useQueryState";
+} from "@/hooks/mutations/usePaylinks";
+import { tokenStore } from "@/store/client"
+import { getSupportedCurrencies } from "@/hooks/mutations/useSettings";
+import { useActiveTabStore } from "@/store/activeTab";
+import { useLoadingStore } from "@/store/loading";
+import { renderMarkdown } from "@/lib/markdown";
+import { useQueryState } from "@/hooks/useQueryState";
+import { Helmet } from "react-helmet-async";
 
 const WALRUS_GATEWAY_TESTNET ="https://aggregator.walrus-testnet.walrus.space/v1/blobs";
 const WALRUS_GATEWAY_MAINNET ="https://aggregator.walrus-mainnet.walrus.space/v1/blobs";
@@ -435,6 +447,10 @@ const PaymentLink = () => {
 
   return (
     <DashboardWrapper>
+      <Helmet>
+        <title>Payment Links | OraFi</title>
+        <meta name="description" content="Create and manage payment links to easily receive payments from your customers." />
+      </Helmet>
       {/* Header */}
       <div className="border-b border-gray-100 bg-white px-4 py-3">
         <div className="flex items-center justify-between">

@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { FiX, FiChevronDown, FiSearch } from "react-icons/fi";
-import { useCustomerFilters } from "../store/customerFilters";
+import { useCustomerFilters } from "@/store/customerFilters";
 import { amountSpentOptions, type AmountSpentRange } from "@orafi/customers";
-import { useQueryState } from "../hooks/useQueryState";
+import { useQueryState } from "@/hooks/useQueryState";
 
 // Filter option types
 interface FilterOption<T> {

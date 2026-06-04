@@ -1,14 +1,17 @@
 {
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "baseUrl": ".",
     "target": "ES2022",
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "types": ["vite/client"],
     "skipLibCheck": true,
-    "baseUrl": ".",
     "paths": {
+      "@/*": ["src/*"],
+      "@orafi/ui": ["../../packages/ui/src/index.ts"],
+      "@orafi/ui/*": ["../../packages/ui/src/*"],
       "@orafi/transactions": ["../../packages/transactions/src/index.ts"],
       "@orafi/transactions/*": ["../../packages/transactions/src/*"],
       "@orafi/customers": ["../../packages/customers/src/index.ts"],

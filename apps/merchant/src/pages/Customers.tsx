@@ -3,17 +3,18 @@ import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { FiTrash2, FiPlus, FiArrowRight } from "react-icons/fi";
 import type { Customer } from "@orafi/customers";
-import DashboardWrapper from "./DashboardWrapper";
-import CustomerFilters from "./CustomerFilters";
-import Modal from "./transactions/Modal";
-import CopyButton from "./transactions/CopyButton";
-import ErrorState from "./transactions/ErrorState";
-import { useCustomers, useCustomer, useDeleteCustomer, useCreateCustomer } from "../hooks/mutations/useCustomers";
-import { useCustomerFilters, buildCustomerParams } from "../store/customerFilters";
-import { useActiveTabStore } from "../store/activeTab";
-import { tokenStore } from "../store/client";
-import { isBrowser, parseNumberParam, updateQueryParams } from "../lib/queryState";
-import { useCustomerSubscriptions } from "../hooks/mutations/useSubscriptions";
+import DashboardWrapper from "@/components/DashboardWrapper";
+import CustomerFilters from "@/components/customers/CustomerFilters";
+import Modal from "@/components/utils/Modal";
+import CopyButton from "@/components/utils/CopyButton";
+import ErrorState from "@/components/utils/ErrorState";
+import { useCustomers, useCustomer, useDeleteCustomer, useCreateCustomer } from "@/hooks/mutations/useCustomers";
+import { useCustomerFilters, buildCustomerParams } from "@/store/customerFilters";
+import { useActiveTabStore } from "@/store/activeTab";
+import { tokenStore } from "@/store/client";
+import { isBrowser, parseNumberParam, updateQueryParams } from "@/lib/queryState";
+import { useCustomerSubscriptions } from "@/hooks/mutations/useSubscriptions";
+import { Helmet } from "react-helmet-async";
 
 const CUSTOMER_QUERY_KEYS = ["amountSpent", "limit", "cursor", "page"];
 
@@ -226,6 +227,10 @@ const Customers = () => {
 
   return (
     <DashboardWrapper>
+      <Helmet>
+        <title>Customers | OraFi</title>
+        <meta name="description" content="View and manage your customers, their purchase history, and details." />
+      </Helmet>
       {/* Header */}
       <div className="px-4 py-3 bg-white border-b border-gray-100">
         <div className="flex items-center justify-between">

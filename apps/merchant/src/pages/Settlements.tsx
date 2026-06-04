@@ -1,7 +1,7 @@
-import DashboardWrapper from "./DashboardWrapper";
+import DashboardWrapper from "@/components/DashboardWrapper";
 import { useEffect, useState } from "react";
-import { useActiveTabStore } from "../store/activeTab";
-import { useQueryState } from "../hooks/useQueryState";
+import { useActiveTabStore } from "@/store/activeTab";
+import { useQueryState } from "@/hooks/useQueryState";
 import { 
   useGetCryptoSettlements, 
   useAddCryptoSettlements, 
@@ -12,10 +12,17 @@ import {
   useUpdatePrimaryFiatSettlementAccount,
   useListFiatBanks,
   useResolveFiatAccount,
-} from "../hooks/mutations/useSettlements";
-import { useGetSupoortedNetworks } from "../hooks/mutations/useTransactions";
-import Modal from "./transactions/Modal";
-import { FiTrash2, FiCopy, FiCheck, FiStar, FiBriefcase } from "react-icons/fi";
+} from "@/hooks/mutations/useSettlements";
+import { useGetSupoortedNetworks } from "@/hooks/mutations/useTransactions";
+import Modal from "@/components/utils/Modal";
+import { 
+  FiTrash2, 
+  FiCopy, 
+  FiCheck, 
+  FiStar, 
+  FiBriefcase 
+} from "react-icons/fi";
+import { Helmet } from "react-helmet-async";
 
 const SETTLEMENT_TAB_IDS = ["crypto", "fiat"] as const;
 
@@ -211,6 +218,10 @@ const Settlements = () => {
 
   return (
     <DashboardWrapper>
+      <Helmet>
+        <title>Settlements | OraFi</title>
+        <meta name="description" content="Manage your settlement accounts for both crypto and fiat payouts." />
+      </Helmet>
       <div className="space-y-6 bg-gray-50 p-4 sm:p-6">
         {/* Tab Navigation */}
         <div className="flex flex-wrap gap-2 border-b border-gray-200">

@@ -1,6 +1,6 @@
-import DashboardWrapper from "./DashboardWrapper";
+import DashboardWrapper from "@/components/DashboardWrapper";
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { useActiveTabStore } from "../store/activeTab";
+import { useActiveTabStore } from "@/store/activeTab";
 import { toast } from "sonner";
 import {
   useRegisterWehbook,
@@ -9,14 +9,26 @@ import {
   useSubcribeToWebhookEvent,
   useRetrieveWebhookDeliveries,
   type FilterOptions
-} from "../hooks/mutations/useWehbooks";
-import Modal from "./transactions/Modal";
-import CopyButton from "./transactions/CopyButton";
-import WebhookFilters from "./webhooks/WebhookFilters";
-import { FiCopy, FiCheck, FiAlertTriangle, FiEye, FiEyeOff } from "react-icons/fi";
-import type { WebhookDelivery, WebhookDeliveryQueryParams, EventType, Event } from "../hooks/mutations/useWehbooks";
-import { buildWebhookParams, useWebhookFilters } from "../store/webhookFilters";
-import { isBrowser, updateQueryParams } from "../lib/queryState";
+} from "@/hooks/mutations/useWehbooks";
+import Modal from "@/components/utils/Modal";
+import CopyButton from "@/components/utils/CopyButton";
+import WebhookFilters from "@/components/webhooks/WebhookFilters";
+import { 
+  FiCopy, 
+  FiCheck, 
+  FiAlertTriangle, 
+  FiEye, 
+  FiEyeOff 
+} from "react-icons/fi";
+import type { 
+  WebhookDelivery, 
+  WebhookDeliveryQueryParams, 
+  EventType, 
+  Event 
+} from "@/hooks/mutations/useWehbooks";
+import { buildWebhookParams, useWebhookFilters } from "@/store/webhookFilters";
+import { isBrowser, updateQueryParams } from "@/lib/queryState";
+import { Helmet } from "react-helmet-async";
 
 const WEBHOOK_QUERY_KEYS = ["status", "transactionId", "event", "startDate", "endDate", "limit", "cursor", "page"];
 
@@ -171,6 +183,10 @@ const Webhook = () => {
 
   return (
     <DashboardWrapper>
+      <Helmet>
+        <title>Webhooks | OraFi</title>
+        <meta name="description" content="Manage your webhook configurations and view delivery logs." />
+      </Helmet>
       <div className="p-4 space-y-6">
         {/* Webhook Information Card */}
         {detailsLoading ? (

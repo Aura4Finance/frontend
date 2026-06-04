@@ -1,19 +1,19 @@
 import { Route, Switch, useLocation } from "wouter";
 import { Toaster } from "sonner";
 import { useEffect, useState } from "react";
-import { tokenStore } from "./store/client";
-import { useLoadingStore } from "./store/loading";
-import { getUserProfile } from "./hooks/mutations/useSettings";
-import Callback from "./components/Callback";
-import Dashboard from "./components/Dashboard";
-import Settings  from "./components/Settings";
-import Customers from "./components/Customers";
-import Settlements from "./components/Settlements";
-import Onboarding from "./components/Onboarding";
-import Transactions from "./components/Transactions";
-import Subscriptions from "./components/Subscriptions";
-import Webhook from "./components/Webhook";
-import PaymentLink from "./components/PaymentLink";
+import { tokenStore } from "@/store/client";
+import { useLoadingStore } from "@/store/loading";
+import { getUserProfile } from "@/hooks/mutations/useSettings";
+import Callback from "@/pages/Callback";
+import Dashboard from "@/pages/Dashboard";
+import Settings  from "@/pages/Settings";
+import Customers from "@/pages/Customers";
+import Settlements from "@/pages/Settlements";
+import Onboarding from "@/pages/Onboarding";
+import Transactions from "@/pages/Transactions";
+import Subscriptions from "@/pages/Subscriptions";
+import Webhook from "@/pages/Webhook";
+import PaymentLink from "@/pages/PaymentLink";
 import logo from "@orafi/ui/assets/OraFi.png";
 
 // Global Progress Bar Component

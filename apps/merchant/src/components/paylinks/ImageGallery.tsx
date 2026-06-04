@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { FiChevronLeft, FiChevronRight, FiShoppingBag, FiTrash2 } from "react-icons/fi";
 import { cn } from "@orafi/ui";
-import { deleteImageFromPaylink } from "../hooks/mutations/usePaylinks";
+import { deleteImageFromPaylink } from "../../hooks/mutations/usePaylinks";
 
 interface ImageObject {
   id: string;

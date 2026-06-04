@@ -2,11 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { FiCopy, FiLogOut, FiRefreshCcw, FiCheck } from "react-icons/fi";
 import { Input } from "@orafi/ui";
 import { useLocation } from "wouter";
-import DashboardWrapper from "./DashboardWrapper";
-import Modal from "./transactions/Modal";
-import { useActiveTabStore } from "../store/activeTab";
-import { tokenStore } from "../store/client";
-import { useQueryState } from "../hooks/useQueryState";
+import DashboardWrapper from "@/components/DashboardWrapper";
+import Modal from "@/components/utils/Modal";
+import { useActiveTabStore } from "@/store/activeTab";
+import { tokenStore } from "@/store/client";
+import { useQueryState } from "@/hooks/useQueryState";
 import {
   generateAPIKey,
   getAPIKeys,
@@ -18,7 +18,8 @@ import {
   useLogout,
   useRequestEmailChange,
   useVerifyEmailChange,
-} from "../hooks/mutations/useSettings";
+} from "@/hooks/mutations/useSettings";
+import { Helmet } from "react-helmet-async";
 
 const formatDate = (value?: string) => {
   if (!value) {
@@ -269,6 +270,10 @@ const Settings = () => {
 
   return (
     <DashboardWrapper>
+      <Helmet>
+        <title>Settings | OraFi</title>
+        <meta name="description" content="Manage your account settings and preferences." />
+      </Helmet>
       <div className="space-y-6 bg-gray-50 p-4 sm:p-6">
         {/* Tab Navigation */}
         <div className="flex flex-wrap gap-2 border-b border-gray-200">

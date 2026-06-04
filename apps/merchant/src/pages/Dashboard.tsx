@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import DashboardWrapper from "./DashboardWrapper";
+import DashboardWrapper from "@/components/DashboardWrapper";
 import {
   FiEye,
   FiEyeOff,
@@ -20,8 +20,9 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { useBalance, useDashboard } from "../hooks/mutations/useDashboard";
-import { useQueryState } from "../hooks/useQueryState";
+import { useBalance, useDashboard } from "@/hooks/mutations/useDashboard";
+import { useQueryState } from "@/hooks/useQueryState";
+import { Helmet } from "react-helmet-async";
 
 const RATES_TO_NGN: Record<string, number> = {
   USDC: 1_580,
@@ -136,6 +137,10 @@ const Dashboard = () => {
 
   return (
     <DashboardWrapper>
+      <Helmet>
+        <title>Dashboard | OraFi</title>
+        <meta name="description" content="Overview of your business metrics and performance." />
+      </Helmet>
       <div className="p-4 space-y-6">
         {/* Balance Card */}
         <div className="flex flex-col items-center py-8">

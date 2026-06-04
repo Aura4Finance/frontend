@@ -4,14 +4,15 @@ import { FiArrowRight } from "react-icons/fi";
 import { FaShieldHalved, FaCopy, FaCheck, FaLock } from "react-icons/fa6";
 import { Input, Select } from "@orafi/ui";
 import logo from "@orafi/ui/assets/OraFi.png";
-import { useCompleteOnboarding } from "../hooks/mutations/useOnboarding";
+import { useCompleteOnboarding } from "@/hooks/mutations/useOnboarding";
 import { setupTwoFactorAuthentication, verifyTwoFactorAuthentication } from "../hooks/mutations/useSettings";
-import { tokenStore } from "../store/client";
-import { getUserProfile } from "../hooks/mutations/useSettings";
-import { BUSINESS_SECTORS, COUNTRIES } from "../constants/onboardingOptions";
+import { tokenStore } from "@/store/client";
+import { getUserProfile } from "@/hooks/mutations/useSettings";
+import { BUSINESS_SECTORS, COUNTRIES } from "@/constants/onboardingOptions";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
-import Modal from "./transactions/Modal";
+import Modal from "@/components/utils/Modal";
+import { Helmet } from "react-helmet-async";
 
 const businessSectorOptions = BUSINESS_SECTORS.map((sector) => ({
   label: sector,
@@ -358,6 +359,9 @@ const Onboarding = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-10 sm:px-6">
+      <Helmet>
+        <title>Complete Onboarding | OraFi</title>
+      </Helmet>
       <div className="mx-auto w-full max-w-3xl">
         <OnboardingBrand />
         {continueWithTwoFAModal}

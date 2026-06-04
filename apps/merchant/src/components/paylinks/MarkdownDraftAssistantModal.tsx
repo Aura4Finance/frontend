@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { LuSparkles } from "react-icons/lu";
 import { toast } from "sonner";
-import Modal from "./transactions/Modal";
+import Modal from "@/components/utils/Modal";
 import {
   type MarkdownDraftInput,
   type MarkdownDraftMode,
   type MarkdownDraftTone,
-} from "../lib/descriptionAssistant";
-import { useGeneratePaylinkDescription } from "../hooks/mutations/usePaylinks";
+} from "@/lib/descriptionAssistant";
+import { useGeneratePaylinkDescription } from "@/hooks/mutations/usePaylinks";
 
 interface MarkdownDraftAssistantModalProps {
   isOpen: boolean;

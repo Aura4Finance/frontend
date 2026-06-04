@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
-import { useExchangeCodeForToken } from '../hooks/mutations/exahngeCodeForToken';
+import { useExchangeCodeForToken } from '@/hooks/mutations/exahngeCodeForToken';
+import { Helmet } from "react-helmet-async";
 
 const Callback = () => {
   const [, setLocation] = useLocation();
@@ -23,9 +24,12 @@ const Callback = () => {
 
   if (exchangeCodeForTokenMutation.isPending) {
     return (
+      <Helmet>
+        <title>Verifying credentials...</title>
       <div className="flex items-center justify-center h-screen w-screen">
         <div className="animate-spin w-8 h-8 border-2 border-black border-t-transparent rounded-full" />
       </div>
+      </Helmet>
     );
   }
 

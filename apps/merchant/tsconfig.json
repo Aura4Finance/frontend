@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
     "paths": {
+      "@/*": ["./src/*"],
       "@orafi/transactions": ["../../packages/transactions/src/index.ts"],
       "@orafi/transactions/*": ["../../packages/transactions/src/*"],
       "@orafi/subscriptions": ["../../packages/subscriptions/src/index.ts"],

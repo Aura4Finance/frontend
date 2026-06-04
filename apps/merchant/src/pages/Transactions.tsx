@@ -2,15 +2,22 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { FiBriefcase } from "react-icons/fi";
 import { toast } from "sonner";
 import type { Transaction } from "@orafi/transactions";
-import DashboardWrapper from "./DashboardWrapper";
-import ErrorState from "./transactions/ErrorState";
-import Modal from "./transactions/Modal";
-import CopyButton from "./transactions/CopyButton";
-import TransactionFilters from "./transactions/TransactionFilters";
-import { tokenStore } from "../store/client";
-import { useActiveTabStore } from "../store/activeTab";
-import { buildTransactionParams, useTransactionFilters } from "../store/transactionFilters";
-import { isBrowser, parseNumberParam, updateQueryParams } from "../lib/queryState";
+import DashboardWrapper from "@/components/DashboardWrapper";
+import ErrorState from "@/components/utils/ErrorState";
+import Modal from "@/components/utils/Modal";
+import CopyButton from "@/components/utils/CopyButton";
+import TransactionFilters from "@/components/transactions/TransactionFilters";
+import { tokenStore } from "@/store/client";
+import { useActiveTabStore } from "@/store/activeTab";
+import { 
+  buildTransactionParams, 
+  useTransactionFilters
+ } from "@/store/transactionFilters";
+import { 
+  isBrowser, 
+  parseNumberParam, 
+  updateQueryParams
+ } from "@/lib/queryState";
 import {
   useRefund,
   useRetryRefund,
@@ -19,9 +26,15 @@ import {
   useTransactions,
   useCreateCryptoPayout,
   useCreateFiatPayout,
-} from "../hooks/mutations/useTransactions";
-import { useBalance } from "../hooks/mutations/useDashboard";
-import { useGetCryptoSettlements, useGetALLFiatSettlements, useListFiatBanks, useResolveFiatAccount } from "../hooks/mutations/useSettlements";
+} from "@/hooks/mutations/useTransactions";
+import { useBalance } from "@/hooks/mutations/useDashboard";
+import { 
+  useGetCryptoSettlements, 
+  useGetALLFiatSettlements, 
+  useListFiatBanks, 
+  useResolveFiatAccount 
+} from "@/hooks/mutations/useSettlements";
+import { Helmet } from "react-helmet-async";
 
 type AssetBadge = {
   symbol?: string;
@@ -656,6 +669,10 @@ const Transactions = () => {
 
   return (
     <DashboardWrapper>
+      <Helmet>
+        <title>Transactions | OraFi</title>
+        <meta name="description" content="View and manage your transactions on OraFi dashboard" />
+      </Helmet>
       <div className="border-b border-gray-100 bg-white px-4 py-3">
         <div className="flex items-center justify-between">
           <p className="text-xs text-gray-500">Total Transactions: {totalCount.toLocaleString()}</p>

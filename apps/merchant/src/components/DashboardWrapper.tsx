@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from "react";
 import { FiAlertTriangle, FiCopy } from "react-icons/fi";
 import { Link } from "wouter";
-import LeftBar from "../components/LeftBar";
-import { useActiveTabStore } from "../store/activeTab";
-import { tokenStore } from "../store/client";
+import LeftBar from "@/components/LeftBar";
+import { useActiveTabStore } from "@/store/activeTab";
+import { tokenStore } from "@/store/client";
 
 const tabSubtitles: Record<string, string> = {
   Dashboard: "Overview of your merchant activity",
