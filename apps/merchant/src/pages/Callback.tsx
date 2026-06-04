@@ -24,12 +24,12 @@ const Callback = () => {
 
   if (exchangeCodeForTokenMutation.isPending) {
     return (
+      <div className="flex items-center justify-center h-screen w-screen">
       <Helmet>
         <title>Verifying credentials...</title>
-      <div className="flex items-center justify-center h-screen w-screen">
+      </Helmet>
         <div className="animate-spin w-8 h-8 border-2 border-black border-t-transparent rounded-full" />
       </div>
-      </Helmet>
     );
   }
 
