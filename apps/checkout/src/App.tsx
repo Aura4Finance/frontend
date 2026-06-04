@@ -10,7 +10,8 @@ function App() {
     <WalletProvider defaultWallets={AllDefaultWallets}>
       <Switch>
         <Route path="/:txId" component={Checkout} />
-        <Route path="*" component={NotFound}/>
+        <Route path="/404" component={NotFound}/>
+        <Route component={NotFound}/>
       </Switch>
       <Toaster position="top-right" richColors />
     </WalletProvider>
