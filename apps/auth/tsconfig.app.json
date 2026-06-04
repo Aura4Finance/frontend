@@ -1,8 +1,6 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "rootDir": "../../",
-    "ignoreDeprecations": "6.0", // <--- Add this right here to silence the TS 6.0 error
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "target": "ES2022",
     "useDefineForClassFields": true,
