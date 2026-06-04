@@ -22,6 +22,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from "../store/auth";;
 import { useForgotPasswordMutation, type ForgotPasswordSchema } from "../hooks/useForgotPasswordMutation";
+import {  Helmet } from "react-helmet-async"
 
 const ForgotPassword = () => {
   const forgotPasswordSchema = z.object({
@@ -44,6 +45,10 @@ const ForgotPassword = () => {
 
   return (
     <Wrapper>
+      <Helmet>
+        <title>Forgot Password</title>
+        <meta name="description" content="Recover account" />
+      </Helmet>
       <Card className="p-5 border border-b-black">
         <CardHeader className='text-center pb-6'>
           <CardTitle className='text-2xl font-semibold'>

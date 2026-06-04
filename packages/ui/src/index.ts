@@ -7,4 +7,3 @@ export * from "./skeleton";
 export * from "./select";
 export * from "./tabs";
 export * from "./lib/util";
-import "./index.css";

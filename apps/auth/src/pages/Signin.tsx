@@ -27,6 +27,7 @@ import {
 import { Button } from "@orafi/ui/button";
 import { Input } from "@orafi/ui/input";
 import { useLoginMutation, useLogin2FAMutation, type LoginSchema } from '../hooks/useLoginMutation';
+import { Helmet } from "react-helmet-async";
 
 const TwoFAStep = ({
   userId,
@@ -52,6 +53,10 @@ const TwoFAStep = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <Helmet>
+        <title>Two-Factor Authentication</title>
+        <meta name="description" content="Enter your 2FA code to complete login" />
+      </Helmet>
       <Card className="w-full max-w-sm border bg-white border-blue-950/20 shadow-2xl p-5">
         <CardHeader className="text-center pb-4">
           <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-blue-950/10">
@@ -173,6 +178,10 @@ const Signin = () => {
 
   return (
     <Wrapper>
+      <Helmet>
+        <title>Login</title>
+        <meta name="description" content="Login to your account" />
+      </Helmet>
       <Card className='p-5 border border-b-black'>
         <CardHeader className='text-center pb-6'>
           <CardTitle className='text-2xl font-semibold'>

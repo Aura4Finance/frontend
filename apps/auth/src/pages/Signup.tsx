@@ -29,6 +29,7 @@ import { z } from 'zod';
 import { useSignUpMutation } from "../hooks/useSignupMutation";
 import type { SignUpSchema } from "../hooks/useLoginMutation";
 import { useAuth } from "../store/auth";
+import { Helmet } from "react-helmet-async";
 
 
 const Signup = () => {
@@ -89,6 +90,10 @@ const Signup = () => {
   }
   return (
     <Wrapper>
+      <Helmet>
+        <title>Sign Up</title>
+        <meta name="description" content="Create a new account" />
+      </Helmet>
       <Card className="p-5 border border-b-black">
         <CardHeader className='text-center pb-6'>
           <CardTitle className='text-2xl font-semibold'>

@@ -1,9 +1,14 @@
 import { Link } from "react-router-dom";
 import { RiArrowLeftLine } from "react-icons/ri";
+import { Helmet } from "react-helmet-async";
 
 export default function Cookies() {
   return (
     <div className="min-h-screen bg-white text-slate-900">
+      <Helmet>
+        <title>Cookie Policy | OraFi</title>
+        <meta name="description" content="Learn how OraFi uses cookies and similar technologies to enhance your experience." />
+      </Helmet>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
         <Link
           to="/"

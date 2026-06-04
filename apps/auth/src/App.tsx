@@ -1,13 +1,12 @@
 import { Route, Switch } from "wouter";
-import Auth from "./components/Auth";
-import Signin from "./components/Signin";
-import Signup from "./components/Signup";
-import VerifyEmail from "./components/Verify-email";
-import ForgotPassword from "./components/Forgot-password";
-import ResetPassword from "./components/Reset-password";
+import Auth from "./pages/Auth";
+import Signin from "./pages/Signin";
+import Signup from "./pages/Signup";
+import VerifyEmail from "./pages/Verify-email";
+import ForgotPassword from "./pages/Forgot-password";
+import ResetPassword from "./pages/Reset-password";
 import Header from "./layouts/Header";
-// import Footer from "./layouts/Footer";
-import NotFound from "./components/NotFound";
+import NotFound from "./pages/NotFound";
 import { Toaster } from "sonner";
 
 

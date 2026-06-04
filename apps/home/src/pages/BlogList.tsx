@@ -3,10 +3,15 @@ import { RiArrowLeftLine, RiArrowRightLine, RiTimeLine } from "react-icons/ri";
 import { blogPosts } from "../blog";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { Helmet } from "react-helmet-async";
 
 export default function BlogList() {
   return (
     <>
+      <Helmet>
+        <title>Engineering Blog | OraFi</title>
+        <meta name="description" content="Deep technical writing from the OraFi engineering team." />
+      </Helmet>
       <Navbar />
       <div className="min-h-screen bg-white text-slate-900">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-16">

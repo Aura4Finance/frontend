@@ -1,9 +1,14 @@
 import { Link } from "react-router-dom";
 import { RiArrowLeftLine } from "react-icons/ri";
+import { Helmet } from "react-helmet-async";
 
 export default function Privacy() {
   return (
     <div className="min-h-screen bg-white text-slate-900">
+      <Helmet>
+        <title>Privacy Policy | OraFi</title>
+        <meta name="description" content="Learn how OraFi collects, uses, and protects your personal information in our Privacy Policy." />
+      </Helmet>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
         <Link
           to="/"

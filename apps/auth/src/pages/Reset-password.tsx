@@ -29,6 +29,7 @@ import { useAuth } from "../store/auth";
 import {useResetPasswordMutation  } from "../hooks/useResetPasswordMutation";
 import { useResendOtpMutation } from "../hooks/useResendOtpMutation";
 import { toast } from "sonner";
+import { Helmet } from "react-helmet-async";
 
 
 
@@ -92,6 +93,10 @@ const ResetPassword = () => {
 
   return (
     <Wrapper>
+      <Helmet>
+        <title>Reset Password</title>
+        <meta name="description" content="Reset your password" />
+      </Helmet>
       <Card className="p-5 border border-b-black">
         <CardHeader className='text-center pb-6'>
           <CardTitle className='text-2xl font-semibold'>

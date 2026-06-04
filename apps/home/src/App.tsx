@@ -1,6 +1,4 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
@@ -8,18 +6,9 @@ import Cookies from "./pages/Cookies";
 import BlogList from "./pages/BlogList";
 import BlogDetail from "./pages/BlogDetail";
 
-function ScrollToTop() {
-  const { pathname } = useLocation();
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
-  return null;
-}
-
 function App() {
   return (
     <BrowserRouter>
-      <ScrollToTop />
       <div className="min-h-screen bg-white text-slate-900 overflow-x-hidden">
         <Routes>
           <Route path="/" element={<HomePage />} />

@@ -14,6 +14,7 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
     "paths": {
       "@orafi/ui/*": ["packages/ui/src/*"],
       "@orafi/wallet/*": ["packages/wallet/src/*"],

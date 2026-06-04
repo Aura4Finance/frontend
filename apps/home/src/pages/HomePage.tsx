@@ -8,10 +8,15 @@ import SimplePrice from "../components/SimplePrice";
 import CTA from "../components/CTA";
 import Footer from "../components/Footer";
 import WaterFlow from "../components/WaterFlow";
+import { Helmet } from "react-helmet-async";
 
 export default function HomePage() {
   return (
     <>
+    <Helmet>
+        <title>OraFi - Payments infrastructure for crypto</title>
+        <meta name="description" content="OraFi is the easiest way to accept crypto payments. A simple API, beautiful checkout, and real-time webhooks — so you can focus on your product, not the blockchain." />
+      </Helmet>
       <WaterFlow />
       <div className="relative z-10">
         <Navbar />

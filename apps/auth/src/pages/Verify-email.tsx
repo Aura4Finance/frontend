@@ -27,6 +27,7 @@ import { useAuth } from "../store/auth";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { QRCodeSVG } from "qrcode.react";
+import { Helmet } from "react-helmet-async";
 
 const TwoFAPopup = ({
   twoFaData,
@@ -46,6 +47,10 @@ const TwoFAPopup = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-10">
+      <Helmet>
+        <title>Set Up Two-Factor Authentication</title>
+        <meta name="description" content="Scan the QR code or enter the manual code to set up 2FA on your account." />
+      </Helmet>
       <Card className="w-full max-w-md border border-blue-950/20 shadow-2xl p-5 bg-white">
         <CardHeader className="text-center pb-4">
           <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-blue-950/10">
@@ -182,6 +187,10 @@ const VerifyEmail = () => {
 
   return (
     <Wrapper>
+      <Helmet>
+        <title>Verify Email</title>
+        <meta name="description" content="Enter the OTP sent to your email address to secure your aura farm!" />
+      </Helmet>
       <Card className="p-5 border border-b-black">
         <CardHeader className="text-center pb-6">
           <CardTitle className="text-2xl font-semibold">Verify Your Email</CardTitle>

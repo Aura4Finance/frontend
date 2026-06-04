@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { RiArrowLeftLine, RiTimeLine, RiCalendarLine } from "react-icons/ri";
 import { getBlogBySlug } from "../blog";
+import { Helmet } from "react-helmet-async";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
@@ -36,6 +37,12 @@ export default function BlogDetail() {
 
   return (
     <>
+      <Helmet>
+        <title>
+          {post.title} | OraFi
+        </title>
+        <meta name="description" content={post.description} />
+      </Helmet>
       <Navbar />
       <div className="min-h-screen bg-white text-slate-900">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-16">
