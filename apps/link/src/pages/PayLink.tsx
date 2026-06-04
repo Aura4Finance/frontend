@@ -76,7 +76,7 @@ const PayLink = () => {
   }
 
   if (!paylinkData.data || paylinkData.isError) {
-    return <Redirect to="/404"/>
+    return <Redirect to="/"/>
   }
 
   return (
