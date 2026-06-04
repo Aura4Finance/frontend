@@ -1,17 +1,18 @@
 import { useEffect, useState } from "react";
-import { useRoute, useSearch } from "wouter";
+import { useRoute, useSearch, Redirect } from "wouter";
 import { Button, Card } from "@orafi/ui";
 import { FiMapPin, FiGlobe } from "react-icons/fi";
 import { RiSecurePaymentLine } from "react-icons/ri";
 import logo from "@orafi/ui/assets/OraFi.png";
-import PaymentSuccess from "./PaymentSuccess";
-import PaymentFailed from "./PaymentFailed";
-import ImageGallery from "./ImageGallery";
+import PaymentSuccess from "../components/PaymentSuccess";
+import PaymentFailed from "../components/PaymentFailed";
+import ImageGallery from "../components/ImageGallery";
 import { renderMarkdown } from "../lib/markdown";
 import { useGetPayLinkInformationQuery } from "../hooks/useGetPayinkInformationQuery";
 import { useVerifyPaymentMutation } from "../hooks/useVerifyPaymentMutation";
 import { useCreatePaymentMutation } from "../hooks/useCreatePaymentMutation";
-import PopupModal from "./PopupModal";
+import PopupModal from "../components/PopupModal";
+import { Helmet } from "react-helmet-async"
 
 const PayLink = () => {
   const [_match, params] = useRoute("/:paylinkId");
@@ -74,11 +75,16 @@ const PayLink = () => {
     );
   }
 
-  if (!paylinkData.data) return null;
+  if (!paylinkData.data || paylinkData.isError) {
+    return <Redirect to="*"/>
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans flex flex-col text-gray-900">
       {/* Simple Header */}
+      <Helmet>
+        <title>{paylinkData.data?.profile.businessName} Payment Link({paylinkData.data?.mode}) | OraFi</title>
+      </Helmet>
       <header className="w-full py-6 flex justify-center">
         <div className="flex items-center gap-3 rounded-full border border-gray-200 bg-white px-4 py-2 shadow-sm">
           <img src={logo} alt="OraFi Logo" className="h-8 w-8 rounded-full object-contain" />

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useLocation, useRoute } from "wouter";
+import { useLocation, useRoute, Redirect } from "wouter";
 import { getFullnodeUrl, SuiClient } from "@mysten/sui/client";
 import { Transaction } from "@mysten/sui/transactions";
 import { ConnectButton, useWallet } from "@suiet/wallet-kit";
@@ -8,12 +8,13 @@ import logo from "@orafi/ui/assets/OraFi.png";
 import { FiCheckCircle, FiShield, FiAlertCircle, FiArrowLeft } from "react-icons/fi";
 import { RiSecurePaymentLine } from "react-icons/ri";
 import { FiChevronDown } from "react-icons/fi";
-import { MobileWalletPrompt } from "./MobileWalletPrompt";
-import { PaymentMethodSelector } from "./PaymentMethodSelector";
-import { TransferPayment } from "./TransferPayment";
+import { MobileWalletPrompt } from "../components/MobileWalletPrompt";
+import { PaymentMethodSelector } from "../components/PaymentMethodSelector";
+import { TransferPayment } from "../components/TransferPayment";
 import { useGetPaymentInformationQuery, useGeneratePaymentIntentMutation } from "../hooks/useGetPaymentInformationQuery";
 import { useGetSupportedNetworksAndTokens } from "../hooks/useGetSupportedNetworksAndTokens";
 import { toast } from "sonner";
+import { Helmet } from "react-helmet-async";
 
 const Checkout = () => {
     const [_match, params] = useRoute("/:txId");
@@ -204,13 +205,7 @@ const Checkout = () => {
             );
         }
         try {
-            /* ------------------------------------------------------------
-               1. Setup Sui Client
-            ------------------------------------------------------------- */
-
-            /* ------------------------------------------------------------
-               2. Read required payment amount (BASE UNITS)
-            ------------------------------------------------------------- */
+        
             const depositObject = await client.getObject({
                 id: depositAddress,
                 options: { showContent: true },
@@ -232,10 +227,7 @@ const Checkout = () => {
             if (amount <= 0n) {
                 throw new Error("Invalid payment amount");
             }
-
-            /* ------------------------------------------------------------
-               3. Fetch coins for selected token
-            ------------------------------------------------------------- */
+            
             if (!selectedTokenObject) {
                 throw new Error("No token selected");
             }
@@ -255,10 +247,7 @@ const Checkout = () => {
                 toast.error(`No ${selectedTokenObject.symbol} balance`);
                 return;
             }
-
-            /* ------------------------------------------------------------
-               4. Ensure total balance is sufficient
-            ------------------------------------------------------------- */
+        
             const totalBalance = allCoins.reduce(
                 (sum, c) => sum + BigInt(c.balance),
                 0n
@@ -268,17 +257,8 @@ const Checkout = () => {
                 toast.error(`Insufficient ${selectedTokenObject.symbol} balance`);
                 return;
             }
-
-            /* ------------------------------------------------------------
-               5. Build Transaction
-            ------------------------------------------------------------- */
             const tx = new Transaction();
-
-            /* ------------------------------------------------------------
-               6. Select or merge USDC coins (NO GAS COIN INVOLVEMENT)
-            ------------------------------------------------------------- */
             let baseCoinId: string;
-
             const singleCoin = allCoins.find(
                 (c) => BigInt(c.balance) >= amount
             );
@@ -298,10 +278,7 @@ const Checkout = () => {
 
                 baseCoinId = target.coinObjectId;
             }
-
-            /* ------------------------------------------------------------
-               7. Split EXACT amount (CRITICAL STEP)
-            ------------------------------------------------------------- */
+            
             const [paymentCoin] = tx.splitCoins(
                 tx.object(baseCoinId),
                 [tx.pure.u64(amount)]
@@ -368,11 +345,15 @@ const Checkout = () => {
         );
     }
 
-    if (!paymentQueryResult.data) return <div className="p-10 text-center">Payment not found</div>;
+    if (!paymentQueryResult.data || paymentQueryResult.isError) return <Redirect to="*"/>
     if (supportedNetworksQuery.isPending) return <div className="p-10 text-center">Loading networks...</div>;
 
     return (
         <>
+            <Helmet>
+                <title>OraFi Checkout</title>
+                <meta name="description" content="Secure checkout for OraFi payments" />
+            </Helmet>
             {/* Verification Overlay */}
             {processing && (
                 <div className="fixed inset-0 z-[200] bg-white/80 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-300">
