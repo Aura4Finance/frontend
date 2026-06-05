@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { FiCopy, FiLogOut, FiRefreshCcw, FiCheck } from "react-icons/fi";
 import { Input } from "@orafi/ui";
+import { Button } from "@orafi/ui"
 import { useLocation } from "wouter";
 import DashboardWrapper from "@/components/DashboardWrapper";
 import Modal from "@/components/utils/Modal";
@@ -278,7 +279,8 @@ const Settings = () => {
         {/* Tab Navigation */}
         <div className="flex flex-wrap gap-2 border-b border-gray-200">
           {tabs.map((tab) => (
-            <button
+            <Button
+              variant="default"
               key={tab.id}
               onClick={() => setActiveTabValue(tab.id)}
               className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-[2px] ${
@@ -288,7 +290,7 @@ const Settings = () => {
               }`}
             >
               {tab.label}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -309,13 +311,13 @@ const Settings = () => {
                     <div className="mt-2 flex items-start justify-between gap-2">
                       <p className="break-all text-sm font-semibold text-gray-900">{item.value}</p>
                       {item.copyable && item.value !== "—" && (
-                        <button
-                          type="button"
+                        <Button
+                          variant="default"
                           onClick={() => copyValue(item.value, "wallet")}
                           className="flex-shrink-0 text-xs font-medium text-blue-700 hover:text-blue-800 transition-colors"
                         >
                           <FiCopy size={14} />
-                        </button>
+                        </Button>
                       )}
                     </div>
                     {item.copyable && copiedItem === "wallet" && (
@@ -342,12 +344,13 @@ const Settings = () => {
                     className="mt-1"
                   />
                 </div>
-                <button
+                <Button
+                  variant="default"
                   disabled={requestEmailChangeMutation.isPending || !requestEmail.trim()}
                   className="rounded-md bg-blue-950 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-900 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {requestEmailChangeMutation.isPending ? "Sending..." : "Request email change"}
-                </button>
+                </Button>
               </form>
 
               <form
@@ -373,14 +376,15 @@ const Settings = () => {
                     className="mt-1"
                   />
                 </div>
-                <button
+                <Button
+                  variant="outline"
                   disabled={
                     verifyEmailChangeMutation.isPending || !verifyEmail.trim() || !verifyToken.trim()
                   }
                   className="rounded-md bg-blue-950 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-900 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {verifyEmailChangeMutation.isPending ? "Verifying..." : "Verify email change"}
-                </button>
+                </Button>
               </form>
             </section>
             </>
@@ -570,14 +574,15 @@ const Settings = () => {
         </div>
 
         <div className="flex justify-end pt-4">
-          <button
+          <Button
+            variant="outline"
             onClick={handleLogout}
             disabled={logoutMutation.isPending}
             className="inline-flex items-center gap-2 rounded-md border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <FiLogOut size={16} />
             {logoutMutation.isPending ? "Signing out..." : "Sign out"}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -630,25 +635,26 @@ const Settings = () => {
               <code className="flex-1 bg-transparent text-gray-900 outline-none font-mono text-xs break-all">
                 {displayedApiKeys?.testKey}
               </code>
-              <button
+              <Button
+                variant="default"
                 onClick={() => copyApiKey(displayedApiKeys?.testKey || "", "test")}
                 className={`p-2 rounded transition-colors flex-shrink-0 ${
                   copiedApiKey === "test"
                     ? "bg-green-100 text-green-700"
                     : "text-gray-600 hover:text-gray-900"
                 }`}
-                type="button"
                 title="Copy to clipboard"
               >
                 {copiedApiKey === "test" ? <FiCheck size={16} /> : <FiCopy size={16} />}
-              </button>
+              </Button>
             </div>
             {copiedApiKey === "test" && (
               <p className="text-xs text-green-600 mt-2">Copied to clipboard</p>
             )}
           </div>
 
-          <button
+          <Button
+            variant="default"
             onClick={() => {
               setShowApiKeysModal(false);
               setDisplayedApiKeys(null);
@@ -657,7 +663,7 @@ const Settings = () => {
             className="w-full px-4 py-2 bg-blue-950 text-white font-medium rounded-lg hover:bg-blue-900 text-sm"
           >
             Done
-          </button>
+          </Button>
         </div>
       </Modal>
     </DashboardWrapper>

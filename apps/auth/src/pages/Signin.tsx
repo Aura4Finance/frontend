@@ -15,7 +15,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle
-} from "@orafi/ui/card";
+} from "@orafi/ui";
 import {
   Form,
   FormControl,
@@ -23,9 +23,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage
-} from '@orafi/ui/form';
-import { Button } from "@orafi/ui/button";
-import { Input } from "@orafi/ui/input";
+} from '@orafi/ui';
+import { Button } from "@orafi/ui";
+import { Input } from "@orafi/ui";
 import { useLoginMutation, useLogin2FAMutation, type LoginSchema } from '../hooks/useLoginMutation';
 import { Helmet } from "react-helmet-async";
 
@@ -43,7 +43,7 @@ const TwoFAStep = ({
   });
 
   const form = useForm({
-    resolver: zodResolver(totpSchema),
+    resolver: zodResolver(totpSchema as any),
     defaultValues: { token: '' },
   });
 
@@ -142,7 +142,7 @@ const Signin = () => {
   });
 
   const form = useForm({
-    resolver: zodResolver(signInSchema),
+    resolver: zodResolver(signInSchema as any),
     defaultValues: {
       email: "",
       password: ""

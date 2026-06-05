@@ -5,7 +5,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle
-} from "@orafi/ui/card";
+} from "@orafi/ui";
 import { IoMdContact } from "react-icons/io";
 import {
   Form,
@@ -14,9 +14,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage
-} from '@orafi/ui/form';
-import { Input } from "@orafi/ui/input";
-import { Button } from "@orafi/ui/button";
+} from '@orafi/ui';
+import { Input } from "@orafi/ui";
+import { Button } from "@orafi/ui";
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -32,7 +32,7 @@ const ForgotPassword = () => {
   const forgotPasswordMutation = useForgotPasswordMutation();
 
   const form = useForm({
-    resolver: zodResolver(forgotPasswordSchema),
+    resolver: zodResolver(forgotPasswordSchema as any),
     defaultValues: {
       email: ""
     }

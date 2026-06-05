@@ -4,9 +4,9 @@ import {
   CardDescription,
   CardHeader,
   CardTitle
-} from "@orafi/ui/card";
+} from "@orafi/ui";
 import logo from "@orafi/ui/assets/OraFi.png";
-import { Button } from "@orafi/ui/button";
+import { Button } from "@orafi/ui";
 import { Link } from "wouter";
 
 const Auth = () => {

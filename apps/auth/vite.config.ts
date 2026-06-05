@@ -9,6 +9,7 @@ export default defineConfig({
     react()],
   resolve: {
     alias: {
+      '@': path.resolve(__dirname, './src'),
       '@orafi/ui': path.resolve(__dirname, '../../packages/ui/src'),
     },
   },

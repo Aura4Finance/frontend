@@ -1,6 +1,6 @@
 import { FaArrowAltCircleLeft } from 'react-icons/fa';
 import { Link } from "wouter";
-import { Button } from "@orafi/ui/button";
+import { Button } from "@orafi/ui";
 
 const Wrapper = ({children}: any) => {
   return (

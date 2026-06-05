@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { Button } from "@orafi/ui/button";
+import { Button } from "@orafi/ui";
 import Wrapper from "../layouts/Wrapper";
 import { FaRegEye } from 'react-icons/fa';
 import { FaRegEyeSlash } from 'react-icons/fa';
@@ -13,7 +13,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle
-} from "@orafi/ui/card";
+} from "@orafi/ui";
 import {
   Form,
   FormControl,
@@ -21,8 +21,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage
-} from '@orafi/ui/form';
-import { Input } from "@orafi/ui/input";
+} from '@orafi/ui';
+import { Input } from "@orafi/ui";
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -49,7 +49,7 @@ const Signup = () => {
   });
 
   const form = useForm({
-    resolver: zodResolver(signUpSchema),
+    resolver: zodResolver(signUpSchema as any),
     defaultValues: {
       firstname: '',
       lastname: '',
