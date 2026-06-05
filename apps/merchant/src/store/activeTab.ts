@@ -1,4 +1,3 @@
-// src/store/useActiveTabStore.ts
 import { create } from "zustand";
 
 export interface ActiveTabState {
