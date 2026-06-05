@@ -280,7 +280,7 @@ const Settings = () => {
         <div className="flex flex-wrap gap-2 border-b border-gray-200">
           {tabs.map((tab) => (
             <Button
-              variant="default"
+              variant="outline"
               key={tab.id}
               onClick={() => setActiveTabValue(tab.id)}
               className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-[2px] ${
@@ -459,7 +459,7 @@ const Settings = () => {
 
                 <div className="grid grid-cols-1 gap-2 text-xs text-gray-500 sm:grid-cols-2">
                   <p>Created: {formatDate(apiKey?.createdAt)}</p>
-                  <p>Last used: {formatDate(apiKey?.lastUsed)}</p>
+                  <p>Last used: {formatDate(apiKey?.lastUsedAt)}</p>
                 </div>
                 {apiKeysLoading && <p className="text-xs text-gray-500">Loading API keys...</p>}
               </div>
@@ -636,7 +636,7 @@ const Settings = () => {
                 {displayedApiKeys?.testKey}
               </code>
               <Button
-                variant="default"
+                variant="outline"
                 onClick={() => copyApiKey(displayedApiKeys?.testKey || "", "test")}
                 className={`p-2 rounded transition-colors flex-shrink-0 ${
                   copiedApiKey === "test"

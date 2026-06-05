@@ -83,7 +83,7 @@ type APIKey = {
     liveKey: string
     testKey: string
     createdAt: string
-    lastUsed: string
+    lastUsedAt: string
 }
 
 export const generateAPIKey = () => {
