@@ -345,7 +345,7 @@ const Checkout = () => {
         );
     }
 
-    if (!paymentQueryResult.data || paymentQueryResult.isError) return <Redirect to="*"/>
+    if (!paymentQueryResult.data || paymentQueryResult.isError) return <Redirect to="/"/>
     if (supportedNetworksQuery.isPending) return <div className="p-10 text-center">Loading networks...</div>;
 
     return (

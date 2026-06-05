@@ -1355,7 +1355,7 @@ const Subscriptions = () => {
   return (
     <DashboardWrapper>
       <Helmet>
-        <title>Subscriptions - Dashboard</title>
+        <title>Subscriptions | OraFi</title>
         <meta name="description" content="Manage your subscription plans and customer subscriptions." />
       </Helmet>
       <div className="space-y-6 p-4 sm:p-6">
