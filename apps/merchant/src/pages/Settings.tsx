@@ -279,8 +279,7 @@ const Settings = () => {
         {/* Tab Navigation */}
         <div className="flex flex-wrap gap-2 border-b border-gray-200">
           {tabs.map((tab) => (
-            <Button
-              variant="default"
+            <button
               key={tab.id}
               onClick={() => setActiveTabValue(tab.id)}
               className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-[2px] ${
@@ -290,7 +289,7 @@ const Settings = () => {
               }`}
             >
               {tab.label}
-            </Button>
+            </button>
           ))}
         </div>
 
