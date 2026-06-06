@@ -28,12 +28,6 @@ import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { Helmet } from "react-helmet-async";
 
-const verifySchema = z.object({
-  otp: z.string().min(6, "OTP must be at least 6 digits"),
-});
-
-type VerifyFormValues = z.infer<typeof verifySchema>;
-
 const VerifyEmail = () => {
   const [isResendDisabled, setIsResendDisabled] = useState(false);
   const [timer, setTimer] = useState(0);
@@ -42,41 +36,33 @@ const VerifyEmail = () => {
   const { email, clearEmail } = useAuth();
   const [, setLocation] = useLocation();
 
-  const form = useForm<VerifyFormValues>({
-    resolver: zodResolver(verifySchema),
-    defaultValues: {
-      otp: "",
-    },
+  const forgotPasswordSchema = z.object({
+    otp: z.string().min(6, "OTP must be at least 6 digits"),
   });
 
-  const handleVerifyAccountMutation = (value: VerifyFormValues) => {
+  const form = useForm({
+    resolver: zodResolver(forgotPasswordSchema as any),
+  });
+
+  const handleVerifyAccountMutation = (value: any) => {
     verifyEmailMutation.mutate({
       email: email as string,
       otp: value.otp,
     });
   };
 
-  const handleResendOtp = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
+  const handleResendOtp = () => {
     resendOtpMutation.mutate({ email: email as string });
     setIsResendDisabled(true);
     setTimer(60);
   };
 
-  // Redirect to login automatically when the backend returns a success response
-  useEffect(() => {
-    if (verifyEmailMutation.isSuccess) {
-      clearEmail();
-      setLocation("/signin");
-    }
-  }, [verifyEmailMutation.isSuccess, setLocation, clearEmail]);
-  
   useEffect(() => {
     if (!email) {
       toast.error("Email not found");
       setLocation("/");
     }
-    let countdown: NodeJS.Timeout;
+    let countdown: number;
     if (isResendDisabled && timer > 0) {
       countdown = setInterval(() => {
         setTimer((prev) => prev - 1);
@@ -85,7 +71,14 @@ const VerifyEmail = () => {
       setIsResendDisabled(false);
     }
     return () => clearInterval(countdown);
-  }, [isResendDisabled, timer, email, setLocation]);
+  }, [isResendDisabled, timer]);
+
+  useEffect(() => {
+    if (verifyEmailMutation.isSuccess) {
+      clearEmail();
+      setLocation("/signin");
+    }
+  }, [verifyEmailMutation.isSuccess]);
 
   return (
     <Wrapper>
@@ -144,7 +137,7 @@ const VerifyEmail = () => {
               >
                 {verifyEmailMutation.isPending ? (
                   <div className="flex items-center space-x-2">
-                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-xl " />
+                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-xl" />
                     <span>Loading...</span>
                   </div>
                 ) : (
