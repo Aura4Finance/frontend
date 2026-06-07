@@ -349,7 +349,7 @@ const Checkout = () => {
                     )}
 
                     <Button
-                      variant="outlined"
+                      variant="outline"
                       onClick={executePayment}
                       className="w-full py-3 font-semibold"
                       disabled={processing}>
