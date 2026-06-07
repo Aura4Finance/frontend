@@ -74,7 +74,7 @@ export const useCheckoutPayment = ({
         },
       });
 
-      if (depositObject.data?.type !== "moveObject") {
+      if (depositObject.data?.content?.dataType !== "moveObject") {
         throw new Error("Invalid deposit object");
       }
 
