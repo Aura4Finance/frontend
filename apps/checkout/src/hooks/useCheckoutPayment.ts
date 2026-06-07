@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { getFullnodeUrl, SuiClient, type MoveValue, type SuiParsedData } from "@mysten/sui/client";
 import { Transaction } from "@mysten/sui/transactions";
-import { DeepBookClient } from "@mysten/deepbook-v3";
+import { deepbook } from "@mysten/deepbook-v3";
 import { toast } from "sonner";
 import {
   useGetSupportedNetworksAndTokens,
@@ -61,11 +61,6 @@ export const useCheckoutPayment = ({
       const network = paymentData.mode === "live" ? "mainnet" : "testnet";
 
       const client = new SuiClient({ url: getFullnodeUrl(network) });
-      const dbClient = new DeepBookClient({
-        client,
-        address: wallet.address,
-        network
-      });
       const depositObject = await client.getObject({
         id: depositAddress,
         options: { 
@@ -176,7 +171,9 @@ export const useCheckoutPayment = ({
         // Dynamic pool verification via DeepBook Client
         let poolObjectId: string | null = null;
         try {
-          poolObjectId = await dbClient.getPoolIdByAssets(tokenCoinType, usdcCoinType);
+          poolObjectId = await (client.$extend(deepbook({
+          address: wallet.address
+      })) as any).deepbook.getPoolIdByAssets(tokenCoinType, usdcCoinType);
         } catch (sdkErr) {
           console.error("DeepBook client pool resolution failed, trying fallback:", sdkErr);
         }
