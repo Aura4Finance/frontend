@@ -68,7 +68,10 @@ export const useCheckoutPayment = ({
       });
       const depositObject = await client.getObject({
         id: depositAddress,
-        options: { showContent: true },
+        options: { 
+          showContent: true,
+          showType: true
+        },
       });
 
       if (depositObject.data?.type !== "moveObject") {
