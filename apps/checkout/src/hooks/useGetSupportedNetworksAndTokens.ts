@@ -3,24 +3,25 @@ import {
 } from "@tanstack/react-query";
 import client from "../client/client";
 
-type SupportedNetwork = {
+export type Token = {
+    name: string;
+    symbol: string;
+    logoUrl: string;
+    decimals: string;
+    mainnet: {
+        coinType: string
+    }
+    testnet: {
+        coinType: string
+    }
+
+}
+export type SupportedNetwork = {
     code: string;
     name: string;
     symbol: string;
     isActive: boolean;
-    supportedTokens: {
-        name: string;
-        symbol: string;
-        logoUrl: string;
-        decimals: string;
-        mainnet: {
-            coinType: string
-        }
-        testnet: {
-            coinType: string
-        }
-        
-    }[],
+    supportedTokens: Token[],
     smartContractPackageId: {
         testnet: string,
         mainnet: string;

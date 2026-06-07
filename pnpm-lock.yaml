@@ -208,6 +208,9 @@ importers:
       '@7kprotocol/sdk-ts':
         specifier: ^4.0.0
         version: 4.0.0(@mysten/sui@1.45.2(typescript@5.9.3))(@pythnetwork/pyth-sui-js@2.4.0(axios@1.13.2)(typescript@5.9.3))(axios@1.13.2)(graphql@16.12.0)(typescript@5.9.3)
+      '@mysten/deepbook-v3':
+        specifier: ^1.4.1
+        version: 1.4.1(@mysten/sui@1.45.2(typescript@5.9.3))
       '@mysten/sui':
         specifier: ^1.43.1
         version: 1.45.2(typescript@5.9.3)
@@ -1553,6 +1556,12 @@ packages:
       '@tanstack/react-query': ^5.0.0
       react: '*'
 
+  '@mysten/deepbook-v3@1.4.1':
+    resolution: {integrity: sha512-OLJ9jYNIetg+aXOR2QpIL5eBHeyF8hm3zbv5s6s/jqmDbzqhpGmxvwOodG1X82cML7kKh4IgyQX193+fvndQYA==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      '@mysten/sui': ^2.17.0
+
   '@mysten/slush-wallet@0.2.12':
     resolution: {integrity: sha512-OVIQbADqUVZCTps3MGvVI90nczTbwepAb75x+jZuH2W2p8lXoYIuvuuP4KlwwalR9QgpqOqptdpYFVAKi8ncLQ==}
 
@@ -2572,6 +2581,10 @@ packages:
     peerDependencies:
       '@mysten/sui': 1.45.2
 
+  agent-base@6.0.2:
+    resolution: {integrity: sha512-RZNwNclF7+MS/8bDg70amg32dyeZGZxiDuQmZxKLAlQjr3jGyLx+4Kkk58UO7D2QdgFIQCovuSuZESne6RG6XQ==}
+    engines: {node: '>= 6.0.0'}
+
   ajv@6.12.6:
     resolution: {integrity: sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g==}
 
@@ -2600,8 +2613,16 @@ packages:
     peerDependencies:
       postcss: ^8.1.0
 
+  axios-retry@4.5.0:
+    resolution: {integrity: sha512-aR99oXhpEDGo0UuAlYcn2iGRds30k366Zfa05XWScR9QaQD4JYiP3/1Qt1u7YlefUOK+cn0CcwoL1oefavQUlQ==}
+    peerDependencies:
+      axios: 0.x || 1.x
+
   axios@1.13.2:
     resolution: {integrity: sha512-VPk9ebNqPcy5lRGuSlKx752IlDatOjT9paPlm8A7yOuW2Fbvp4X3JznJtT4f0GzGLLiWE9W8onz51SqLYwzGaA==}
+
+  axios@1.17.0:
+    resolution: {integrity: sha512-J8SwNxprqqpbfenehxWYXE7CW+wM1BB4w3+N+g+/Wx40xM4rsLrfPmHHxSWIxJLYDgSY/HqlFPIYb2/S3rxafw==}
 
   babel-plugin-polyfill-corejs2@0.4.14:
     resolution: {integrity: sha512-Co2Y9wX854ts6U8gAAPXfn0GmAyctHuK8n0Yhfjd6t30g7yvKjspvvOo9yG+z52PZRgFErt7Ka2pYnXCjLKEpg==}
@@ -3222,6 +3243,15 @@ packages:
       debug:
         optional: true
 
+  follow-redirects@1.16.0:
+    resolution: {integrity: sha512-y5rN/uOsadFT/JfYwhxRS5R7Qce+g3zG97+JrtFZlC9klX/W5hD7iiLzScI4nZqUS7DNUdhPgw4xI8W2LuXlUw==}
+    engines: {node: '>=4.0'}
+    peerDependencies:
+      debug: '*'
+    peerDependenciesMeta:
+      debug:
+        optional: true
+
   form-data@4.0.5:
     resolution: {integrity: sha512-8RipRLol37bNs2bhoV67fiTEvdTrbMUYcFTiy3+wuuOnUog2QBHCZWXDRijWQfAkhBj2Uf5UnVaiWwA5vdd82w==}
     engines: {node: '>= 6'}
@@ -3335,6 +3365,10 @@ packages:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
 
+  https-proxy-agent@5.0.1:
+    resolution: {integrity: sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA==}
+    engines: {node: '>= 6'}
+
   iconv-lite@0.6.3:
     resolution: {integrity: sha512-4fCk79wshMdzMp2rH06qWrJE4iolqLhCUH+OiuIgU++RB0+94NlDL81atO7GX55uUKueo0txHNtvEyI6D7WdMw==}
     engines: {node: '>=0.10.0'}
@@ -3393,6 +3427,10 @@ packages:
   is-glob@4.0.3:
     resolution: {integrity: sha512-xelSayHH36ZgE7ZWhli7pW34hNbNl8Ojv5KVmkJD4hBdD3th8Tfk9vYasLM+mXWOZhFkgZfxhLSnrwRr4elSSg==}
     engines: {node: '>=0.10.0'}
+
+  is-retry-allowed@2.2.0:
+    resolution: {integrity: sha512-XVm7LOeLpTW4jV19QSH38vkswxoLud8sQ57YwJVTPWdiaI9I8keEhGFpBlslyVsgdQy4Opg8QOLb8YRgsyZiQg==}
+    engines: {node: '>=10'}
 
   isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
@@ -3796,6 +3834,10 @@ packages:
 
   proxy-from-env@1.1.0:
     resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
+
+  proxy-from-env@2.1.0:
+    resolution: {integrity: sha512-cJ+oHTW1VAEa8cJslgmUZrc+sjRKgAKl3Zyse6+PV38hZe/V6Z14TbCuXcan9F9ghlz4QrFr2c92TNF82UkYHA==}
+    engines: {node: '>=10'}
 
   punycode@2.3.1:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
@@ -5465,7 +5507,6 @@ snapshots:
     dependencies:
       '@mysten/utils': 0.3.3
       '@scure/base': 2.2.0
-    optional: true
 
   '@mysten/dapp-kit@0.19.11(@tanstack/react-query@5.90.18(react@19.2.3))(@types/react-dom@19.2.3(@types/react@19.2.8))(@types/react@19.2.8)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)':
     dependencies:
@@ -5492,6 +5533,17 @@ snapshots:
       - immer
       - react-dom
       - typescript
+
+  '@mysten/deepbook-v3@1.4.1(@mysten/sui@1.45.2(typescript@5.9.3))':
+    dependencies:
+      '@mysten/bcs': 2.0.5
+      '@mysten/sui': 1.45.2(typescript@5.9.3)
+      '@noble/hashes': 2.2.0
+      axios: 1.17.0
+      axios-retry: 4.5.0(axios@1.17.0)
+    transitivePeerDependencies:
+      - debug
+      - supports-color
 
   '@mysten/slush-wallet@0.2.12(typescript@5.9.3)':
     dependencies:
@@ -5596,7 +5648,6 @@ snapshots:
   '@mysten/utils@0.3.3':
     dependencies:
       '@scure/base': 2.2.0
-    optional: true
 
   '@mysten/wallet-standard@0.11.6(typescript@5.9.3)':
     dependencies:
@@ -5660,8 +5711,7 @@ snapshots:
 
   '@noble/hashes@1.8.0': {}
 
-  '@noble/hashes@2.2.0':
-    optional: true
+  '@noble/hashes@2.2.0': {}
 
   '@protobuf-ts/grpcweb-transport@2.11.1':
     dependencies:
@@ -6072,8 +6122,7 @@ snapshots:
 
   '@scure/base@1.2.6': {}
 
-  '@scure/base@2.2.0':
-    optional: true
+  '@scure/base@2.2.0': {}
 
   '@scure/bip32@1.7.0':
     dependencies:
@@ -6667,6 +6716,12 @@ snapshots:
       priority-queue-typescript: 1.0.1
     optional: true
 
+  agent-base@6.0.2:
+    dependencies:
+      debug: 4.4.3
+    transitivePeerDependencies:
+      - supports-color
+
   ajv@6.12.6:
     dependencies:
       fast-deep-equal: 3.1.3
@@ -6697,6 +6752,11 @@ snapshots:
       postcss: 8.5.6
       postcss-value-parser: 4.2.0
 
+  axios-retry@4.5.0(axios@1.17.0):
+    dependencies:
+      axios: 1.17.0
+      is-retry-allowed: 2.2.0
+
   axios@1.13.2:
     dependencies:
       follow-redirects: 1.15.11
@@ -6704,6 +6764,16 @@ snapshots:
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
       - debug
+
+  axios@1.17.0:
+    dependencies:
+      follow-redirects: 1.16.0
+      form-data: 4.0.5
+      https-proxy-agent: 5.0.1
+      proxy-from-env: 2.1.0
+    transitivePeerDependencies:
+      - debug
+      - supports-color
 
   babel-plugin-polyfill-corejs2@0.4.14(@babel/core@7.28.6):
     dependencies:
@@ -7377,6 +7447,8 @@ snapshots:
 
   follow-redirects@1.15.11: {}
 
+  follow-redirects@1.16.0: {}
+
   form-data@4.0.5:
     dependencies:
       asynckit: 0.4.0
@@ -7490,6 +7562,13 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
+  https-proxy-agent@5.0.1:
+    dependencies:
+      agent-base: 6.0.2
+      debug: 4.4.3
+    transitivePeerDependencies:
+      - supports-color
+
   iconv-lite@0.6.3:
     dependencies:
       safer-buffer: 2.1.2
@@ -7535,6 +7614,8 @@ snapshots:
   is-glob@4.0.3:
     dependencies:
       is-extglob: 2.1.1
+
+  is-retry-allowed@2.2.0: {}
 
   isexe@2.0.0: {}
 
@@ -7896,6 +7977,8 @@ snapshots:
       react-is: 16.13.1
 
   proxy-from-env@1.1.0: {}
+
+  proxy-from-env@2.1.0: {}
 
   punycode@2.3.1: {}
 

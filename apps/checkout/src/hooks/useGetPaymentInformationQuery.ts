@@ -4,7 +4,7 @@ import {
  } from "@tanstack/react-query";
 import client from "../client/client";
 
-type PaymentData = {
+export type PaymentData = {
   id: string;
   businessName: string;
   depositAddress: string;
@@ -24,7 +24,7 @@ export const useGetPaymentInformationQuery = (paymentId: string) => {
       const { data } = await client.get(
         `/transactions/payment/${paymentId}`,
       );
-      return data.data;
+      return data.data as PaymentData;
     },
     enabled: !!paymentId,
     staleTime: Infinity,
