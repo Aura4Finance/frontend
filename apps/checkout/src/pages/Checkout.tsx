@@ -351,7 +351,7 @@ const Checkout = () => {
                     <Button
                       variant="default"
                       onClick={executePayment}
-                      className="w-full py-3 font-semibold"
+                      className="w-full py-3 font-semibold suiet-custom-wrapper"
                       disabled={processing}>
                       {processing ? "Processing..." : `Pay ${displayTokenAmount} ${displayTokenSymbol}`}
                     </Button>
