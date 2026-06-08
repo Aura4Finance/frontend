@@ -364,7 +364,7 @@ const Checkout = () => {
                       {processing ? "Processing..." : `Pay ${displayTokenAmount} ${displayTokenSymbol}`}
                     </Button>
                     <MobileWalletPrompt
-                      checkDepositAddressOnChain={checkDepositAddressOnChain ? checkDepositAddressOnChain : async () => false}
+                      checkDepositAddressOnChain={checkDepositAddressOnChain}
                       redirectUrl={redirect}
                     />
                   </div>
