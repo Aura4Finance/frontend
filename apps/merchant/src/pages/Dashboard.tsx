@@ -90,7 +90,7 @@ const Dashboard = () => {
 
   const dashboardKpis = [
     {
-      label: "Completed transactions",
+      label: "Total transactions",
       value: transactionCount?.total?.toLocaleString("en-US") ?? "—",
       helper: transactionCount
         ? `${transactionCount.percentageChange}% ${transactionCount.trend === "up" ? "increase" : "decrease"} from last period`
@@ -112,7 +112,7 @@ const Dashboard = () => {
     {
       label: "Total transaction volume",
       value: transactionVolume
-        ? `$${transactionVolume.totalVolumeInUSDC.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC`
+        ? `${transactionVolume.totalVolumeInUSDC.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC`
         : "—",
       helper: transactionVolume
         ? `${transactionVolume.transactionCount.toLocaleString()} transactions settled`
@@ -124,10 +124,10 @@ const Dashboard = () => {
     {
       label: "Net Earnings",
       value: earnings?.earningsUSDC
-        ? `$${earnings.earningsUSDC.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC`
+        ? `${earnings.earningsUSDC.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC`
         : "—",
       helper: earnings?.grossEarningsUSDC
-        ? `Gross: $${earnings.grossEarningsUSDC.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC`
+        ? `Gross: ${earnings.grossEarningsUSDC.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC`
         : "—",
       icon: FiDollarSign,
       iconClassName: "bg-green-50 text-green-600",
