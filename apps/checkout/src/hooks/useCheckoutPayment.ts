@@ -37,16 +37,17 @@ export const useCheckoutPayment = ({
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch supported networks and tokens data via your react-query hook
-  if(!paymentData) {
-    toast.error("Payment data not available");
-    return { executePayment: async () => {}, processing, error, setError };
+  const initializeClient = () => {
+    const network: "mainnet" | "testnet" | "devnet" | "localnet" = paymentData?.mode === "live" ? "mainnet" : "testnet";
+    return {
+      client: new SuiClient({ url: getFullnodeUrl(network) }),
+      network
+    }
   }
-  const network = paymentData.mode === "live" ? "mainnet" : "testnet";
+  // Fetch supported networks and tokens data via your react-query hook
   const { data: supportedNetworks } = useGetSupportedNetworksAndTokens();
-  const client = new SuiClient({ url: getFullnodeUrl(network) });
   const executePayment = async () => {
-    if (!wallet.connected || !wallet.address) {
+    if (!wallet.connected || !paymentData || !wallet.address) {
       toast.error("Wallet not connected");
       return;
     }
@@ -65,7 +66,10 @@ export const useCheckoutPayment = ({
     }
 
     try {
-
+      const {
+        client,
+        network
+      } = initializeClient();
       const dbClient: ClientWithExtensions<{ deepbook: DeepBookClient }> | any = new SuiGrpcClient({
         network,
         baseUrl: getFullnodeUrl(network)
@@ -253,6 +257,7 @@ export const useCheckoutPayment = ({
 
   const checkDepositAddressOnChain = async (): Promise<boolean> => {
     try {
+      const { client } = initializeClient();
       const depositObject = await client.getObject({
         id: generatedAddresses.depositAddress || "",
         options: { showContent: true }
