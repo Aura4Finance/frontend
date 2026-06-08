@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { getFullnodeUrl, SuiClient, type MoveValue, type SuiParsedData } from "@mysten/sui/client";
 import { Transaction } from "@mysten/sui/transactions";
-import { deepbook } from "@mysten/deepbook-v3";
+import { deepbook, type DeepBookClient } from "@mysten/deepbook-v3";
+import { SuiGrpcClient } from '@mysten/sui/grpc';
 import { toast } from "sonner";
 import {
   useGetSupportedNetworksAndTokens,
@@ -10,6 +11,7 @@ import {
 } from "./useGetSupportedNetworksAndTokens";
 import type { WalletContextState } from "@suiet/wallet-kit";
 import type { PaymentData } from "./useGetPaymentInformationQuery";
+import type { ClientWithExtensions } from "@mysten/sui/experimental";
 
 interface UseCheckoutPaymentProps {
   wallet: WalletContextState;
@@ -61,9 +63,18 @@ export const useCheckoutPayment = ({
       const network = paymentData.mode === "live" ? "mainnet" : "testnet";
 
       const client = new SuiClient({ url: getFullnodeUrl(network) });
+      const dbClient: ClientWithExtensions<{ deepbook: DeepBookClient }> | any = new SuiGrpcClient({
+        network,
+        baseUrl: getFullnodeUrl(network)
+      }).$extend(
+        deepbook({
+          address: wallet.address,
+        }),
+      );
+
       const depositObject = await client.getObject({
         id: depositAddress,
-        options: { 
+        options: {
           showContent: true,
           showType: true
         },
@@ -171,9 +182,7 @@ export const useCheckoutPayment = ({
         // Dynamic pool verification via DeepBook Client
         let poolObjectId: string | null = null;
         try {
-          poolObjectId = await (client.$extend(deepbook({
-          address: wallet.address
-      })) as any).deepbook.getPoolIdByAssets(tokenCoinType, usdcCoinType);
+          poolObjectId = await dbClient.deepbook.getPoolIdByAssets(tokenCoinType, usdcCoinType);
         } catch (sdkErr) {
           console.error("DeepBook client pool resolution failed, trying fallback:", sdkErr);
         }
