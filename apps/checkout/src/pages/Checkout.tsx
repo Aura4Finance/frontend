@@ -351,7 +351,7 @@ const Checkout = () => {
                     <Button
                       variant="outline"
                       onClick={executePayment}
-                      className="w-full py-3 bg-blue-900 hover:bg-blue-800 text-white font-bold text-lg shadow-lg active:scale-[0.98] transition-all disabled:opacity-75 disabled:cursor-not-allowed"
+                      className="w-full h-12 py-3 bg-blue-900 hover:bg-blue-800 text-white font-bold text-lg shadow-lg active:scale-[0.98] transition-all disabled:opacity-75 disabled:cursor-not-allowed"
                       disabled={processing}>
                       {processing ? "Processing..." : `Pay ${displayTokenAmount} ${displayTokenSymbol}`}
                     </Button>
