@@ -2,15 +2,13 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@orafi/ui";
 import { FiCopy, FiCheck, FiSmartphone } from "react-icons/fi";
 import { toast } from "sonner";
-import type { SuiClient } from "@mysten/sui/client";
 
 interface MobileWalletPromptProps {
-    client: SuiClient;
-    depositAddress: string;
+    checkDepositAddressOnChain: (() => Promise<boolean>);
     redirectUrl?: string;
 }
 
-export const MobileWalletPrompt = ({ redirectUrl, client, depositAddress }: MobileWalletPromptProps) => {
+export const MobileWalletPrompt = ({ redirectUrl, checkDepositAddressOnChain  }: MobileWalletPromptProps) => {
     const [showPayWithMobile, setShowPayWithMobile] = useState(false);
     const [copied, setCopied] = useState(false);
     const [verifyingPayment, setVerifyingPayment] = useState(false);
@@ -73,25 +71,6 @@ export const MobileWalletPrompt = ({ redirectUrl, client, depositAddress }: Mobi
             setVerifyingPayment(false);
         }
     };
-
-    const checkDepositAddressOnChain = async (): Promise<boolean> => {
-        try {
-            const depositObject = await client.getObject({
-                id: depositAddress,
-                options: { showContent: true }
-            });
-            return !!depositObject.data;
-        } catch (error: any) {
-            if (
-                error.message?.includes("not find") ||
-                error.message?.includes("deleted")
-            ) {
-                return false;
-            }
-
-            return false; // Placeholder
-        };
-    }
 
         const linkToCopy = window.location.href + (window.location.href.includes('?') ? '&' : '?') + 'redirect=false';
 

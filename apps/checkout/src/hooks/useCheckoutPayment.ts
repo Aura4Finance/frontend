@@ -38,10 +38,15 @@ export const useCheckoutPayment = ({
   const [error, setError] = useState<string | null>(null);
 
   // Fetch supported networks and tokens data via your react-query hook
+  if(!paymentData) {
+    toast.error("Payment data not available");
+    return { executePayment: async () => {}, processing, error, setError };
+  }
+  const network = paymentData.mode === "live" ? "mainnet" : "testnet";
   const { data: supportedNetworks } = useGetSupportedNetworksAndTokens();
-
+  const client = new SuiClient({ url: getFullnodeUrl(network) });
   const executePayment = async () => {
-    if (!wallet.connected || !paymentData || !wallet.address) {
+    if (!wallet.connected || !wallet.address) {
       toast.error("Wallet not connected");
       return;
     }
@@ -60,9 +65,7 @@ export const useCheckoutPayment = ({
     }
 
     try {
-      const network = paymentData.mode === "live" ? "mainnet" : "testnet";
 
-      const client = new SuiClient({ url: getFullnodeUrl(network) });
       const dbClient: ClientWithExtensions<{ deepbook: DeepBookClient }> | any = new SuiGrpcClient({
         network,
         baseUrl: getFullnodeUrl(network)
@@ -248,5 +251,24 @@ export const useCheckoutPayment = ({
     }
   };
 
-  return { executePayment, processing, error, setError };
+  const checkDepositAddressOnChain = async (): Promise<boolean> => {
+    try {
+      const depositObject = await client.getObject({
+        id: generatedAddresses.depositAddress || "",
+        options: { showContent: true }
+      });
+      return !!depositObject.data;
+    } catch (error: any) {
+      if (
+        error.message?.includes("not find") ||
+        error.message?.includes("deleted")
+      ) {
+        return false;
+      }
+
+      return false; // Placeholder
+    };
+  }
+
+  return { executePayment, checkDepositAddressOnChain, processing, error, setError };
 };

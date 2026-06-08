@@ -9,6 +9,7 @@ import { Helmet } from "react-helmet-async";
 import { toast } from "sonner";
 
 import { PaymentMethodSelector } from "../components/PaymentMethodSelector";
+import { MobileWalletPrompt } from "../components/MobileWalletPrompt";
 import { TransferPayment } from "../components/TransferPayment";
 import { CheckoutSummary } from "../components/CheckoutSummary";
 import { useCheckoutPayment } from "../hooks/useCheckoutPayment";
@@ -60,7 +61,13 @@ const Checkout = () => {
   const hasNoRedirect = !redirect || new URL(window.location.href).searchParams.get("redirect") === "false";
 
   // Use the isolated hook for handling payment processing executions
-  const { executePayment, processing, error, setError } = useCheckoutPayment({
+  const { 
+    executePayment,
+    checkDepositAddressOnChain,  
+    processing, 
+    error, 
+    setError
+} = useCheckoutPayment({
     wallet,
     paymentData: paymentQueryResult.data,
     generatedAddresses,
@@ -356,6 +363,10 @@ const Checkout = () => {
                       disabled={processing}>
                       {processing ? "Processing..." : `Pay ${displayTokenAmount} ${displayTokenSymbol}`}
                     </Button>
+                    <MobileWalletPrompt
+                      checkDepositAddressOnChain={checkDepositAddressOnChain ? checkDepositAddressOnChain : async () => false}
+                      redirectUrl={redirect}
+                    />
                   </div>
                 )}
               </>
