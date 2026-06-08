@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { getFullnodeUrl, SuiClient, type MoveValue, type SuiParsedData } from "@mysten/sui/client";
 import { Transaction } from "@mysten/sui/transactions";
-import { deepbook, type DeepBookClient } from "@mysten/deepbook-v3";
-import { SuiGrpcClient } from '@mysten/sui/grpc';
+import { deepbook} from "@mysten/deepbook-v3";
 import { toast } from "sonner";
 import {
   useGetSupportedNetworksAndTokens,
@@ -70,14 +69,6 @@ export const useCheckoutPayment = ({
         client,
         network
       } = initializeClient();
-      const dbClient: ClientWithExtensions<{ deepbook: DeepBookClient }> | any = new SuiGrpcClient({
-        network,
-        baseUrl: getFullnodeUrl(network)
-      }).$extend(
-        deepbook({
-          address: wallet.address,
-        }),
-      );
 
       const depositObject = await client.getObject({
         id: depositAddress,
@@ -189,7 +180,11 @@ export const useCheckoutPayment = ({
         // Dynamic pool verification via DeepBook Client
         let poolObjectId: string | null = null;
         try {
-          poolObjectId = await dbClient.deepbook.getPoolIdByAssets(tokenCoinType, usdcCoinType);
+          // Create the extended client once (reusing your existing `client`)
+             const dbClient: unknown = client.$extend(
+             deepbook({ address: wallet.address });
+           // Then call it
+             poolObjectId = await dbClient.core.deepbook.getPoolIdByAssets(tokenCoinType, usdcCoinType);
         } catch (sdkErr) {
           console.error("DeepBook client pool resolution failed, trying fallback:", sdkErr);
         }
