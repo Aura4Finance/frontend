@@ -9,6 +9,7 @@ import { Helmet } from "react-helmet-async";
 import { toast } from "sonner";
 
 import { PaymentMethodSelector } from "../components/PaymentMethodSelector";
+import { TransferPayment } from "../components/TransferPayment";
 import { CheckoutSummary } from "../components/CheckoutSummary";
 import { useCheckoutPayment } from "../hooks/useCheckoutPayment";
 import { useGetPaymentInformationQuery, useGeneratePaymentIntentMutation } from "../hooks/useGetPaymentInformationQuery";
@@ -359,7 +360,14 @@ const Checkout = () => {
                 )}
               </>
             ) : (
-              <div>{/* Content placeholder for transfer address info layout if needed */}</div>
+              <TransferPayment
+                transferAddress={generatedAddresses.transferAddress}
+                amountInUSDC={roundedAmountInUSDC}
+                transactionId={params?.txId}
+                redirectUrl={redirect}
+                isTestnet={paymentQueryResult.data?.mode === "test"}
+                selectedToken={selectedTokenObject}
+              />
             )}
           </div>
         </Card>

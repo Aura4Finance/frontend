@@ -7,9 +7,9 @@ import { useVerifyTransferMutation } from "../hooks/useVerifyTransferMutation";
 import { toast } from "sonner";
 
 interface TransferPaymentProps {
-    transferAddress: string;
+    transferAddress?: string;
     amountInUSDC: string;
-    transactionId: string;
+    transactionId?: string;
     redirectUrl?: string;
     isTestnet?: boolean;
     selectedToken?: {
@@ -82,7 +82,7 @@ export const TransferPayment = ({
     // Generate QR code on mount
     const generateQRCode = async () => {
         try {
-            const url = await QRCode.toDataURL(transferAddress, {
+            const url = await QRCode.toDataURL(String(transferAddress), {
                 margin: 1,
                 width: 200,
                 color: {
@@ -103,11 +103,11 @@ export const TransferPayment = ({
     const handleCopyAddress = async () => {
         try {
             if (navigator.clipboard && navigator.clipboard.writeText) {
-                await navigator.clipboard.writeText(transferAddress);
+                await navigator.clipboard.writeText(String(transferAddress));
             } else {
                 // Fallback for mobile / in-app browsers
                 const textArea = document.createElement("textarea");
-                textArea.value = transferAddress;
+                textArea.value = String(transferAddress);
                 textArea.style.position = "fixed"; // avoid scroll jump
                 document.body.appendChild(textArea);
                 textArea.focus();
@@ -123,7 +123,7 @@ export const TransferPayment = ({
     };
 
     const handleVerifyTransfer = () => {
-        verifyTransferMutation.mutate({ paymentId: transactionId, token: tokenSymbol });
+        verifyTransferMutation.mutate({ paymentId: String(transactionId), token: tokenSymbol });
     };
 
     return (
