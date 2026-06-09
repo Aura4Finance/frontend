@@ -182,7 +182,7 @@ export const useCheckoutPayment = ({
         try {
           // Create the extended client once (reusing your existing `client`)
              const dbClient: unknown = client.$extend(
-             deepbook({ address: wallet.address });
+             deepbook({ address: wallet.address }))
            // Then call it
              poolObjectId = await dbClient.core.deepbook.getPoolIdByAssets(tokenCoinType, usdcCoinType);
         } catch (sdkErr) {
