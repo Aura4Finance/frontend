@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { getFullnodeUrl, SuiClient, type MoveValue, type SuiParsedData } from "@mysten/sui/client";
 import { Transaction } from "@mysten/sui/transactions";
+import { bcs } from '@mysten/sui/bcs';
 import { toast } from "sonner";
 import {
   useGetSupportedNetworksAndTokens,
@@ -195,11 +196,7 @@ export const useCheckoutPayment = ({
         if (!poolIdBytes) {
           throw new Error("Could not find the pool ID");
         }
-
-        const poolObjectId = '0x' + Array.from(poolIdBytes)
-          .map(b => b.toString(16).padStart(2, '0'))
-          .join('');
-
+        const poolObjectId = bcs.Address.parse(poolIdBytes as unknown as Uint8Array<ArrayBufferLike>);
         const deepTokenItem = currentNetworkContext?.supportedTokens.find(
           (token) => token.symbol.toUpperCase() === "DEEP"
         );
