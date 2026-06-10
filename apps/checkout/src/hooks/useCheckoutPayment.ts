@@ -196,8 +196,9 @@ export const useCheckoutPayment = ({
           throw new Error("Could not find the pool ID");
         }
 
-        // Convert the byte array back into a hex string
-        const poolObjectId = '0x' + Buffer.from(poolIdBytes).toString('hex');
+        const poolObjectId = '0x' + Array.from(poolIdBytes)
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
 
         const deepTokenItem = currentNetworkContext?.supportedTokens.find(
           (token) => token.symbol.toUpperCase() === "DEEP"
