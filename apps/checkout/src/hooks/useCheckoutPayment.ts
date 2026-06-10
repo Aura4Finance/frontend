@@ -190,13 +190,19 @@ export const useCheckoutPayment = ({
         });
 
         // 3. Extract the ID from the return values
-        // Move addresses/IDs are typically returned as raw bytes, so we parse them
-        const poolIdBytes = inspectResult.results?.[0]?.returnValues?.[0]?.[0];
+        // Note: We target the inner array directly (inspectResult.results[0].returnValues[0])
+        const returnValues = inspectResult.results?.[0]?.returnValues?.[0];
 
-        if (!poolIdBytes) {
+        if (!returnValues || !returnValues[0]) {
           throw new Error("Could not find the pool ID");
         }
-        const poolObjectId = bcs.Address.parse(poolIdBytes as unknown as Uint8Array<ArrayBufferLike>);
+
+        // Ensure the raw data is flattened into a plain array, then build a proper Uint8Array
+        const rawNumbers = Array.from(returnValues[0]);
+        const poolIdBytes = new Uint8Array(rawNumbers);
+
+        // Parse it safely with BCS into a clean 0x address string
+        const poolObjectId = bcs.Address.parse(poolIdBytes);
         const deepTokenItem = currentNetworkContext?.supportedTokens.find(
           (token) => token.symbol.toUpperCase() === "DEEP"
         );
