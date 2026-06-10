@@ -112,7 +112,7 @@ const Checkout = () => {
 
   const isTokenDisabled = (tokenSymbol: string): boolean => {
     if (!matchedNetwork) return true;
-    return paymentQueryResult.data?.mode === "test" ? !["SUI", "USDC"].includes(tokenSymbol) : false;
+    return paymentQueryResult.data?.mode === "test" ? !["USDC"].includes(tokenSymbol) : false;
   };
 
   useEffect(() => {
@@ -303,7 +303,7 @@ const Checkout = () => {
                   <div className="flex flex-col gap-3">
                     <p className="text-sm text-gray-600 text-center">Connect your Sui wallet to pay</p>
                     <div className="flex justify-center suiet-custom-wrapper">
-                      <ConnectButton label="Connect Wallet" />
+                      <ConnectButton label="Connect Wallet" className="w-full h-12 py-3 bg-blue-900 hover:bg-blue-800 text-white font-bold text-lg shadow-lg active:scale-[0.98] transition-all disabled:opacity-75 disabled:cursor-not-allowed"/>
                     </div>
                   </div>
                 ) : (

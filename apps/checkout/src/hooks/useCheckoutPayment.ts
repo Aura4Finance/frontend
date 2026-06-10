@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { getFullnodeUrl, SuiClient, type MoveValue, type SuiParsedData } from "@mysten/sui/client";
 import { Transaction } from "@mysten/sui/transactions";
-import { deepbook} from "@mysten/deepbook-v3";
 import { toast } from "sonner";
 import {
   useGetSupportedNetworksAndTokens,
@@ -10,8 +9,6 @@ import {
 } from "./useGetSupportedNetworksAndTokens";
 import type { WalletContextState } from "@suiet/wallet-kit";
 import type { PaymentData } from "./useGetPaymentInformationQuery";
-import type { ClientWithExtensions } from "@mysten/sui/experimental";
-
 interface UseCheckoutPaymentProps {
   wallet: WalletContextState;
   paymentData?: PaymentData;
@@ -177,22 +174,14 @@ export const useCheckoutPayment = ({
           ? usdcTokenItem.mainnet.coinType
           : usdcTokenItem.testnet.coinType;
 
-        // Dynamic pool verification via DeepBook Client
-        let poolObjectId: string | null = null;
-        try {
-          // Create the extended client once (reusing your existing `client`)
-             const dbClient: unknown = client.$extend(
-             deepbook({ address: wallet.address });
-           // Then call it
-             poolObjectId = await dbClient.core.deepbook.getPoolIdByAssets(tokenCoinType, usdcCoinType);
-        } catch (sdkErr) {
-          console.error("DeepBook client pool resolution failed, trying fallback:", sdkErr);
-        }
-        if (!poolObjectId) {
-          throw new Error(`Could not resolve a valid liquidity pool for ${selectedTokenObject.symbol} -> USDC conversion.`);
-        }
+          const DEEPBOOK_PACKAGE_ID = '0x2c8d603bc51326b8c13cef9dd07031a408a48dddb541963357661df5d3204809';
+          const DEEPBOOK_REGISTRY_ID = '0xaf16199a2dff736e9f07a845f23c5da6df6f756eddb631aed9d24a93efc4549d';
+          const poolObjectId = tx.moveCall({
+            target: `${DEEPBOOK_PACKAGE_ID}::pool::get_pool_id_by_asset`,
+            typeArguments: [tokenCoinType, usdcCoinType],
+            arguments: [tx.object(DEEPBOOK_REGISTRY_ID)]
+            });
 
-        // --- DYNAMICALLY FIND DEEP TOKEN METADATA VIA THE API RESPONSE ---
         const deepTokenItem = currentNetworkContext?.supportedTokens.find(
           (token) => token.symbol.toUpperCase() === "DEEP"
         );
@@ -220,7 +209,7 @@ export const useCheckoutPayment = ({
           arguments: [
             paymentCoin,
             tx.object(depositAddress),
-            tx.object(poolObjectId),
+            poolObjectId,
             deepFeeCoin,
             tx.object("0x6"), // Shared System Clock Object
           ],
