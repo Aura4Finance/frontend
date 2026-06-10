@@ -99,8 +99,8 @@ export const useCheckoutPayment = ({
           : selectedTokenObject.testnet.coinType;
 
       const usdcCoinType = paymentData.mode === "live"
-        ? supportedNetworks?.find(n => n.code === paymentData.network)?.supportedTokens.find(t => t.symbol.toUpperCase() === "USDC")?.mainnet.coinType
-        : supportedNetworks?.find(n => n.code === paymentData.network)?.supportedTokens.find(t => t.symbol.toUpperCase() === "USDC")?.testnet.coinType;
+        ? supportedNetworks?.find(n => n.symbol === paymentData.network)?.supportedTokens.find(t => t.symbol.toUpperCase() === "USDC")?.mainnet.coinType
+        : supportedNetworks?.find(n => n.symbol === paymentData.network)?.supportedTokens.find(t => t.symbol.toUpperCase() === "USDC")?.testnet.coinType;
       if (!tokenCoinType) {
         throw new Error(`${selectedTokenObject.symbol} is not supported on this network environment.`);
       }
