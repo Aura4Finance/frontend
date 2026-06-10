@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { getFullnodeUrl, SuiClient, type MoveValue, type SuiParsedData } from "@mysten/sui/client";
-import { Transaction } from "@mysten/sui/transactions";
-import { bcs } from '@mysten/sui/bcs';
+import { coinWithBalance, Transaction, type TransactionObjectInput } from "@mysten/sui/transactions";
 import { toast } from "sonner";
 import {
   useGetSupportedNetworksAndTokens,
@@ -10,6 +9,8 @@ import {
 } from "./useGetSupportedNetworksAndTokens";
 import type { WalletContextState } from "@suiet/wallet-kit";
 import type { PaymentData } from "./useGetPaymentInformationQuery";
+import { MetaAg } from "@7kprotocol/sdk-ts";
+
 interface UseCheckoutPaymentProps {
   wallet: WalletContextState;
   paymentData?: PaymentData;
@@ -64,8 +65,7 @@ export const useCheckoutPayment = ({
 
     try {
       const {
-        client,
-        network
+        client
       } = initializeClient();
 
       const depositObject = await client.getObject({
@@ -82,7 +82,9 @@ export const useCheckoutPayment = ({
 
       const rawAmount = ((depositObject.data?.content as Extract<SuiParsedData, { dataType: "moveObject" }>)
         ?.fields as { [key: string]: MoveValue })?.amount as string;
+
       const amount: bigint = BigInt(rawAmount);
+
       if (amount <= 0n) {
         throw new Error("Invalid payment amount");
       }
@@ -96,6 +98,9 @@ export const useCheckoutPayment = ({
           ? selectedTokenObject.mainnet.coinType
           : selectedTokenObject.testnet.coinType;
 
+      const usdcCoinType = paymentData.mode === "live"
+        ? supportedNetworks?.find(n => n.code === paymentData.network)?.supportedTokens.find(t => t.symbol.toUpperCase() === "USDC")?.mainnet.coinType
+        : supportedNetworks?.find(n => n.code === paymentData.network)?.supportedTokens.find(t => t.symbol.toUpperCase() === "USDC")?.testnet.coinType;
       if (!tokenCoinType) {
         throw new Error(`${selectedTokenObject.symbol} is not supported on this network environment.`);
       }
@@ -117,21 +122,21 @@ export const useCheckoutPayment = ({
       }
 
       const tx = new Transaction();
-      let baseCoinId: string;
+      let baseCoin: TransactionObjectInput;
       const singleCoin = allCoins.find((c) => BigInt(c.balance) >= amount);
 
       if (singleCoin) {
-        baseCoinId = singleCoin.coinObjectId;
+        baseCoin = tx.object(singleCoin.coinObjectId);
       } else {
         const [target, ...rest] = allCoins;
         const targetObj = tx.object(target.coinObjectId);
         for (const c of rest) {
           tx.mergeCoins(targetObj, [tx.object(c.coinObjectId)]);
         }
-        baseCoinId = target.coinObjectId;
+        baseCoin = tx.object(target.coinObjectId);
       }
 
-      const [paymentCoin] = tx.splitCoins(tx.object(baseCoinId), [tx.pure.u64(amount)]);
+      let [paymentCoin] = tx.splitCoins(baseCoin, [tx.pure.u64(amount)]);
 
       const packageId =
         paymentData.mode === "live"
@@ -143,100 +148,40 @@ export const useCheckoutPayment = ({
       }
 
       const isUsdc = selectedTokenObject.symbol.toUpperCase() === "USDC";
-
-      if (isUsdc) {
-        tx.moveCall({
-          target: `${packageId}::main::pay_usdc`,
-          arguments: [paymentCoin, tx.object(depositAddress)],
-          typeArguments: [tokenCoinType],
-        });
-      } else {
-        if (!supportedNetworks) {
-          throw new Error("Network configuration metadata is loading. Please try again.");
-        }
-
-        // Find the specific network matching our current package configuration context
-        const currentNetworkContext = supportedNetworks.find(
-          (net) =>
-            net.smartContractPackageId.mainnet === matchedNetwork?.smartContractPackageId.mainnet ||
-            net.smartContractPackageId.testnet === matchedNetwork?.smartContractPackageId.testnet
-        );
-
-        // Find the native USDC token item within that network configuration
-        const usdcTokenItem = currentNetworkContext?.supportedTokens.find(
-          (token) => token.symbol.toUpperCase() === "USDC"
-        );
-
-        if (!usdcTokenItem) {
-          throw new Error("USDC configurations not found within the matching supported network payload.");
-        }
-
-        const usdcCoinType = paymentData.mode === "live"
-          ? usdcTokenItem.mainnet.coinType
-          : usdcTokenItem.testnet.coinType;
-
-        const DEEPBOOK_PACKAGE_ID = '0x337f4f4f6567fcd778d5454f27c16c70e2f274cc6377ea6249ddf491482ef497';
-        const DEEPBOOK_REGISTRY_ID = '0xaf16199a2dff736e9f07a845f23c5da6df6f756eddb631aed9d24a93efc4549d';
-        tx.moveCall({
-          target: `${DEEPBOOK_PACKAGE_ID}::pool::get_pool_id_by_asset`,
-          typeArguments: [tokenCoinType, usdcCoinType],
-          arguments: [tx.object(DEEPBOOK_REGISTRY_ID)]
+      if (!isUsdc) {
+        const metaAg = new MetaAg();
+        const quotes = await metaAg.quote({
+          amountIn: amount.toString(),
+          coinTypeIn: tokenCoinType,
+          coinTypeOut: usdcCoinType!,
         });
 
-        // 2. Inspect the result using your suiClient instance
-        const inspectResult = await client.devInspectTransactionBlock({
-          sender: wallet.address,
-          transactionBlock: tx,
-        });
+        const bestQuote = quotes.sort(
+          (a, b) => Number(b.simulatedAmountOut || b.amountOut) - Number(a.simulatedAmountOut || a.amountOut),
+        )[0];
 
-        // 3. Extract the ID from the return values
-        // Note: We target the inner array directly (inspectResult.results[0].returnValues[0])
-        const returnValues = inspectResult.results?.[0]?.returnValues?.[0];
-
-        if (!returnValues || !returnValues[0]) {
-          throw new Error("Could not find the pool ID");
-        }
-
-        // Ensure the raw data is flattened into a plain array, then build a proper Uint8Array
-        const rawNumbers = Array.from(returnValues[0]);
-        const poolIdBytes = new Uint8Array(rawNumbers);
-
-        // Parse it safely with BCS into a clean 0x address string
-        const poolObjectId = bcs.Address.parse(poolIdBytes);
-        const deepTokenItem = currentNetworkContext?.supportedTokens.find(
-          (token) => token.symbol.toUpperCase() === "DEEP"
-        );
-
-        if (!deepTokenItem) {
-          throw new Error("DEEP configurations not found within the matching supported network payload.");
-        }
-
-        const deepCoinType = paymentData.mode === "live"
-          ? deepTokenItem.mainnet.coinType
-          : deepTokenItem.testnet.coinType;
-
-        if (!deepCoinType) {
-          throw new Error(`DEEP token contract address configuration is disabled or null for ${network}.`);
-        }
-
-        const [deepFeeCoin] = tx.moveCall({
-          target: "0x2::coin::zero",
-          typeArguments: [deepCoinType],
-        });
-
-        // Execution of swap contract pipeline context
-        tx.moveCall({
-          target: `${packageId}::main::pay_swap`,
-          arguments: [
-            paymentCoin,
-            tx.object(depositAddress),
-            tx.object(poolObjectId),
-            deepFeeCoin,
-            tx.object("0x6"), // Shared System Clock Object
-          ],
-          typeArguments: [tokenCoinType],
-        });
+        paymentCoin = (await metaAg.swap(
+          {
+            quote: bestQuote!,
+            signer: wallet.address,
+            coinIn: coinWithBalance({
+              balance: amount,
+              type: tokenCoinType,
+            }),
+            tx,
+          },
+          100,
+        )) as {
+          $kind: "NestedResult";
+          NestedResult: [number, number];
+        };
       }
+
+      tx.moveCall({
+        target: `${packageId}::main::pay_usdc`,
+        arguments: [paymentCoin, tx.object(depositAddress)],
+        typeArguments: [tokenCoinType],
+      });
 
       await wallet.signAndExecuteTransactionBlock({
         transactionBlock: tx as any,
