@@ -363,12 +363,12 @@ const Checkout = () => {
                       disabled={processing}>
                       {processing ? "Processing..." : `Pay ${displayTokenAmount} ${displayTokenSymbol}`}
                     </Button>
-                    <MobileWalletPrompt
-                      checkDepositAddressOnChain={checkDepositAddressOnChain}
-                      redirectUrl={redirect}
-                    />
                   </div>
                 )}
+                <MobileWalletPrompt
+                  checkDepositAddressOnChain={checkDepositAddressOnChain}
+                  redirectUrl={redirect}
+                />
               </>
             ) : (
               <TransferPayment
