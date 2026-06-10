@@ -34,7 +34,7 @@ export const useCheckoutPayment = ({
   const [error, setError] = useState<string | null>(null);
 
   const initializeClient = () => {
-    const network: "mainnet" | "testnet" | "devnet" | "localnet" = paymentData?.mode === "live" ? "mainnet" : "testnet";
+    const network = paymentData?.mode === "live" ? "mainnet" : "testnet";
     return {
       client: new SuiClient({ url: getFullnodeUrl(network) }),
       network
