@@ -175,7 +175,7 @@ export const useCheckoutPayment = ({
           ? usdcTokenItem.mainnet.coinType
           : usdcTokenItem.testnet.coinType;
 
-        const DEEPBOOK_PACKAGE_ID = '0x2c8d603bc51326b8c13cef9dd07031a408a48dddb541963357661df5d3204809';
+        const DEEPBOOK_PACKAGE_ID = '0x337f4f4f6567fcd778d5454f27c16c70e2f274cc6377ea6249ddf491482ef497';
         const DEEPBOOK_REGISTRY_ID = '0xaf16199a2dff736e9f07a845f23c5da6df6f756eddb631aed9d24a93efc4549d';
         tx.moveCall({
           target: `${DEEPBOOK_PACKAGE_ID}::pool::get_pool_id_by_asset`,
