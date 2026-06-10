@@ -179,8 +179,7 @@ export const useCheckoutPayment = ({
 
       tx.moveCall({
         target: `${packageId}::main::pay_usdc`,
-        arguments: [paymentCoin, tx.object(depositAddress)],
-        typeArguments: [tokenCoinType],
+        arguments: [paymentCoin, tx.object(depositAddress)]
       });
 
       await wallet.signAndExecuteTransactionBlock({
