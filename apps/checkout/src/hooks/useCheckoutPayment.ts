@@ -209,7 +209,7 @@ export const useCheckoutPayment = ({
           arguments: [
             paymentCoin,
             tx.object(depositAddress),
-            poolObjectId,
+            tx.object(poolObjectId),
             deepFeeCoin,
             tx.object("0x6"), // Shared System Clock Object
           ],
