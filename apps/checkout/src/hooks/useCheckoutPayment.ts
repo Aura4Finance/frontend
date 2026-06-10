@@ -174,13 +174,30 @@ export const useCheckoutPayment = ({
           ? usdcTokenItem.mainnet.coinType
           : usdcTokenItem.testnet.coinType;
 
-          const DEEPBOOK_PACKAGE_ID = '0x2c8d603bc51326b8c13cef9dd07031a408a48dddb541963357661df5d3204809';
-          const DEEPBOOK_REGISTRY_ID = '0xaf16199a2dff736e9f07a845f23c5da6df6f756eddb631aed9d24a93efc4549d';
-          const poolObjectId = tx.moveCall({
-            target: `${DEEPBOOK_PACKAGE_ID}::pool::get_pool_id_by_asset`,
-            typeArguments: [tokenCoinType, usdcCoinType],
-            arguments: [tx.object(DEEPBOOK_REGISTRY_ID)]
-            });
+        const DEEPBOOK_PACKAGE_ID = '0x2c8d603bc51326b8c13cef9dd07031a408a48dddb541963357661df5d3204809';
+        const DEEPBOOK_REGISTRY_ID = '0xaf16199a2dff736e9f07a845f23c5da6df6f756eddb631aed9d24a93efc4549d';
+        tx.moveCall({
+          target: `${DEEPBOOK_PACKAGE_ID}::pool::get_pool_id_by_asset`,
+          typeArguments: [tokenCoinType, usdcCoinType],
+          arguments: [tx.object(DEEPBOOK_REGISTRY_ID)]
+        });
+
+        // 2. Inspect the result using your suiClient instance
+        const inspectResult = await client.devInspectTransactionBlock({
+          sender: wallet.address,
+          transactionBlock: tx,
+        });
+
+        // 3. Extract the ID from the return values
+        // Move addresses/IDs are typically returned as raw bytes, so we parse them
+        const poolIdBytes = inspectResult.results?.[0]?.returnValues?.[0]?.[0];
+
+        if (!poolIdBytes) {
+          throw new Error("Could not find the pool ID");
+        }
+
+        // Convert the byte array back into a hex string
+        const poolObjectId = '0x' + Buffer.from(poolIdBytes).toString('hex');
 
         const deepTokenItem = currentNetworkContext?.supportedTokens.find(
           (token) => token.symbol.toUpperCase() === "DEEP"
