@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getFullnodeUrl, SuiClient, type MoveValue, type SuiParsedData } from "@mysten/sui/client";
+import { SuiGrpcClient } from '@mysten/sui/grpc';
 import { Transaction, type TransactionObjectInput } from "@mysten/sui/transactions";
 import { toast } from "sonner";
 import {
@@ -10,6 +10,7 @@ import {
 import type { WalletContextState } from "@suiet/wallet-kit";
 import type { PaymentData } from "./useGetPaymentInformationQuery";
 import { CetusClmmSDK, type Pool } from "@cetusprotocol/sui-clmm-sdk";
+import { bcs } from "@mysten/sui/bcs";
 
 // Cetus CLMM constants
 const CETUS_CONSTANTS = {
@@ -56,13 +57,16 @@ export const useCheckoutPayment = ({
   const initializeClient = () => {
     const network = paymentData?.mode === "live" ? "mainnet" : "testnet";
     return {
-      client: new SuiClient({ url: getFullnodeUrl(network) }),
+      client: new SuiGrpcClient({
+        network,
+        baseUrl: network === "mainnet" ? 'https://fullnode.mainnet.sui.io:443' : 'https://fullnode.testnet.sui.io:443',
+      }),
       network
     }
   }
-  
+
   const { data: supportedNetworks } = useGetSupportedNetworksAndTokens();
-  
+
   const executePayment = async () => {
     if (!wallet.connected || !paymentData || !wallet.address) {
       toast.error("Wallet not connected");
@@ -85,22 +89,30 @@ export const useCheckoutPayment = ({
     try {
       const { client, network } = initializeClient();
 
-      const depositObject = await client.getObject({
-        id: depositAddress,
-        options: {
-          showContent: true,
-          showType: true
+      const { object } = await client.core.getObject({
+        objectId: depositAddress,
+        include: {
+          content: true
         },
       });
 
-      if (depositObject.data?.content?.dataType !== "moveObject") {
-        throw new Error("Invalid deposit object");
+      if (object.type !== `${matchedNetwork?.smartContractPackageId}::main::Wallet<${network === "mainnet" ? selectedTokenObject?.mainnet.coinType : selectedTokenObject?.testnet.coinType}>`) {
+        throw new Error("Invalid deposit object for selected token and network");
       }
 
-      const rawAmount = ((depositObject.data?.content as Extract<SuiParsedData, { dataType: "moveObject" }>)
-        ?.fields as { [key: string]: MoveValue })?.amount as string;
+      const WalletBcs = bcs.struct('Wallet', {
+        id: bcs.Address,
+        merchant: bcs.Address,
+        amount: bcs.u64(),
+        transaction_id: bcs.string(),
+      });
 
-      const amount: bigint = BigInt(rawAmount);
+      const WalletObject = WalletBcs.parse(object.content);
+      if (!WalletObject) {
+        throw new Error("Payment amount not found in deposit object");
+      }
+
+      const amount: bigint = BigInt(WalletObject.amount);
 
       if (amount <= 0n) {
         throw new Error("Invalid payment amount");
@@ -118,42 +130,66 @@ export const useCheckoutPayment = ({
       const usdcCoinType = paymentData.mode === "live"
         ? supportedNetworks?.find(n => n.symbol === paymentData.network)?.supportedTokens.find(t => t.symbol.toUpperCase() === "USDC")?.mainnet.coinType
         : supportedNetworks?.find(n => n.symbol === paymentData.network)?.supportedTokens.find(t => t.symbol.toUpperCase() === "USDC")?.testnet.coinType;
-      
+
       if (!tokenCoinType) {
         throw new Error(`${selectedTokenObject.symbol} is not supported on this network environment.`);
       }
 
-      const coins = await client.getCoins({
-        owner: wallet.address,
-        coinType: tokenCoinType,
-      });
+      // 1. Fetch ALL coin objects of this specific type (handling pagination)
+      let allCoins: any[] = [];
+      let cursor: string | null = null;
+      let hasNextPage = true;
 
-      const allCoins = coins.data || [];
+      while (hasNextPage) {
+        const response = await client.core.listCoins({
+          owner: wallet.address,
+          coinType: tokenCoinType,
+          cursor: cursor,
+        });
+
+        allCoins.push(...(response.objects || []));
+        cursor = response.cursor ?? null;
+        hasNextPage = response.hasNextPage;
+      }
+
+      // 2. Validate if the wallet has any coins of this type
       if (allCoins.length === 0) {
         toast.error(`No ${selectedTokenObject.symbol} balance`);
         return;
       }
+
+      // 3. Calculate total balance across all fetched coin objects
+      // Note: getCoins returns 'balance' on each coin object as a string
       const totalBalance = allCoins.reduce((sum: bigint, c) => sum + BigInt(c.balance), 0n);
+
       if (totalBalance < amount) {
         toast.error(`Insufficient ${selectedTokenObject.symbol} balance`);
         return;
       }
 
+      // 4. Set up the transaction builder
       const tx = new Transaction();
       let baseCoin: TransactionObjectInput;
+
+      // Find a single coin object that is large enough by itself
       const singleCoin = allCoins.find((c) => BigInt(c.balance) >= amount);
 
       if (singleCoin) {
         baseCoin = tx.object(singleCoin.coinObjectId);
       } else {
+        // If no single coin is big enough, merge them together
         const [target, ...rest] = allCoins;
         const targetObj = tx.object(target.coinObjectId);
-        for (const c of rest) {
-          tx.mergeCoins(targetObj, [tx.object(c.coinObjectId)]);
-        }
-        baseCoin = tx.object(target.coinObjectId);
+
+        // Create an array of object references for the coins to merge
+        const coinsToMerge = rest.map(c => tx.object(c.coinObjectId));
+
+        // Merge all subsequent coins into the first target coin
+        tx.mergeCoins(targetObj, coinsToMerge);
+        baseCoin = targetObj;
       }
 
+      // 5. Split out the exact amount needed for your transaction
       let [paymentCoin] = tx.splitCoins(baseCoin, [tx.pure.u64(amount)]);
 
       const packageId =
@@ -219,11 +255,13 @@ export const useCheckoutPayment = ({
   const checkDepositAddressOnChain = async (): Promise<boolean> => {
     try {
       const { client } = initializeClient();
-      const depositObject = await client.getObject({
-        id: generatedAddresses.depositAddress || "",
-        options: { showContent: true }
+      const depositObject = await client.core.getObject({
+        objectId: generatedAddresses.depositAddress || "",
+        include: { 
+          content: true
+         }
       });
-      return !!depositObject.data;
+      return !!depositObject.object;
     } catch (error: any) {
       return false;
     };
@@ -245,15 +283,15 @@ async function getCetusPoolId(
     // 2. Fetch the active pools registry configuration from Cetus
     const pools = await sdk.Pool.getPoolByCoins([coinTypeA, coinTypeB]);
 
-    if(!pools || pools.length === 0 ){
+    if (!pools || pools.length === 0) {
       return null;
     }
 
     const pool = pools.sort((a: Pool, b: Pool) => Number(b.liquidity) - Number(a.liquidity))[0];
-    
+
     return pool.id || null;
   } catch (error) {
     console.error("Failed to fetch Cetus pool via SDK:", error);
     return null;
   }
-    }
+}
