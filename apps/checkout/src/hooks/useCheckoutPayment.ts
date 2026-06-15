@@ -9,7 +9,27 @@ import {
 } from "./useGetSupportedNetworksAndTokens";
 import type { WalletContextState } from "@suiet/wallet-kit";
 import type { PaymentData } from "./useGetPaymentInformationQuery";
-import { MetaAg } from "@7kprotocol/sdk-ts";
+// Cetus CLMM constants
+const CETUS_CONSTANTS = {
+  mainnet: {
+    globalConfig: "0xdaa46292632c3c4d8f31f23ea0f9b36a28ff3677e9684980e4438403a67a3d8f",
+    aggregatorPackage: "0x11451575c775a3e633437b827ecbc1eb51a5964b0302210b28f5b89880be21a2",
+    partner: "0x639b5e433da31739e800cd085f356e64cae222966d0f1b11bd9dc76b322ff58b",
+    poolsRegistry: "0xf699e7f2276f5c9a75944b37a0c5b5d9ddfd2471bf6242483b03ab2887d198d0",
+  },
+  testnet: {
+    globalConfig: "0xc6273f844b4bc258952c4e477697aa12c918c8e08106fac6b934811298c9820a",
+    aggregatorPackage: "0x11451575c775a3e633437b827ecbc1eb51a5964b0302210b28f5b89880be21a2",
+    partner: "0x1f5fa5c820f40d43fc47815ad06d95e40a1942ff72a732a92e8ef4aa8cde70a5",
+    poolsRegistry: "0x20a086e6fa0741b3ca77d033a65faf0871349b986ddbdde6fa1d85d78a5f4222",
+  },
+} as const;
+
+const CLOCK_ADDRESS = "0x6";
+
+// sqrt_price_limit constants for Cetus swap direction
+const SQRT_PRICE_LIMIT_A2B = BigInt("4295048016");
+const SQRT_PRICE_LIMIT_B2A = BigInt("79226673515401279992447579055");
 
 interface UseCheckoutPaymentProps {
   wallet: WalletContextState;
@@ -149,32 +169,26 @@ export const useCheckoutPayment = ({
 
       const isUsdc = selectedTokenObject.symbol.toUpperCase() === "USDC";
       if (!isUsdc) {
-        const metaAg = new MetaAg();
-        const quotes = await metaAg.quote({
-          amountIn: amount.toString(),
-          coinTypeIn: tokenCoinType,
-          coinTypeOut: usdcCoinType!,
-        });
+        const cetusEnv = paymentData.mode === "live" ? CETUS_CONSTANTS.mainnet : CETUS_CONSTANTS.testnet;
 
-        const bestQuote = quotes.sort(
-          (a, b) => Number(b.simulatedAmountOut || b.amountOut) - Number(a.simulatedAmountOut || a.amountOut),
-        )[0];
+        // Fetch the Cetus pool object ID for tokenCoinType <-> USDC
+        const poolId = await getCetusPoolId(client, cetusEnv.poolsRegistry, tokenCoinType, usdcCoinType!);
+        if (!poolId) {
+          throw new Error(`No Cetus pool found for ${selectedTokenObject.symbol}/USDC`);
+        }
 
-        paymentCoin = (await metaAg.swap(
-          {
-            quote: bestQuote!,
-            signer: wallet.address,
-            coinIn: coinWithBalance({
-              balance: amount,
-              type: tokenCoinType,
-            }),
-            tx,
-          },
-          100,
-        )) as {
-          $kind: "NestedResult";
-          NestedResult: [number, number];
-        };
+        // Use the Cetus aggregator swap_a2b: swaps all of paymentCoin (token → USDC)
+        paymentCoin = tx.moveCall({
+          target: `${cetusEnv.aggregatorPackage}::cetus::swap_a2b`,
+          typeArguments: [tokenCoinType, usdcCoinType!],
+          arguments: [
+            tx.object(cetusEnv.globalConfig),
+            tx.object(poolId),
+            tx.object(cetusEnv.partner),
+            paymentCoin,
+            tx.object(CLOCK_ADDRESS),
+          ],
+        }) as { $kind: "NestedResult"; NestedResult: [number, number] };
       }
 
       tx.moveCall({
@@ -226,3 +240,48 @@ export const useCheckoutPayment = ({
 
   return { executePayment, checkDepositAddressOnChain, processing, error, setError };
 };
+
+/**
+ * Looks up a Cetus CLMM pool object ID for a given token pair (tokenA/USDC).
+ *
+ * Strategy: query the Cetus pools registry dynamic fields, which store pool
+ * handles keyed by a struct containing (coin_type_a, coin_type_b). We try
+ * both orderings (a2b and b2a) because Cetus always stores the pool with the
+ * lexicographically-first type as CoinA.
+ */
+async function getCetusPoolId(
+  client: SuiClient,
+  poolsRegistryId: string,
+  coinTypeA: string,
+  coinTypeB: string,
+): Promise<string | null> {
+  // Normalise coin types: strip leading "0x" padding for consistent comparison
+  const normalise = (t: string) => t.replace(/^0x0+/, "0x");
+  const typeA = normalise(coinTypeA);
+  const typeB = normalise(coinTypeB);
+
+  // Cetus stores pool registry entries as dynamic fields. We page through them
+  // and find the one whose name encodes both coin types.
+  let cursor: string | null | undefined = undefined;
+  do {
+    const page = await client.getDynamicFields({
+      parentId: poolsRegistryId,
+      cursor,
+      limit: 50,
+    });
+
+    for (const field of page.data) {
+      // The field name is a struct; serialise it and check for both coin types
+      const nameStr = JSON.stringify(field.name);
+      if (nameStr.includes(typeA) && nameStr.includes(typeB)) {
+        // The field value objectId is the pool object ID
+        return field.objectId;
+      }
+    }
+
+    cursor = page.nextCursor;
+    if (!page.hasNextPage) break;
+  } while (true);
+
+  return null;
+}
