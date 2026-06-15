@@ -208,6 +208,9 @@ importers:
       '@7kprotocol/sdk-ts':
         specifier: ^4.0.0
         version: 4.0.0(@mysten/sui@1.45.2(typescript@5.9.3))(@pythnetwork/pyth-sui-js@2.4.0(axios@1.13.2)(typescript@5.9.3))(axios@1.13.2)(graphql@16.12.0)(typescript@5.9.3)
+      '@cetusprotocol/sui-clmm-sdk':
+        specifier: ^1.4.5
+        version: 1.4.5(@cetusprotocol/common-sdk@1.3.7(@mysten/sui@1.45.2(typescript@5.9.3))(axios@1.13.2))(@mysten/sui@1.45.2(typescript@5.9.3))(blakejs@1.2.1)
       '@mysten/deepbook-v3':
         specifier: ^1.4.1
         version: 1.4.1(@mysten/sui@1.45.2(typescript@5.9.3))
@@ -1236,6 +1239,18 @@ packages:
     resolution: {integrity: sha512-p60SfpXco3B3Gz7o3tYOQMxFJ4gvIyDXd4QpwSgsd5UmuHkCklZj46rK3dd2no798g6jT7QCiyYUqPPECuM6Xw==}
     peerDependencies:
       typescript: ^5.0.0
+
+  '@cetusprotocol/common-sdk@1.3.7':
+    resolution: {integrity: sha512-Q5aNl8VZW5DEYAC4mFWSxD59IRlNr1wwqag0d2gxTS9rSMN7FaAno74EUcltL43RE9ZCFtKAKxjRw8T+67Uo7g==}
+    peerDependencies:
+      '@mysten/sui': '>=2.0.0'
+
+  '@cetusprotocol/sui-clmm-sdk@1.4.5':
+    resolution: {integrity: sha512-In1kpNh9tn8flkcst9gbiI7bsZnUQD5X7cQRCKQEG+EbRrAx5qcEmMZm03533jNi3V0ZJElk49+DoqIRzpnZWg==}
+    peerDependencies:
+      '@cetusprotocol/common-sdk': '*'
+      '@mysten/sui': '>=2.0.0'
+      blakejs: '*'
 
   '@chevrotain/cst-dts-gen@11.1.2':
     resolution: {integrity: sha512-XTsjvDVB5nDZBQB8o0o/0ozNelQtn2KrUVteIHSlPd2VAV2utEb6JzyCJaJ8tGxACR4RiBNWy5uYUHX2eji88Q==}
@@ -2664,6 +2679,9 @@ packages:
 
   bip39@3.1.0:
     resolution: {integrity: sha512-c9kiwdk45Do5GL0vJMe7tS95VjCii65mYAH7DfWl3uW8AVzXKQVUm64i3hzVybBDMp9r7j9iNxR85+ul8MdN/A==}
+
+  blakejs@1.2.1:
+    resolution: {integrity: sha512-QXUSXI3QVc/gJME0dBpXrag1kbzOqCjCX8/b54ntNyW6sjtoqxqRk3LTmXzaJoh71zMsDCjM+47jS7XiwN/+fQ==}
 
   bn.js@5.2.3:
     resolution: {integrity: sha512-EAcmnPkxpntVL+DS7bO1zhcZNvCkxqtkd0ZY53h06GNQ3DEkkGZ/gKgmDv6DdZQGj9BgfSPKtJJ7Dp1GPP8f7w==}
@@ -5238,6 +5256,19 @@ snapshots:
       - axios
     optional: true
 
+  '@cetusprotocol/common-sdk@1.3.7(@mysten/sui@1.45.2(typescript@5.9.3))(axios@1.13.2)':
+    dependencies:
+      '@mysten/sui': 1.45.2(typescript@5.9.3)
+      '@pythnetwork/hermes-client': 3.1.0(axios@1.13.2)
+    transitivePeerDependencies:
+      - axios
+
+  '@cetusprotocol/sui-clmm-sdk@1.4.5(@cetusprotocol/common-sdk@1.3.7(@mysten/sui@1.45.2(typescript@5.9.3))(axios@1.13.2))(@mysten/sui@1.45.2(typescript@5.9.3))(blakejs@1.2.1)':
+    dependencies:
+      '@cetusprotocol/common-sdk': 1.3.7(@mysten/sui@1.45.2(typescript@5.9.3))(axios@1.13.2)
+      '@mysten/sui': 1.45.2(typescript@5.9.3)
+      blakejs: 1.2.1
+
   '@chevrotain/cst-dts-gen@11.1.2':
     dependencies:
       '@chevrotain/gast': 11.1.2
@@ -6818,6 +6849,8 @@ snapshots:
     dependencies:
       '@noble/hashes': 1.8.0
     optional: true
+
+  blakejs@1.2.1: {}
 
   bn.js@5.2.3:
     optional: true

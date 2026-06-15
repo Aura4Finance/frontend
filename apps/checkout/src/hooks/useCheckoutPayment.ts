@@ -9,7 +9,6 @@ import {
 } from "./useGetSupportedNetworksAndTokens";
 import type { WalletContextState } from "@suiet/wallet-kit";
 import type { PaymentData } from "./useGetPaymentInformationQuery";
-import { MetaAg } from "@7kprotocol/sdk-ts";
 
 interface UseCheckoutPaymentProps {
   wallet: WalletContextState;
