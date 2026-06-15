@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getFullnodeUrl, SuiClient, type MoveValue, type SuiParsedData } from "@mysten/sui/client";
-import { coinWithBalance, Transaction, type TransactionObjectInput } from "@mysten/sui/transactions";
+import { Transaction, type TransactionObjectInput } from "@mysten/sui/transactions";
 import { toast } from "sonner";
 import {
   useGetSupportedNetworksAndTokens,
@@ -26,10 +26,6 @@ const CETUS_CONSTANTS = {
 } as const;
 
 const CLOCK_ADDRESS = "0x6";
-
-// sqrt_price_limit constants for Cetus swap direction
-const SQRT_PRICE_LIMIT_A2B = BigInt("4295048016");
-const SQRT_PRICE_LIMIT_B2A = BigInt("79226673515401279992447579055");
 
 interface UseCheckoutPaymentProps {
   wallet: WalletContextState;
@@ -178,7 +174,7 @@ export const useCheckoutPayment = ({
         }
 
         // Use the Cetus aggregator swap_a2b: swaps all of paymentCoin (token → USDC)
-        paymentCoin = tx.moveCall({
+        [paymentCoin] = tx.moveCall({
           target: `${cetusEnv.aggregatorPackage}::cetus::swap_a2b`,
           typeArguments: [tokenCoinType, usdcCoinType!],
           arguments: [
@@ -188,7 +184,7 @@ export const useCheckoutPayment = ({
             paymentCoin,
             tx.object(CLOCK_ADDRESS),
           ],
-        }) as { $kind: "NestedResult"; NestedResult: [number, number] };
+        });
       }
 
       tx.moveCall({
@@ -284,4 +280,4 @@ async function getCetusPoolId(
   } while (true);
 
   return null;
-}
+    }
