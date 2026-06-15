@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  '@mysten/sui': ^2.1.0
+
 importers:
 
   .:
@@ -628,8 +631,8 @@ importers:
         specifier: ^0.19.6
         version: 0.19.11(@tanstack/react-query@5.90.18(react@19.2.3))(@types/react-dom@19.2.3(@types/react@19.2.8))(@types/react@19.2.8)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
       '@mysten/sui':
-        specifier: ^1.45.2
-        version: 1.45.2(typescript@5.9.3)
+        specifier: ^2.1.0
+        version: 2.17.0(typescript@5.9.3)
       '@tanstack/react-query':
         specifier: ^5.90.5
         version: 5.90.18(react@19.2.3)
@@ -653,7 +656,7 @@ packages:
   '@7kprotocol/sdk-ts@4.0.0':
     resolution: {integrity: sha512-Q2DEXgugdaokquAWaiS7Y8PwJf+PD1m+J0WLQGt/53oWVx+kG0Z0WiOxDE4BDM7s6FfREjFq7QqfGPQenMy1OA==}
     peerDependencies:
-      '@mysten/sui': ^1.44.0
+      '@mysten/sui': ^2.1.0
       '@pythnetwork/pyth-sui-js': ^2.2.0
 
   '@antfu/install-pkg@1.1.0':
@@ -1229,13 +1232,13 @@ packages:
   '@bluefin-exchange/bluefin7k-aggregator-sdk@4.3.2':
     resolution: {integrity: sha512-i17f++6v+9ju2vvdmqe6nVhbKadiHcLmU7Fqzsjijh0NKZ39xNrsKjCA33RIP7KTeXpTOxdNytgiqR2TQKUdDQ==}
     peerDependencies:
-      '@mysten/sui': ^1.33.0
+      '@mysten/sui': ^2.1.0
       '@pythnetwork/pyth-sui-js': ^2.1.0
 
   '@bluefin-exchange/bluefin7k-aggregator-sdk@5.5.1':
     resolution: {integrity: sha512-BPdBTBist7UrULMxY2B9HS/0IzbMLUL1k+Uknw3Jzb7DNcc68rtH7YLxjxE2Z9nW3cCu8muNHZahm4PNEaQ67A==}
     peerDependencies:
-      '@mysten/sui': ^1.44.0
+      '@mysten/sui': ^2.1.0
       '@pythnetwork/pyth-sui-js': ^2.1.0
 
   '@braintree/sanitize-url@7.1.2':
@@ -1249,13 +1252,13 @@ packages:
   '@cetusprotocol/common-sdk@1.3.7':
     resolution: {integrity: sha512-Q5aNl8VZW5DEYAC4mFWSxD59IRlNr1wwqag0d2gxTS9rSMN7FaAno74EUcltL43RE9ZCFtKAKxjRw8T+67Uo7g==}
     peerDependencies:
-      '@mysten/sui': '>=2.0.0'
+      '@mysten/sui': ^2.1.0
 
   '@cetusprotocol/sui-clmm-sdk@1.4.5':
     resolution: {integrity: sha512-In1kpNh9tn8flkcst9gbiI7bsZnUQD5X7cQRCKQEG+EbRrAx5qcEmMZm03533jNi3V0ZJElk49+DoqIRzpnZWg==}
     peerDependencies:
       '@cetusprotocol/common-sdk': '*'
-      '@mysten/sui': '>=2.0.0'
+      '@mysten/sui': ^2.1.0
       blakejs: '*'
 
   '@chevrotain/cst-dts-gen@11.1.2':
@@ -1562,12 +1565,6 @@ packages:
   '@mysten/bcs@0.11.1':
     resolution: {integrity: sha512-xP85isNSYUCHd3O/g+TmZYmg4wK6cU8q/n/MebkIGP4CYVJZz2wU/G24xIZ3wI+0iTop4dfgA5kYrg/DQKCUzA==}
 
-  '@mysten/bcs@1.0.2':
-    resolution: {integrity: sha512-haHT0km/9yIIe8lwo8gDFxGLnoxfRF4WmEVCz4lDXbEVQRsZkF0zB97kukiwMjDuFBaGVUhrOMCLz6td8tSMaQ==}
-
-  '@mysten/bcs@1.9.2':
-    resolution: {integrity: sha512-kBk5xrxV9OWR7i+JhL/plQrgQ2/KJhB2pB5gj+w6GXhbMQwS3DPpOvi/zN0Tj84jwPvHMllpEl0QHj6ywN7/eQ==}
-
   '@mysten/bcs@2.0.5':
     resolution: {integrity: sha512-Dop9Xq36DPLlsmIDQZvUg4uJeBBxIGirgp2OXGaEff+mtLKFBoW2HnE3aSTSSpiMQH9XRhjwtiM16zFJhFqz0Q==}
 
@@ -1581,7 +1578,7 @@ packages:
     resolution: {integrity: sha512-OLJ9jYNIetg+aXOR2QpIL5eBHeyF8hm3zbv5s6s/jqmDbzqhpGmxvwOodG1X82cML7kKh4IgyQX193+fvndQYA==}
     engines: {node: '>=22'}
     peerDependencies:
-      '@mysten/sui': ^2.17.0
+      '@mysten/sui': ^2.1.0
 
   '@mysten/slush-wallet@0.2.12':
     resolution: {integrity: sha512-OVIQbADqUVZCTps3MGvVI90nczTbwepAb75x+jZuH2W2p8lXoYIuvuuP4KlwwalR9QgpqOqptdpYFVAKi8ncLQ==}
@@ -1590,14 +1587,6 @@ packages:
     resolution: {integrity: sha512-TSmGIX7U9O/uS9EKIQdv7/S69KTbBhMJVelXCafJE6IJw8iB9cN9uLu0+uklkBSDrbRmLSEY70jMr3uRFjReIg==}
     engines: {node: '>=16'}
     deprecated: This package has been renamed to @mysten/sui, please update to use the renamed package.
-
-  '@mysten/sui@1.2.0':
-    resolution: {integrity: sha512-USDOckZPGcwi2QAuKHEcieoVuW8Xgsm8vtKyXaRrhVLG2t2q3hCEigquiLXh7S3okBbD/P35xjvhR9PdUeqweA==}
-    engines: {node: '>=18'}
-
-  '@mysten/sui@1.45.2':
-    resolution: {integrity: sha512-gftf7fNpFSiXyfXpbtP2afVEnhc7p2m/MEYc/SO5pov92dacGKOpQIF7etZsGDI1Wvhv+dpph+ulRNpnYSs7Bg==}
-    engines: {node: '>=18'}
 
   '@mysten/sui@2.17.0':
     resolution: {integrity: sha512-TrS1BCPm4V6rC69MBejmcqnKIyJ5t1iksax4XA9jWarZxAAp9LMmdxEBebejyDT/yAJxYIf3fNm5WBkHE2qnIw==}
@@ -1623,10 +1612,6 @@ packages:
 
   '@mysten/zksend@0.9.10':
     resolution: {integrity: sha512-ExKtKZT9bL3BKTQZww1zOv8gFDju/40rx2kqjO+qy2Ju+0Mc3jmtoR7NYpCdPK19DvvOl0eKGs6f2P+LN0+rlQ==}
-
-  '@noble/curves@1.9.4':
-    resolution: {integrity: sha512-2bKONnuM53lINoDrSmK8qP8W271ms7pygDhZt4SiLOoLwBtoHqeCFi6RG42V8zd3mLHuJFhU/Bmaqo4nX0/kBw==}
-    engines: {node: ^14.21.3 || >=16}
 
   '@noble/curves@1.9.7':
     resolution: {integrity: sha512-gbKGcRUYIjA3/zCCNaWDciTMFI0dCkvou3TL8Zmy5Nc7sJ47a0jtOeZoTaMxkuqRo9cRhjOdZJXegxYE5FN/xw==}
@@ -2600,7 +2585,7 @@ packages:
   aftermath-ts-sdk@1.3.29:
     resolution: {integrity: sha512-YjsY8zfBajCeGcKrk7bW2exJKdzC5MW6iFFyJ+igpF9dt7cUoT/vjKU6ZlojtBSAN3zE77GRJGUWoEcyvCsxOw==}
     peerDependencies:
-      '@mysten/sui': 1.45.2
+      '@mysten/sui': ^2.1.0
 
   agent-base@6.0.2:
     resolution: {integrity: sha512-RZNwNclF7+MS/8bDg70amg32dyeZGZxiDuQmZxKLAlQjr3jGyLx+4Kkk58UO7D2QdgFIQCovuSuZESne6RG6XQ==}
@@ -5232,9 +5217,9 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
 
-  '@bluefin-exchange/bluefin7k-aggregator-sdk@4.3.2(@mysten/sui@1.45.2(typescript@5.9.3))(@pythnetwork/pyth-sui-js@2.4.0(axios@1.13.2)(typescript@5.9.3))':
+  '@bluefin-exchange/bluefin7k-aggregator-sdk@4.3.2(@mysten/sui@2.17.0(typescript@5.9.3))(@pythnetwork/pyth-sui-js@2.4.0(axios@1.13.2)(typescript@5.9.3))':
     dependencies:
-      '@mysten/sui': 1.45.2(typescript@5.9.3)
+      '@mysten/sui': 2.17.0(typescript@5.9.3)
       '@pythnetwork/pyth-sui-js': 2.4.0(axios@1.13.2)(typescript@5.9.3)
     optional: true
 
@@ -5437,11 +5422,11 @@ snapshots:
 
   '@flowx-finance/sdk@1.15.0(@pythnetwork/pyth-sui-js@2.4.0(axios@1.13.2)(typescript@5.9.3))(axios@1.13.2)(graphql@16.12.0)(typescript@5.9.3)':
     dependencies:
-      '@bluefin-exchange/bluefin7k-aggregator-sdk': 4.3.2(@mysten/sui@1.45.2(typescript@5.9.3))(@pythnetwork/pyth-sui-js@2.4.0(axios@1.13.2)(typescript@5.9.3))
+      '@bluefin-exchange/bluefin7k-aggregator-sdk': 4.3.2(@mysten/sui@2.17.0(typescript@5.9.3))(@pythnetwork/pyth-sui-js@2.4.0(axios@1.13.2)(typescript@5.9.3))
       '@cetusprotocol/aggregator-sdk': 1.5.4(axios@1.13.2)(typescript@5.9.3)
-      '@mysten/sui': 1.45.2(typescript@5.9.3)
+      '@mysten/sui': 2.17.0(typescript@5.9.3)
       '@mysten/sui.js': 0.54.1(typescript@5.9.3)
-      aftermath-ts-sdk: 1.3.29(@mysten/sui@1.45.2(typescript@5.9.3))
+      aftermath-ts-sdk: 1.3.29(@mysten/sui@2.17.0(typescript@5.9.3))
       bignumber.js: 9.3.1
       bn.js: 5.2.3
       crypto-js: 4.2.0
@@ -5531,15 +5516,6 @@ snapshots:
     dependencies:
       bs58: 5.0.0
 
-  '@mysten/bcs@1.0.2':
-    dependencies:
-      bs58: 5.0.0
-
-  '@mysten/bcs@1.9.2':
-    dependencies:
-      '@mysten/utils': 0.2.0
-      '@scure/base': 1.2.6
-
   '@mysten/bcs@2.0.5':
     dependencies:
       '@mysten/utils': 0.3.3
@@ -5548,7 +5524,7 @@ snapshots:
   '@mysten/dapp-kit@0.19.11(@tanstack/react-query@5.90.18(react@19.2.3))(@types/react-dom@19.2.3(@types/react@19.2.8))(@types/react@19.2.8)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)':
     dependencies:
       '@mysten/slush-wallet': 0.2.12(typescript@5.9.3)
-      '@mysten/sui': 1.45.2(typescript@5.9.3)
+      '@mysten/sui': 2.17.0(typescript@5.9.3)
       '@mysten/utils': 0.2.0
       '@mysten/wallet-standard': 0.19.9(typescript@5.9.3)
       '@radix-ui/react-dialog': 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.8))(@types/react@19.2.8)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -5584,7 +5560,7 @@ snapshots:
 
   '@mysten/slush-wallet@0.2.12(typescript@5.9.3)':
     dependencies:
-      '@mysten/sui': 1.45.2(typescript@5.9.3)
+      '@mysten/sui': 2.17.0(typescript@5.9.3)
       '@mysten/utils': 0.2.0
       '@mysten/wallet-standard': 0.19.9(typescript@5.9.3)
       '@mysten/window-wallet-core': 0.1.1(typescript@5.9.3)
@@ -5609,47 +5585,6 @@ snapshots:
       graphql: 16.12.0
       superstruct: 1.0.4
       tweetnacl: 1.0.3
-    transitivePeerDependencies:
-      - '@gql.tada/svelte-support'
-      - '@gql.tada/vue-support'
-      - typescript
-
-  '@mysten/sui@1.2.0(typescript@5.9.3)':
-    dependencies:
-      '@graphql-typed-document-node/core': 3.2.0(graphql@16.12.0)
-      '@mysten/bcs': 1.0.2
-      '@noble/curves': 1.9.7
-      '@noble/hashes': 1.8.0
-      '@scure/bip32': 1.7.0
-      '@scure/bip39': 1.6.0
-      '@suchipi/femver': 1.0.0
-      bech32: 2.0.0
-      gql.tada: 1.9.0(graphql@16.12.0)(typescript@5.9.3)
-      graphql: 16.12.0
-      tweetnacl: 1.0.3
-      valibot: 0.25.0
-    transitivePeerDependencies:
-      - '@gql.tada/svelte-support'
-      - '@gql.tada/vue-support'
-      - typescript
-
-  '@mysten/sui@1.45.2(typescript@5.9.3)':
-    dependencies:
-      '@graphql-typed-document-node/core': 3.2.0(graphql@16.12.0)
-      '@mysten/bcs': 1.9.2
-      '@mysten/utils': 0.2.0
-      '@noble/curves': 1.9.4
-      '@noble/hashes': 1.8.0
-      '@protobuf-ts/grpcweb-transport': 2.11.1
-      '@protobuf-ts/runtime': 2.11.1
-      '@protobuf-ts/runtime-rpc': 2.11.1
-      '@scure/base': 1.2.6
-      '@scure/bip32': 1.7.0
-      '@scure/bip39': 1.6.0
-      gql.tada: 1.9.0(graphql@16.12.0)(typescript@5.9.3)
-      graphql: 16.12.0
-      poseidon-lite: 0.2.1
-      valibot: 1.2.0(typescript@5.9.3)
     transitivePeerDependencies:
       - '@gql.tada/svelte-support'
       - '@gql.tada/vue-support'
@@ -5696,7 +5631,7 @@ snapshots:
 
   '@mysten/wallet-standard@0.12.10(typescript@5.9.3)':
     dependencies:
-      '@mysten/sui': 1.2.0(typescript@5.9.3)
+      '@mysten/sui': 2.17.0(typescript@5.9.3)
       '@wallet-standard/core': 1.0.3
     transitivePeerDependencies:
       - '@gql.tada/svelte-support'
@@ -5705,7 +5640,7 @@ snapshots:
 
   '@mysten/wallet-standard@0.19.9(typescript@5.9.3)':
     dependencies:
-      '@mysten/sui': 1.45.2(typescript@5.9.3)
+      '@mysten/sui': 2.17.0(typescript@5.9.3)
       '@wallet-standard/core': 1.1.1
     transitivePeerDependencies:
       - '@gql.tada/svelte-support'
@@ -5722,7 +5657,7 @@ snapshots:
 
   '@mysten/zksend@0.9.10(typescript@5.9.3)':
     dependencies:
-      '@mysten/sui': 1.2.0(typescript@5.9.3)
+      '@mysten/sui': 2.17.0(typescript@5.9.3)
       '@mysten/wallet-standard': 0.12.10(typescript@5.9.3)
       mitt: 3.0.1
       nanostores: 0.9.5
@@ -5731,10 +5666,6 @@ snapshots:
       - '@gql.tada/svelte-support'
       - '@gql.tada/vue-support'
       - typescript
-
-  '@noble/curves@1.9.4':
-    dependencies:
-      '@noble/hashes': 1.8.0
 
   '@noble/curves@1.9.7':
     dependencies:
@@ -5777,7 +5708,7 @@ snapshots:
 
   '@pythnetwork/pyth-sui-js@2.4.0(axios@1.13.2)(typescript@5.9.3)':
     dependencies:
-      '@mysten/sui': 1.45.2(typescript@5.9.3)
+      '@mysten/sui': 2.17.0(typescript@5.9.3)
       '@pythnetwork/hermes-client': 2.1.0(axios@1.13.2)
       buffer: 6.0.3
     transitivePeerDependencies:
@@ -6740,9 +6671,9 @@ snapshots:
 
   acorn@8.16.0: {}
 
-  aftermath-ts-sdk@1.3.29(@mysten/sui@1.45.2(typescript@5.9.3)):
+  aftermath-ts-sdk@1.3.29(@mysten/sui@2.17.0(typescript@5.9.3)):
     dependencies:
-      '@mysten/sui': 1.45.2(typescript@5.9.3)
+      '@mysten/sui': 2.17.0(typescript@5.9.3)
       bn.js: 5.2.3
       dayjs: 1.11.19
       node-fetch: 3.3.2
