@@ -9,6 +9,10 @@ import {
 } from "./useGetSupportedNetworksAndTokens";
 import type { WalletContextState } from "@suiet/wallet-kit";
 import type { PaymentData } from "./useGetPaymentInformationQuery";
+
+// Import Cetus SDK classes
+import { SDK, SUI_MINT_TYPE } from "@cetusprotocol/cetus-sui-clmm-sdk";
+
 // Cetus CLMM constants
 const CETUS_CONSTANTS = {
   mainnet: {
@@ -58,8 +62,9 @@ export const useCheckoutPayment = ({
       network
     }
   }
-  // Fetch supported networks and tokens data via your react-query hook
+  
   const { data: supportedNetworks } = useGetSupportedNetworksAndTokens();
+  
   const executePayment = async () => {
     if (!wallet.connected || !paymentData || !wallet.address) {
       toast.error("Wallet not connected");
@@ -80,9 +85,7 @@ export const useCheckoutPayment = ({
     }
 
     try {
-      const {
-        client
-      } = initializeClient();
+      const { client, network } = initializeClient();
 
       const depositObject = await client.getObject({
         id: depositAddress,
@@ -117,6 +120,7 @@ export const useCheckoutPayment = ({
       const usdcCoinType = paymentData.mode === "live"
         ? supportedNetworks?.find(n => n.symbol === paymentData.network)?.supportedTokens.find(t => t.symbol.toUpperCase() === "USDC")?.mainnet.coinType
         : supportedNetworks?.find(n => n.symbol === paymentData.network)?.supportedTokens.find(t => t.symbol.toUpperCase() === "USDC")?.testnet.coinType;
+      
       if (!tokenCoinType) {
         throw new Error(`${selectedTokenObject.symbol} is not supported on this network environment.`);
       }
@@ -167,10 +171,10 @@ export const useCheckoutPayment = ({
       if (!isUsdc) {
         const cetusEnv = paymentData.mode === "live" ? CETUS_CONSTANTS.mainnet : CETUS_CONSTANTS.testnet;
 
-        // Fetch the Cetus pool object ID for tokenCoinType <-> USDC
-        const poolId = await getCetusPoolId(client, cetusEnv.poolsRegistry, tokenCoinType, usdcCoinType!);
+        // Fetch Cetus pool object ID using the new Cetus SDK function
+        const poolId = await getCetusPoolId(client, network, tokenCoinType, usdcCoinType!);
         if (!poolId) {
-          throw new Error(`No Cetus pool found for ${selectedTokenObject.symbol}/USDC`);
+          throw new Error(`No active Cetus pool found for ${selectedTokenObject.symbol}/USDC`);
         }
 
         // Use the Cetus aggregator swap_a2b: swaps all of paymentCoin (token → USDC)
@@ -223,14 +227,7 @@ export const useCheckoutPayment = ({
       });
       return !!depositObject.data;
     } catch (error: any) {
-      if (
-        error.message?.includes("not find") ||
-        error.message?.includes("deleted")
-      ) {
-        return false;
-      }
-
-      return false; // Placeholder
+      return false;
     };
   }
 
@@ -238,46 +235,31 @@ export const useCheckoutPayment = ({
 };
 
 /**
- * Looks up a Cetus CLMM pool object ID for a given token pair (tokenA/USDC).
- *
- * Strategy: query the Cetus pools registry dynamic fields, which store pool
- * handles keyed by a struct containing (coin_type_a, coin_type_b). We try
- * both orderings (a2b and b2a) because Cetus always stores the pool with the
- * lexicographically-first type as CoinA.
+ * Looks up a Cetus CLMM pool object ID for a given token pair using the official Cetus SDK.
  */
 async function getCetusPoolId(
   client: SuiClient,
-  poolsRegistryId: string,
+  network: "mainnet" | "testnet",
   coinTypeA: string,
   coinTypeB: string,
 ): Promise<string | null> {
-  // Normalise coin types: strip leading "0x" padding for consistent comparison
-  const normalise = (t: string) => t.replace(/^0x0+/, "0x");
-  const typeA = normalise(coinTypeA);
-  const typeB = normalise(coinTypeB);
-
-  // Cetus stores pool registry entries as dynamic fields. We page through them
-  // and find the one whose name encodes both coin types.
-  let cursor: string | null | undefined = undefined;
-  do {
-    const page = await client.getDynamicFields({
-      parentId: poolsRegistryId,
-      cursor,
-      limit: 50,
+  try {
+    // 1. Initialize Cetus SDK instance
+    const sdk = new SDK({
+      fullNodeUrl: network === "mainnet" ? getFullnodeUrl("mainnet") : getFullnodeUrl("testnet"),
+      simulationAccount: "0x0000000000000000000000000000000000000000000000000000000000000001", // Dummy address for read-only config load
     });
 
-    for (const field of page.data) {
-      // The field name is a struct; serialise it and check for both coin types
-      const nameStr = JSON.stringify(field.name);
-      if (nameStr.includes(typeA) && nameStr.includes(typeB)) {
-        // The field value objectId is the pool object ID
-        return field.objectId;
-      }
-    }
+    // 2. Fetch the active pools registry configuration from Cetus
+    await sdk.Pool.getPools();
 
-    cursor = page.nextCursor;
-    if (!page.hasNextPage) break;
-  } while (true);
-
-  return null;
+    // 3. Request pool address using the internal Cetus SDK method
+    // Note: The SDK automatically alphabetizes/sorts coin types to look up the correct address.
+    const poolAddress = await sdk.Pool.getPoolAddressByCoins(coinTypeA, coinTypeB);
+    
+    return poolAddress || null;
+  } catch (error) {
+    console.error("Failed to fetch Cetus pool via SDK:", error);
+    return null;
+  }
     }
