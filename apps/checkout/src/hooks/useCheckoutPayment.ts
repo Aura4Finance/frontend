@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getFullnodeUrl, SuiClient, type MoveValue, type SuiParsedData } from "@mysten/sui/client";
-import { coinWithBalance, Transaction, type TransactionObjectInput } from "@mysten/sui/transactions";
+import { Transaction, type TransactionObjectInput } from "@mysten/sui/transactions";
 import { toast } from "sonner";
 import {
   useGetSupportedNetworksAndTokens,
@@ -9,6 +9,25 @@ import {
 } from "./useGetSupportedNetworksAndTokens";
 import type { WalletContextState } from "@suiet/wallet-kit";
 import type { PaymentData } from "./useGetPaymentInformationQuery";
+import { CetusClmmSDK, type Pool } from "@cetusprotocol/sui-clmm-sdk";
+
+// Cetus CLMM constants
+const CETUS_CONSTANTS = {
+  mainnet: {
+    globalConfig: "0xdaa46292632c3c4d8f31f23ea0f9b36a28ff3677e9684980e4438403a67a3d8f",
+    aggregatorPackage: "0x11451575c775a3e633437b827ecbc1eb51a5964b0302210b28f5b89880be21a2",
+    partner: "0x639b5e433da31739e800cd085f356e64cae222966d0f1b11bd9dc76b322ff58b",
+    poolsRegistry: "0xf699e7f2276f5c9a75944b37a0c5b5d9ddfd2471bf6242483b03ab2887d198d0",
+  },
+  testnet: {
+    globalConfig: "0xc6273f844b4bc258952c4e477697aa12c918c8e08106fac6b934811298c9820a",
+    aggregatorPackage: "0x11451575c775a3e633437b827ecbc1eb51a5964b0302210b28f5b89880be21a2",
+    partner: "0x1f5fa5c820f40d43fc47815ad06d95e40a1942ff72a732a92e8ef4aa8cde70a5",
+    poolsRegistry: "0x20a086e6fa0741b3ca77d033a65faf0871349b986ddbdde6fa1d85d78a5f4222",
+  },
+} as const;
+
+const CLOCK_ADDRESS = "0x6";
 
 interface UseCheckoutPaymentProps {
   wallet: WalletContextState;
@@ -41,8 +60,9 @@ export const useCheckoutPayment = ({
       network
     }
   }
-  // Fetch supported networks and tokens data via your react-query hook
+  
   const { data: supportedNetworks } = useGetSupportedNetworksAndTokens();
+  
   const executePayment = async () => {
     if (!wallet.connected || !paymentData || !wallet.address) {
       toast.error("Wallet not connected");
@@ -63,9 +83,7 @@ export const useCheckoutPayment = ({
     }
 
     try {
-      const {
-        client
-      } = initializeClient();
+      const { client, network } = initializeClient();
 
       const depositObject = await client.getObject({
         id: depositAddress,
@@ -100,6 +118,7 @@ export const useCheckoutPayment = ({
       const usdcCoinType = paymentData.mode === "live"
         ? supportedNetworks?.find(n => n.symbol === paymentData.network)?.supportedTokens.find(t => t.symbol.toUpperCase() === "USDC")?.mainnet.coinType
         : supportedNetworks?.find(n => n.symbol === paymentData.network)?.supportedTokens.find(t => t.symbol.toUpperCase() === "USDC")?.testnet.coinType;
+      
       if (!tokenCoinType) {
         throw new Error(`${selectedTokenObject.symbol} is not supported on this network environment.`);
       }
@@ -148,32 +167,26 @@ export const useCheckoutPayment = ({
 
       const isUsdc = selectedTokenObject.symbol.toUpperCase() === "USDC";
       if (!isUsdc) {
-        const metaAg = new MetaAg();
-        const quotes = await metaAg.quote({
-          amountIn: amount.toString(),
-          coinTypeIn: tokenCoinType,
-          coinTypeOut: usdcCoinType!,
+        const cetusEnv = paymentData.mode === "live" ? CETUS_CONSTANTS.mainnet : CETUS_CONSTANTS.testnet;
+
+        // Fetch Cetus pool object ID using the new Cetus SDK function
+        const poolId = await getCetusPoolId(network as "mainnet" | "testnet", tokenCoinType, usdcCoinType!);
+        if (!poolId) {
+          throw new Error(`No active Cetus pool found for ${selectedTokenObject.symbol}/USDC`);
+        }
+
+        // Use the Cetus aggregator swap_a2b: swaps all of paymentCoin (token → USDC)
+        [paymentCoin] = tx.moveCall({
+          target: `${cetusEnv.aggregatorPackage}::cetus::swap_a2b`,
+          typeArguments: [tokenCoinType, usdcCoinType!],
+          arguments: [
+            tx.object(cetusEnv.globalConfig),
+            tx.object(poolId),
+            tx.object(cetusEnv.partner),
+            paymentCoin,
+            tx.object(CLOCK_ADDRESS),
+          ],
         });
-
-        const bestQuote = quotes.sort(
-          (a, b) => Number(b.simulatedAmountOut || b.amountOut) - Number(a.simulatedAmountOut || a.amountOut),
-        )[0];
-
-        paymentCoin = (await metaAg.swap(
-          {
-            quote: bestQuote!,
-            signer: wallet.address,
-            coinIn: coinWithBalance({
-              balance: amount,
-              type: tokenCoinType,
-            }),
-            tx,
-          },
-          100,
-        )) as {
-          $kind: "NestedResult";
-          NestedResult: [number, number];
-        };
       }
 
       tx.moveCall({
@@ -212,16 +225,35 @@ export const useCheckoutPayment = ({
       });
       return !!depositObject.data;
     } catch (error: any) {
-      if (
-        error.message?.includes("not find") ||
-        error.message?.includes("deleted")
-      ) {
-        return false;
-      }
-
-      return false; // Placeholder
+      return false;
     };
   }
 
   return { executePayment, checkDepositAddressOnChain, processing, error, setError };
 };
+
+/**
+ * Looks up a Cetus CLMM pool object ID for a given token pair using the official Cetus SDK.
+ */
+async function getCetusPoolId(
+  network: "mainnet" | "testnet",
+  coinTypeA: string,
+  coinTypeB: string,
+): Promise<string | null> {
+  try {
+    const sdk = CetusClmmSDK.createSDK({ env: network });
+    // 2. Fetch the active pools registry configuration from Cetus
+    const pools = await sdk.Pool.getPoolByCoins([coinTypeA, coinTypeB]);
+
+    if(!pools || pools.length === 0 ){
+      return null;
+    }
+
+    const pool = pools.sort((a: Pool, b: Pool) => Number(b.liquidity) - Number(a.liquidity))[0];
+    
+    return pool.id || null;
+  } catch (error) {
+    console.error("Failed to fetch Cetus pool via SDK:", error);
+    return null;
+  }
+    }
