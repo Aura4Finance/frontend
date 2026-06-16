@@ -134,7 +134,6 @@ export const useCheckoutPayment = ({
         throw new Error(`${selectedTokenObject.symbol} is not supported on this network environment.`);
       }
 
-      // 1. Fetch ALL coin objects of this specific type (handling pagination)
       let allCoins: any[] = [];
       let cursor: string | null = null;
       let hasNextPage = true;
