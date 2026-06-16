@@ -156,7 +156,6 @@ export const useCheckoutPayment = ({
       }
 
       const tx = new Transaction();
-      let paymentCoin = tx.coin({ balance: amount, type: tokenCoinType });
 
       const packageId =
         paymentData.mode === "live"
@@ -182,7 +181,7 @@ export const useCheckoutPayment = ({
           arguments: [
             tx.object(cetusEnv.globalConfig),
             tx.object(poolId),
-            paymentCoin,
+            tx.coin({ balance: amount, type: tokenCoinType }),
             tx.object(depositAddress),
             tx.pure.u128(sqrtPriceLimitA2B),
             tx.object(CLOCK_ADDRESS),
@@ -193,7 +192,7 @@ export const useCheckoutPayment = ({
 
         tx.moveCall({
           target: `${packageId}::main::pay_usdc`,
-          arguments: [paymentCoin, tx.object(depositAddress)]
+          arguments: [tx.coin({ balance: amount, type: usdcCoinType }), tx.object(depositAddress)]
         });
       }
 
@@ -219,7 +218,7 @@ export const useCheckoutPayment = ({
     } catch (err: any) {
       console.error(err);
       let errorMessage = err.message || "Payment failed";
-      
+
       if (errorMessage.includes("Unable to perform gas selection due to insufficient SUI balance")) {
         errorMessage = "Insufficient SUI balance to pay for gas fees.";
       } else if (errorMessage.includes("Rejected") || errorMessage.includes("User rejected")) {
