@@ -1,12 +1,13 @@
 packages:
   - "apps/*"
   - "packages/*"
-pnpm:
-  overrides:
-    '@mysten/sui': '2.17.0'
-  onlyBuiltDependencies:
-    - whatever-was-there-before # keep any existing entries
+packageExtensions:
+  "@7kprotocol/sdk-ts@*":
+    peerDependenciesMeta:
+      "@mysten/sui":
+        optional: true
+
+overrides:
+  "@7kprotocol/sdk-ts>@mysten/sui": "1.45.2"
 allowBuilds:
   esbuild: false
-minimumReleaseAgeExclude:
-  - '@mysten/utils@0.4.0'
