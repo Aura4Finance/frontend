@@ -141,6 +141,7 @@ export const useCheckoutPayment = ({
       let allCoins: any[] = [];
       let cursor: string | null = null;
       let hasNextPage = true;
+      let totalBalance = 0n;
 
       while (hasNextPage) {
         const response = await client.core.listCoins({
@@ -149,7 +150,18 @@ export const useCheckoutPayment = ({
           cursor: cursor,
         });
 
-        allCoins.push(...(response.objects || []));
+        const newCoins = response.objects || [];
+        allCoins.push(...newCoins);
+        
+        // Add to total balance
+        const pageBalance = newCoins.reduce((sum: bigint, c: any) => sum + BigInt(c.balance), 0n);
+        totalBalance += pageBalance;
+
+        // Stop fetching if we already have enough balance
+        if (totalBalance >= amount) {
+          break;
+        }
+
         cursor = response.cursor ?? null;
         hasNextPage = response.hasNextPage;
       }
@@ -158,10 +170,6 @@ export const useCheckoutPayment = ({
         toast.error(`No ${selectedTokenObject.symbol} balance`);
         return;
       }
-
-      // 3. Calculate total balance across all fetched coin objects
-      // Note: getCoins returns 'balance' on each coin object as a string
-      const totalBalance = allCoins.reduce((sum: bigint, c) => sum + BigInt(c.balance), 0n);
 
       if (totalBalance < amount) {
         toast.error(`Insufficient ${selectedTokenObject.symbol} balance`);
