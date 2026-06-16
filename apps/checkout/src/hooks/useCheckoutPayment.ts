@@ -199,8 +199,12 @@ export const useCheckoutPayment = ({
       }
 
 
+      tx.setSender(wallet.address);
+      const txBytes = await tx.build({ client });
+      const resolvedTx = Transaction.from(txBytes);
+
       await wallet.signAndExecuteTransactionBlock({
-        transactionBlock: tx as any,
+        transactionBlock: resolvedTx as any,
       });
 
       toast.success("Payment successful");
