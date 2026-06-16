@@ -27,6 +27,8 @@ const CETUS_CONSTANTS = {
   },
 } as const;
 
+const sqrtPriceLimitA2B = 2000000n;
+
 const CLOCK_ADDRESS = "0x6";
 
 interface UseCheckoutPaymentProps {
@@ -209,24 +211,27 @@ export const useCheckoutPayment = ({
           throw new Error(`No active Cetus pool found for ${selectedTokenObject.symbol}/USDC`);
         }
 
-        // Use the Cetus aggregator swap_a2b: swaps all of paymentCoin (token → USDC)
         [paymentCoin] = tx.moveCall({
-          target: `${cetusEnv.aggregatorPackage}::cetus::swap_a2b`,
-          typeArguments: [tokenCoinType, usdcCoinType!],
+          target: `${packageId}::main::pay_swap`,
+          typeArguments: [tokenCoinType],
           arguments: [
             tx.object(cetusEnv.globalConfig),
             tx.object(poolId),
-            tx.object(cetusEnv.partner),
             paymentCoin,
+            tx.object(depositAddress),
+            tx.pure.u128(sqrtPriceLimitA2B),
             tx.object(CLOCK_ADDRESS),
           ],
         });
+
+      } else {
+
+        tx.moveCall({
+          target: `${packageId}::main::pay_usdc`,
+          arguments: [paymentCoin, tx.object(depositAddress)]
+        });
       }
 
-      tx.moveCall({
-        target: `${packageId}::main::pay_usdc`,
-        arguments: [paymentCoin, tx.object(depositAddress)]
-      });
 
       await wallet.signAndExecuteTransactionBlock({
         transactionBlock: tx as any,
