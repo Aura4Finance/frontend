@@ -1,18 +1,15 @@
 {
   "name": "orafi-frontend",
   "private": true,
-  "pnpm": {
-    "overrides": {
-      "@mysten/sui": "^2.1.0"
-    },
-    "onlyBuiltDependencies": [
-      "esbuild"
-    ]
-  },
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
+  "pnpm": {
+    "overrides": {
+      "@mysten/sui": "1.45.2"
+    }
+  },
   "scripts": {
     "install:all": "pnpm install",
     "build:admin": "pnpm --filter admin build",
