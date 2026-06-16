@@ -100,6 +100,7 @@ export const useCheckoutPayment = ({
 
       const expectedWalletType = `${matchedNetwork?.smartContractPackageId}::main::Wallet<${network === "mainnet" ? selectedTokenObject?.mainnet.coinType : selectedTokenObject?.testnet.coinType}>`;
       if (normalizeStructTag(object.type) !== normalizeStructTag(expectedWalletType)) {
+        console.log(object.type)
         throw new Error("Invalid deposit object for selected token and network");
       }
 
