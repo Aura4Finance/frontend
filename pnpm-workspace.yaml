@@ -1,7 +1,12 @@
 packages:
   - "apps/*"
   - "packages/*"
-overrides:
-  "@mysten/sui": "1.45.2"
+pnpm:
+  overrides:
+    '@mysten/sui': '2.17.0'
+  onlyBuiltDependencies:
+    - whatever-was-there-before # keep any existing entries
 allowBuilds:
   esbuild: false
+minimumReleaseAgeExclude:
+  - '@mysten/utils@0.4.0'

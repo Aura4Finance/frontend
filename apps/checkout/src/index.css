@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
 @theme {
   --font-sans: 'Inter', system-ui, sans-serif;
@@ -12,8 +12,10 @@
   font-weight: 400;
 
   color-scheme: light;
-  background-color: #f9fafb; /* gray-50 */
-  color: #111827; /* gray-900 */
+  background-color: #f9fafb;
+  /* gray-50 */
+  color: #111827;
+  /* gray-900 */
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;

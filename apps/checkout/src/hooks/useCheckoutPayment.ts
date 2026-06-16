@@ -92,8 +92,8 @@ export const useCheckoutPayment = ({
       const { object } = await client.core.getObject({
         objectId: depositAddress,
         include: {
-          content: true
-        },
+          content: true,
+        }
       });
 
       if (object.type !== `${matchedNetwork?.smartContractPackageId}::main::Wallet<${network === "mainnet" ? selectedTokenObject?.mainnet.coinType : selectedTokenObject?.testnet.coinType}>`) {
@@ -257,9 +257,6 @@ export const useCheckoutPayment = ({
       const { client } = initializeClient();
       const depositObject = await client.core.getObject({
         objectId: generatedAddresses.depositAddress || "",
-        include: { 
-          content: true
-         }
       });
       return !!depositObject.object;
     } catch (error: any) {
