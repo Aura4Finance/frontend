@@ -12,7 +12,6 @@ import type { PaymentData } from "./useGetPaymentInformationQuery";
 import { CetusClmmSDK, type Pool } from "@cetusprotocol/sui-clmm-sdk";
 import { bcs } from "@mysten/sui/bcs";
 
-// Cetus CLMM constants
 const CETUS_CONSTANTS = {
   mainnet: {
     globalConfig: "0xdaa46292632c3c4d8f31f23ea0f9b36a28ff3677e9684980e4438403a67a3d8f",
