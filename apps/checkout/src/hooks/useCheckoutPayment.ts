@@ -138,7 +138,6 @@ export const useCheckoutPayment = ({
         throw new Error(`${selectedTokenObject.symbol} is not supported on this network environment.`);
       }
 
-      // Pre-flight balance check for user-friendly error messages
       const { balance: balanceInfo } = await client.getBalance({
         owner: wallet.address,
         coinType: tokenCoinType,
