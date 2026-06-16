@@ -11,6 +11,7 @@ import type { WalletContextState } from "@suiet/wallet-kit";
 import type { PaymentData } from "./useGetPaymentInformationQuery";
 import { CetusClmmSDK, type Pool } from "@cetusprotocol/sui-clmm-sdk";
 import { bcs } from "@mysten/sui/bcs";
+import { normalizeStructTag } from "@mysten/sui/utils";
 
 const CETUS_CONSTANTS = {
   mainnet: {
@@ -97,7 +98,8 @@ export const useCheckoutPayment = ({
         }
       });
 
-      if (object.type !== `${matchedNetwork?.smartContractPackageId}::main::Wallet<${network === "mainnet" ? selectedTokenObject?.mainnet.coinType : selectedTokenObject?.testnet.coinType}>`) {
+      const expectedWalletType = `${matchedNetwork?.smartContractPackageId}::main::Wallet<${network === "mainnet" ? selectedTokenObject?.mainnet.coinType : selectedTokenObject?.testnet.coinType}>`;
+      if (normalizeStructTag(object.type) !== normalizeStructTag(expectedWalletType)) {
         throw new Error("Invalid deposit object for selected token and network");
       }
 
