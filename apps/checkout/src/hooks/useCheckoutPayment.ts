@@ -156,8 +156,6 @@ export const useCheckoutPayment = ({
         return;
       }
 
-      // Set up the transaction — tx.coin() automatically handles coin resolution,
-      // merging, splitting, and address balance withdrawals at build time
       const tx = new Transaction();
       let paymentCoin = tx.coin({ balance: amount, type: tokenCoinType });
 
