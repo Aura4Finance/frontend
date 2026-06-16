@@ -151,8 +151,9 @@ export const useCheckoutPayment = ({
         });
 
         const newCoins = response.objects || [];
+        console.log('newCoins', newCoins);
         allCoins.push(...newCoins);
-        
+
         // Add to total balance
         const pageBalance = newCoins.reduce((sum: bigint, c: any) => sum + BigInt(c.balance), 0n);
         totalBalance += pageBalance;
