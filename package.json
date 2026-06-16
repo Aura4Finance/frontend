@@ -5,11 +5,6 @@
     "apps/*",
     "packages/*"
   ],
-  "pnpm": {
-    "overrides": {
-      "@mysten/sui": "1.45.2"
-    }
-  },
   "scripts": {
     "install:all": "pnpm install",
     "build:admin": "pnpm --filter admin build",
