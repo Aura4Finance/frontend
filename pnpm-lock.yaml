@@ -4,9 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  '@7kprotocol/sdk-ts>@mysten/sui': 1.45.2
-
 packageExtensionsChecksum: sha256-yjj+AvQsnBDg//VE4Bc7QKjPb3IUJZaSLh85WvfPVnQ=
 
 importers:
