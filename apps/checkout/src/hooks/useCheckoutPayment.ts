@@ -155,7 +155,6 @@ export const useCheckoutPayment = ({
         hasNextPage = response.hasNextPage;
       }
 
-      // 2. Validate if the wallet has any coins of this type
       if (allCoins.length === 0) {
         toast.error(`No ${selectedTokenObject.symbol} balance`);
         return;
