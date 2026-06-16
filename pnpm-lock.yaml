@@ -3,9 +3,7 @@ lockfileVersion: '9.0'
 settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
-
-packageExtensionsChecksum: sha256-yjj+AvQsnBDg//VE4Bc7QKjPb3IUJZaSLh85WvfPVnQ=
-
+  
 importers:
 
   .:
