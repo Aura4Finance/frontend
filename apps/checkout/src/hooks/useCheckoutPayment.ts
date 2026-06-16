@@ -144,7 +144,7 @@ export const useCheckoutPayment = ({
       let totalBalance = 0n;
 
       while (hasNextPage) {
-        const response = await client.core.listCoins({
+        const response = await client.listCoins({
           owner: wallet.address,
           coinType: tokenCoinType,
           cursor: cursor,
