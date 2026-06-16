@@ -2,10 +2,13 @@
   "name": "orafi-frontend",
   "private": true,
   "pnpm": {
-  "overrides": {
-    "@mysten/sui": "^2.1.0"
-  }
-},
+    "overrides": {
+      "@mysten/sui": "^2.1.0"
+    },
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
   "workspaces": [
     "apps/*",
     "packages/*"
