@@ -98,10 +98,8 @@ export const useCheckoutPayment = ({
         }
       });
 
-      const expectedWalletType = `${matchedNetwork?.smartContractPackageId}::main::Wallet<${network === "mainnet" ? selectedTokenObject?.mainnet.coinType : selectedTokenObject?.testnet.coinType}>`;
+      const expectedWalletType = `${network === "mainnet" ? matchedNetwork?.smartContractPackageId.mainnet : matchedNetwork?.smartContractPackageId.testnet}::main::Wallet<${network === "mainnet" ? selectedTokenObject?.mainnet.coinType : selectedTokenObject?.testnet.coinType}>`;
       if (normalizeStructTag(object.type) !== normalizeStructTag(expectedWalletType)) {
-        console.log(object.type)
-        console.log(expectedWalletType)
         throw new Error("Invalid deposit object for selected token and network");
       }
 
