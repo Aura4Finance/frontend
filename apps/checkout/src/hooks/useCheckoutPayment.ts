@@ -218,7 +218,16 @@ export const useCheckoutPayment = ({
       }
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "Payment failed");
+      let errorMessage = err.message || "Payment failed";
+      
+      if (errorMessage.includes("Unable to perform gas selection due to insufficient SUI balance")) {
+        errorMessage = "Insufficient SUI balance to pay for gas fees.";
+      } else if (errorMessage.includes("Rejected") || errorMessage.includes("User rejected")) {
+        errorMessage = "Transaction was rejected.";
+      }
+
+      toast.error(errorMessage);
+      setError(errorMessage);
     } finally {
       setProcessing(false);
     }
