@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { SuiGrpcClient } from '@mysten/sui/grpc';
-import { Transaction, type TransactionObjectInput } from "@mysten/sui/transactions";
+import { Transaction } from "@mysten/sui/transactions";
 import { toast } from "sonner";
 import {
   useGetSupportedNetworksAndTokens,
@@ -138,33 +138,15 @@ export const useCheckoutPayment = ({
         throw new Error(`${selectedTokenObject.symbol} is not supported on this network environment.`);
       }
 
-      let allCoins: any[] = [];
-      let cursor: string | null = null;
-      let hasNextPage = true;
-      let totalBalance = 0n;
+      // Pre-flight balance check for user-friendly error messages
+      const { balance: balanceInfo } = await client.getBalance({
+        owner: wallet.address,
+        coinType: tokenCoinType,
+      });
 
-      while (hasNextPage) {
-        const response = await client.listCoins({
-          owner: wallet.address,
-          coinType: tokenCoinType,
-          cursor: cursor,
-        });
+      const totalBalance = BigInt(balanceInfo.balance);
 
-        const newCoins = response.objects || [];
-        console.log('newCoins', newCoins);
-        allCoins.push(...newCoins);
-        const pageBalance = newCoins.reduce((sum: bigint, c: any) => sum + BigInt(c.balance), 0n);
-        totalBalance += pageBalance;
-
-        if (totalBalance >= amount) {
-          break;
-        }
-
-        cursor = response.cursor ?? null;
-        hasNextPage = response.hasNextPage;
-      }
-
-      if (allCoins.length === 0) {
+      if (totalBalance === 0n) {
         toast.error(`No ${selectedTokenObject.symbol} balance`);
         return;
       }
@@ -174,30 +156,10 @@ export const useCheckoutPayment = ({
         return;
       }
 
-      // 4. Set up the transaction builder
+      // Set up the transaction — tx.coin() automatically handles coin resolution,
+      // merging, splitting, and address balance withdrawals at build time
       const tx = new Transaction();
-      let baseCoin: TransactionObjectInput;
-
-      // Find a single coin object that is large enough by itself
-      const singleCoin = allCoins.find((c) => BigInt(c.balance) >= amount);
-
-      if (singleCoin) {
-        baseCoin = tx.object(singleCoin.coinObjectId);
-      } else {
-        // If no single coin is big enough, merge them together
-        const [target, ...rest] = allCoins;
-        const targetObj = tx.object(target.coinObjectId);
-
-        // Create an array of object references for the coins to merge
-        const coinsToMerge = rest.map(c => tx.object(c.coinObjectId));
-
-        // Merge all subsequent coins into the first target coin
-        tx.mergeCoins(targetObj, coinsToMerge);
-        baseCoin = targetObj;
-      }
-
-      // 5. Split out the exact amount needed for your transaction
-      let [paymentCoin] = tx.splitCoins(baseCoin, [tx.pure.u64(amount)]);
+      let paymentCoin = tx.coin({ balance: amount, type: tokenCoinType });
 
       const packageId =
         paymentData.mode === "live"
@@ -217,7 +179,7 @@ export const useCheckoutPayment = ({
           throw new Error(`No active Cetus pool found for ${selectedTokenObject.symbol}/USDC`);
         }
 
-        [paymentCoin] = tx.moveCall({
+        tx.moveCall({
           target: `${packageId}::main::pay_swap`,
           typeArguments: [tokenCoinType],
           arguments: [
