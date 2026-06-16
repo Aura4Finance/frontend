@@ -204,9 +204,8 @@ export const useCheckoutPayment = ({
       const isUsdc = selectedTokenObject.symbol.toUpperCase() === "USDC";
       if (!isUsdc) {
         const cetusEnv = paymentData.mode === "live" ? CETUS_CONSTANTS.mainnet : CETUS_CONSTANTS.testnet;
-
-        // Fetch Cetus pool object ID using the new Cetus SDK function
         const poolId = await getCetusPoolId(network as "mainnet" | "testnet", tokenCoinType, usdcCoinType!);
+
         if (!poolId) {
           throw new Error(`No active Cetus pool found for ${selectedTokenObject.symbol}/USDC`);
         }
