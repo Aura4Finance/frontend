@@ -4,7 +4,7 @@ import { getJsonRpcFullnodeUrl } from "@mysten/sui/jsonRpc"
 export const { networkConfig } = createNetworkConfig({
   live: { 
     network: "mainnet",  
-    url: getJsonRpcFullnodeUrl("mainnet")
+    url: getJsonRpcFullnodeUrl("mainnet"),
 },
   test: { 
     network: "testnet",

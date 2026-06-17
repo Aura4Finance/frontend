@@ -9,7 +9,8 @@ import {
 } from "./useGetSupportedNetworksAndTokens";
 import { 
   useSignAndExecuteTransaction, 
-  useSuiClientContext
+  useSuiClientContext,
+  useSuiClient
 } from "@mysten/dapp-kit";
 import type { PaymentData } from "./useGetPaymentInformationQuery";
 import { CetusClmmSDK, type Pool } from "@cetusprotocol/sui-clmm-sdk";
@@ -64,6 +65,7 @@ export const useCheckoutPayment = ({
   const [error, setError] = useState<string | null>(null);
   const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
   const  { selectNetwork } = useSuiClientContext();
+  const {  } = useSuiClient();
 
   const initializeClient = () => {
     selectNetwork(paymentData?.mode!);
@@ -72,6 +74,7 @@ export const useCheckoutPayment = ({
         network: paymentData?.mode === "live" ? networkConfig.live.network : networkConfig.test.network,
         baseUrl: paymentData?.mode === "live" ? networkConfig.live.url : networkConfig.test.url
       }),
+      chain: paymentData?.mode === "live" ? "sui:mainnet" : "sui:testnet",
       network: paymentData?.mode
     }
   }
@@ -98,7 +101,7 @@ export const useCheckoutPayment = ({
     }
 
     try {
-      const { client, network } = initializeClient();
+      const { client, network, chain } = initializeClient();
 
       const { object } = await client.core.getObject({
         objectId: depositAddress,
@@ -207,7 +210,10 @@ export const useCheckoutPayment = ({
 
       tx.setSenderIfNotSet(wallet.address);
       tx.setGasBudget(100_000_000);
-      await signAndExecuteTransaction({ transaction: tx as any});
+      await signAndExecuteTransaction({ 
+        transaction: tx as any,
+        chain: chain as any
+      });
 
       toast.success("Payment successful");
 
