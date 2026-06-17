@@ -7,11 +7,15 @@ import {
   type SupportedNetwork,
   type Token
 } from "./useGetSupportedNetworksAndTokens";
-import type { WalletContextState } from "@suiet/wallet-kit";
+import { 
+  useSignAndExecuteTransaction, 
+  useSuiClientContext
+} from "@mysten/dapp-kit";
 import type { PaymentData } from "./useGetPaymentInformationQuery";
 import { CetusClmmSDK, type Pool } from "@cetusprotocol/sui-clmm-sdk";
 import { bcs } from "@mysten/sui/bcs";
 import { normalizeStructTag } from "@mysten/sui/utils";
+import { networkConfig } from "../utils/network";
 
 const CETUS_CONSTANTS = {
   mainnet: {
@@ -33,7 +37,10 @@ const sqrtPriceLimitA2B = 2000000n;
 const CLOCK_ADDRESS = "0x6";
 
 interface UseCheckoutPaymentProps {
-  wallet: WalletContextState;
+  wallet: {
+    isConnected: boolean;
+    address: string;
+  };
   paymentData?: PaymentData;
   generatedAddresses: { depositAddress?: string };
   selectedTokenObject?: Token;
@@ -55,22 +62,24 @@ export const useCheckoutPayment = ({
 }: UseCheckoutPaymentProps) => {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
+  const  { selectNetwork } = useSuiClientContext();
 
   const initializeClient = () => {
-    const network = paymentData?.mode === "live" ? "mainnet" : "testnet";
+    selectNetwork(paymentData?.mode!);
     return {
       client: new SuiGrpcClient({
-        network,
-        baseUrl: network === "mainnet" ? 'https://fullnode.mainnet.sui.io:443' : 'https://fullnode.testnet.sui.io:443',
+        network: paymentData?.mode === "live" ? networkConfig.live.network : networkConfig.test.network,
+        baseUrl: paymentData?.mode === "live" ? networkConfig.live.url : networkConfig.test.url
       }),
-      network
+      network: paymentData?.mode
     }
   }
 
   const { data: supportedNetworks } = useGetSupportedNetworksAndTokens();
 
   const executePayment = async () => {
-    if (!wallet.connected || !paymentData || !wallet.address) {
+    if (!wallet.isConnected || !paymentData || !wallet.address) {
       toast.error("Wallet not connected");
       return;
     }
@@ -98,7 +107,7 @@ export const useCheckoutPayment = ({
         }
       });
 
-      const expectedWalletType = `${network === "mainnet" ? matchedNetwork?.smartContractPackageId.mainnet : matchedNetwork?.smartContractPackageId.testnet}::main::Wallet<${network === "mainnet" ? selectedTokenObject?.mainnet.coinType : selectedTokenObject?.testnet.coinType}>`;
+      const expectedWalletType = `${network === "live" ? matchedNetwork?.smartContractPackageId.mainnet : matchedNetwork?.smartContractPackageId.testnet}::main::Wallet<${network === "live" ? selectedTokenObject?.mainnet.coinType : selectedTokenObject?.testnet.coinType}>`;
       if (normalizeStructTag(object.type) !== normalizeStructTag(expectedWalletType)) {
         throw new Error("Invalid deposit object for selected token and network");
       }
@@ -196,14 +205,9 @@ export const useCheckoutPayment = ({
         });
       }
 
-
-      tx.setSender(wallet.address);
-      const txBytes = await tx.build({ client });
-      const resolvedTx = Transaction.from(txBytes);
-
-      await wallet.signAndExecuteTransactionBlock({
-        transactionBlock: resolvedTx as any,
-      });
+      tx.setSenderIfNotSet(wallet.address);
+      tx.setGasBudget(100_000_000);
+      await signAndExecuteTransaction({ transaction: tx as any});
 
       toast.success("Payment successful");
 

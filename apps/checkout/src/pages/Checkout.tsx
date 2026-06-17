@@ -1,6 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRoute, Redirect } from "wouter";
-import { ConnectButton, useWallet } from "@suiet/wallet-kit";
+import {
+  ConnectButton,
+  useCurrentWallet,
+  useCurrentAccount,
+  useAccounts,
+  useDisconnectWallet,
+  useSwitchAccount
+} from "@mysten/dapp-kit";
 import { Button, Card } from "@orafi/ui";
 import logo from "@orafi/ui/assets/OraFi.png";
 import { FiAlertCircle, FiArrowLeft, FiChevronDown } from "react-icons/fi";
@@ -31,8 +38,11 @@ const Checkout = () => {
     transferAddress?: string;
   }>({});
 
-  const wallet = useWallet();
-  const accounts = useMemo(() => (wallet.connected ? wallet.getAccounts?.() ?? [] : []), [wallet]);
+  const wallet = useCurrentWallet();
+  const accounts = useAccounts();
+  const currentAccount = useCurrentAccount();
+  const { mutate: disconnect } = useDisconnectWallet();
+  const { mutate: switchAccount } = useSwitchAccount();
 
   const paymentQueryResult = useGetPaymentInformationQuery(params?.txId as string);
   const supportedNetworksQuery = useGetSupportedNetworksAndTokens();
@@ -61,14 +71,17 @@ const Checkout = () => {
   const hasNoRedirect = !redirect || new URL(window.location.href).searchParams.get("redirect") === "false";
 
   // Use the isolated hook for handling payment processing executions
-  const { 
+  const {
     executePayment,
-    checkDepositAddressOnChain,  
-    processing, 
-    error, 
+    checkDepositAddressOnChain,
+    processing,
+    error,
     setError
-} = useCheckoutPayment({
-    wallet,
+  } = useCheckoutPayment({
+    wallet: {
+      isConnected: wallet.isConnected,
+      address: currentAccount?.address || "",
+    },
     paymentData: paymentQueryResult.data,
     generatedAddresses,
     selectedTokenObject,
@@ -299,11 +312,10 @@ const Checkout = () => {
               <PaymentMethodSelector onSelectMethod={handleSelectPaymentMethod} isLoading={isGeneratingIntent} />
             ) : paymentMethod === "deposit_address" ? (
               <>
-                {!wallet.connected ? (
+                {!wallet.isConnected ? (
                   <div className="flex flex-col gap-3">
-                    <p className="text-sm text-gray-600 text-center">Connect your Sui wallet to pay</p>
                     <div className="flex justify-center suiet-custom-wrapper">
-                      <ConnectButton label="Connect Wallet" className="w-full h-12 py-3 bg-blue-900 hover:bg-blue-800 text-white font-bold text-lg shadow-lg active:scale-[0.98] transition-all disabled:opacity-75 disabled:cursor-not-allowed"/>
+                      <ConnectButton connectText="Connect Wallet" className="w-full h-12 py-3 bg-blue-900 hover:bg-blue-800 text-white font-bold text-lg shadow-lg active:scale-[0.98] transition-all disabled:opacity-75 disabled:cursor-not-allowed" />
                     </div>
                   </div>
                 ) : (
@@ -314,7 +326,7 @@ const Checkout = () => {
                     >
                       <span className="text-xs font-bold text-blue-800 uppercase tracking-wider">Wallet Connected</span>
                       <span className="text-xs font-mono text-blue-600 truncate max-w-[120px] ml-auto">
-                        {wallet.address?.slice(0, 6)}...{wallet.address?.slice(-4)}
+                        {currentAccount?.address?.slice(0, 6)}...{currentAccount?.address?.slice(-4)}
                       </span>
                       <FiChevronDown className={`w-4 h-4 text-blue-700 transition-transform ${showModal ? "rotate-180" : ""}`} />
                     </button>
@@ -323,12 +335,12 @@ const Checkout = () => {
                       <div className="absolute right-0 mt-2 w-64 rounded-lg border border-blue-100 bg-white shadow-xl z-50 overflow-hidden">
                         <div className="bg-blue-50 border-b border-blue-100 p-3">
                           <p className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">Wallet Connected</p>
-                          <p className="text-xs font-mono text-blue-800 truncate mt-1">{wallet.address}</p>
+                          <p className="text-xs font-mono text-blue-800 truncate mt-1">{currentAccount?.address}</p>
                         </div>
                         <div className="p-2 space-y-1">
                           <button
                             onClick={() => {
-                              wallet.disconnect();
+                              disconnect();
                               setShowModal(false);
                             }}
                             className="w-full px-3 py-2 text-left text-sm rounded-md text-red-600 hover:bg-red-50 transition"
@@ -337,12 +349,12 @@ const Checkout = () => {
                           </button>
                           {accounts.length > 1 && <div className="h-px bg-blue-100 my-1" />}
                           {accounts
-                            .filter((acc) => acc.address !== wallet.address)
+                            .filter((acc) => acc.address !== currentAccount?.address)
                             .map((acc) => (
                               <button
                                 key={acc.address}
-                                onClick={async () => {
-                                  await wallet.select(acc.address);
+                                onClick={() => {
+                                  switchAccount({ account: acc });
                                   setShowModal(false);
                                 }}
                                 className="w-full px-3 py-2 text-left text-sm rounded-md hover:bg-blue-50 transition"
