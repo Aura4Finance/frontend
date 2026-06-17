@@ -1,12 +1,13 @@
 import { createNetworkConfig } from '@mysten/dapp-kit';
+import { getJsonRpcFullnodeUrl } from "@mysten/sui/jsonRpc"
 
 export const { networkConfig } = createNetworkConfig({
   live: { 
     network: "mainnet",  
-    url: "https://fullnode.mainnet.sui.io:443" 
+    url: getJsonRpcFullnodeUrl("mainnet")
 },
   test: { 
     network: "testnet",
-    url: "https://fullnode.testnet.sui.io:443"
+    url: getJsonRpcFullnodeUrl("testnet")
  },
 });
