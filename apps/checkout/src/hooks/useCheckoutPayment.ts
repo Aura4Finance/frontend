@@ -9,8 +9,7 @@ import {
 } from "./useGetSupportedNetworksAndTokens";
 import { 
   useSignAndExecuteTransaction, 
-  useSuiClientContext,
-  useSuiClient
+  useSuiClientContext
 } from "@mysten/dapp-kit";
 import type { PaymentData } from "./useGetPaymentInformationQuery";
 import { CetusClmmSDK, type Pool } from "@cetusprotocol/sui-clmm-sdk";
@@ -65,7 +64,6 @@ export const useCheckoutPayment = ({
   const [error, setError] = useState<string | null>(null);
   const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
   const  { selectNetwork } = useSuiClientContext();
-  const {  } = useSuiClient();
 
   const initializeClient = () => {
     selectNetwork(paymentData?.mode!);
