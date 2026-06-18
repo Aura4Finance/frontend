@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 // @ts-ignore
 import QRCode from "qrcode";
 import { FiCopy, FiCheckCircle, FiAlertCircle, FiLoader } from "react-icons/fi";
@@ -7,11 +7,11 @@ import { useVerifyTransferMutation } from "../hooks/useVerifyTransferMutation";
 import { toast } from "sonner";
 
 interface TransferPaymentProps {
+    tokenAmount: string;
+    isLoadingAmount: boolean;
     transferAddress?: string;
-    amountInUSDC: string;
     transactionId?: string;
     redirectUrl?: string;
-    isTestnet?: boolean;
     selectedToken?: {
         name: string;
         symbol: string;
@@ -23,56 +23,16 @@ interface TransferPaymentProps {
 }
 
 export const TransferPayment = ({
+    tokenAmount,
+    isLoadingAmount,
     transferAddress,
-    amountInUSDC,
     transactionId,
     redirectUrl,
-    isTestnet = true,
     selectedToken
 }: TransferPaymentProps) => {
     const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
     const [copied, _setCopied] = useState<boolean>(false);
-    const [tokenAmount, setTokenAmount] = useState<string>(amountInUSDC);
-    const [isLoadingAmount, setIsLoadingAmount] = useState<boolean>(false);
     const verifyTransferMutation = useVerifyTransferMutation(redirectUrl);
-
-    // Fetch token price and calculate amount
-    useEffect(() => {
-        const fetchTokenAmount = async () => {
-            if (!selectedToken || selectedToken.symbol === "USDC") {
-                // If USDC is selected, amount stays the same
-                setTokenAmount(amountInUSDC);
-                return;
-            }
-
-            setIsLoadingAmount(true);
-            try {
-                // Dynamic import to avoid build issues
-                const { getTokenPrice } = await import("@7kprotocol/sdk-ts");
-                
-                // Get the coin type based on network
-                const coinType = isTestnet 
-                    ? selectedToken.testnet.coinType 
-                    : selectedToken.mainnet.coinType;
-                
-                // Get the price rate
-                const rate = await getTokenPrice(coinType);
-                
-                // Calculate amount: amountInUSDC / rate
-                const amountInToken = parseFloat(amountInUSDC) / rate;
-                // Format with proper decimals
-                setTokenAmount((Math.ceil(amountInToken * 100) / 100).toFixed(2));
-            } catch (error) {
-                console.error("Failed to fetch token price", error);
-                // Fallback to amountInUSDC if fetch fails
-                setTokenAmount(amountInUSDC);
-            } finally {
-                setIsLoadingAmount(false);
-            }
-        };
-
-        fetchTokenAmount();
-    }, [selectedToken, amountInUSDC, isTestnet]);
 
     // Get the token symbol, with fallback to USDC
     const tokenSymbol = selectedToken?.symbol || "USDC";

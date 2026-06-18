@@ -390,10 +390,10 @@ const Checkout = () => {
             ) : (
               <TransferPayment
                 transferAddress={generatedAddresses.transferAddress}
-                amountInUSDC={roundedAmountInUSDC}
+                tokenAmount={tokenAmount}
+                isLoadingAmount={isLoadingTokenAmount}
                 transactionId={params?.txId}
                 redirectUrl={redirect}
-                isTestnet={paymentQueryResult.data?.mode === "test"}
                 selectedToken={selectedTokenObject}
               />
             )}
