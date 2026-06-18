@@ -16,6 +16,7 @@ import { CetusClmmSDK, type Pool } from "@cetusprotocol/sui-clmm-sdk";
 import { bcs } from "@mysten/sui/bcs";
 import { normalizeStructTag } from "@mysten/sui/utils";
 import { networkConfig } from "../utils/network";
+import client from "../client/client";
 
 const CETUS_CONSTANTS = {
   mainnet: {
@@ -251,8 +252,28 @@ export const useCheckoutPayment = ({
       return false;
     };
   }
+  
+  type PriceQuote = {
+      price: number;
+      timeStamp: Date;
+  }
+  type QuoteParams = {
+      amountInUSDC: number;
+      token: string;
+      mode: "test" | "live";
+  }
+  const getPriceQuote = async (params: QuoteParams): Promise<number> => {
+    const { data } = await client.get<{ data: PriceQuote }>(`/quotes`, { params });
+    return data.data.price;
+  };
 
-  return { executePayment, checkDepositAddressOnChain, processing, error, setError };
+  return { 
+    executePayment, 
+    getPriceQuote,
+    checkDepositAddressOnChain, 
+    processing, 
+    error, 
+    setError };
 };
 
 /**

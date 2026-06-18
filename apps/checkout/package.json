@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@7kprotocol/sdk-ts": "5.0.0-beta.2",
     "@bluefin-exchange/bluefin7k-aggregator-sdk": "^7.3.0",
     "@cetusprotocol/sui-clmm-sdk": "^1.4.5",
     "@mysten/dapp-kit": "^1.1.0",

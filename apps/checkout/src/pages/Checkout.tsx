@@ -10,7 +10,11 @@ import {
 } from "@mysten/dapp-kit";
 import { Button, Card } from "@orafi/ui";
 import logo from "@orafi/ui/assets/OraFi.png";
-import { FiAlertCircle, FiArrowLeft, FiChevronDown } from "react-icons/fi";
+import {
+  FiAlertCircle,
+  FiArrowLeft,
+  FiChevronDown
+} from "react-icons/fi";
 import { RiSecurePaymentLine } from "react-icons/ri";
 import { Helmet } from "react-helmet-async";
 import { toast } from "sonner";
@@ -20,7 +24,10 @@ import { MobileWalletPrompt } from "../components/MobileWalletPrompt";
 import { TransferPayment } from "../components/TransferPayment";
 import { CheckoutSummary } from "../components/CheckoutSummary";
 import { useCheckoutPayment } from "../hooks/useCheckoutPayment";
-import { useGetPaymentInformationQuery, useGeneratePaymentIntentMutation } from "../hooks/useGetPaymentInformationQuery";
+import {
+  useGetPaymentInformationQuery,
+  useGeneratePaymentIntentMutation
+} from "../hooks/useGetPaymentInformationQuery";
 import { useGetSupportedNetworksAndTokens } from "../hooks/useGetSupportedNetworksAndTokens";
 
 const Checkout = () => {
@@ -73,6 +80,7 @@ const Checkout = () => {
   // Use the isolated hook for handling payment processing executions
   const {
     executePayment,
+    getPriceQuote,
     checkDepositAddressOnChain,
     processing,
     error,
@@ -87,7 +95,7 @@ const Checkout = () => {
     selectedTokenObject,
     matchedNetwork,
     txId: params?.txId,
-    hasNoRedirect,
+    hasNoRedirect, 
     redirectUrl: redirect,
   });
 
@@ -103,15 +111,12 @@ const Checkout = () => {
 
       setIsLoadingTokenAmount(true);
       try {
-        const { getTokenPrice } = await import("@7kprotocol/sdk-ts");
-        const coinType =
-          paymentQueryResult.data.mode === "test"
-            ? selectedTokenObject.testnet.coinType
-            : selectedTokenObject.mainnet.coinType;
-
-        const rate = await getTokenPrice(coinType);
-        const amountInToken = parseFloat(amountInUSDC) / rate;
-        setTokenAmount((Math.ceil(amountInToken * 100) / 100).toFixed(2));
+        const price = await getPriceQuote({
+          amountInUSDC: parseFloat(amountInUSDC),
+          token: selectedTokenObject.symbol,
+          mode: paymentQueryResult.data.mode,
+        });
+        setTokenAmount((Math.ceil(price * 100) / 100).toFixed(2));
       } catch (err) {
         console.error("Failed to fetch token price", err);
         setTokenAmount(amountInUSDC);
