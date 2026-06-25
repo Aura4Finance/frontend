@@ -24,12 +24,6 @@ import { useBalance, useDashboard } from "@/hooks/mutations/useDashboard";
 import { useQueryState } from "@/hooks/useQueryState";
 import { Helmet } from "react-helmet-async";
 
-const RATES_TO_NGN: Record<string, number> = {
-  USDC: 1_580,
-  USDT: 1_575,
-  SUI: 520,
-  ETH: 5_200_000,
-};
 
 // --- Skeleton helpers ---
 const KpiSkeleton = () => (
@@ -79,7 +73,6 @@ const Dashboard = () => {
   }, [coinOptions, selectedCoin]);
 
   const currentBalance = balances.find(({ coinType }) => coinType === selectedCoin)?.balance ?? 0;
-  const ngnBalance = currentBalance * (RATES_TO_NGN[selectedCoin] ?? 0);
 
   // Chart data comes straight from the API's transactionMetrics array
   const chartData = data?.transactionMetrics ?? [];
@@ -185,7 +178,7 @@ const Dashboard = () => {
             <div className="flex items-center justify-center gap-2 mb-1">
               <span className="text-3xl font-bold text-gray-900 tracking-tight">
                 {balanceVisible
-                  ? `${currentBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })} ${selectedCoin || ""}`
+                  ? `${currentBalance} ${selectedCoin || ""}`
                   : "********"}
               </span>
               <button
@@ -196,11 +189,6 @@ const Dashboard = () => {
                 {balanceVisible ? <FiEye size={18} /> : <FiEyeOff size={18} />}
               </button>
             </div>
-            <p className="text-sm text-gray-500">
-              {balanceVisible
-                ? `≈ ₦${ngnBalance.toLocaleString("en-NG", { minimumFractionDigits: 2 })}`
-                : "********"}
-            </p>
           </div>
         </div>
 

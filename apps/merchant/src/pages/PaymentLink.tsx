@@ -334,7 +334,7 @@ const PaymentLink = () => {
       currency: formData.currency,
     };
     setCreatingPaylink(true);
-    toast.info("Processing, this may take some monents...")
+    toast.info("Processing, this may take a moments...")
     setTimeout(() => setShowCreateModal(false), 3000);
     createPaylink(
       { payload, images },

@@ -70,14 +70,10 @@ export const useBalance = () => {
                 ? data
                 : data?.balances ?? [];
 
-            return balances.map((entry) => {
-                const normalizedBalance = Number(entry.balance);
-
-                return {
-                    coinType: entry.coinType,
-                    balance: Number.isFinite(normalizedBalance) ? normalizedBalance / 1_000_000 : 0,
-                };
-            });
+            return balances.map((entry) => ({
+                coinType: entry.coinType,
+                balance: Number(entry.balance),
+            }));
         }
     })
 }

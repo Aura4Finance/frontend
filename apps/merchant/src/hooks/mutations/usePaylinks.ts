@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import client from "../../store/client";
 import type { MarkdownDraftInput } from "../../lib/descriptionAssistant";
+import { useLoadingStore } from "@/store/loading";
 
 // Types
 export type PaylinkMode = "live" | "test";
@@ -90,6 +91,7 @@ export const useGetPaylink = (paylinkId: string, enabled: boolean = true) => {
 // Create paylink with images
 export const useCreatePaylink = () => {
   const queryClient = useQueryClient();
+  const { setCreatingPaylink } = useLoadingStore();
 
   return useMutation({
     mutationFn: async ({
@@ -116,6 +118,7 @@ export const useCreatePaylink = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["paylinks"] });
       toast.success("Paylink created successfully");
+      setCreatingPaylink(false);
     },
     onError: (error: any) => {
       toast.error(
@@ -128,6 +131,7 @@ export const useCreatePaylink = () => {
 // Edit paylink with optional images
 export const useEditPaylink = () => {
   const queryClient = useQueryClient();
+  const { setEditingPaylink } = useLoadingStore();
 
   return useMutation({
     mutationFn: async ({
@@ -159,11 +163,13 @@ export const useEditPaylink = () => {
       queryClient.invalidateQueries({ queryKey: ["paylinks"] });
       queryClient.invalidateQueries({ queryKey: ["paylink", variables.paylinkId] });
       toast.success("Paylink updated successfully");
+      setEditingPaylink(false);
     },
     onError: (error: any) => {
       toast.error(
         error?.response?.data?.message || "Failed to update paylink"
       );
+      setEditingPaylink(false);
     },
   });
 };

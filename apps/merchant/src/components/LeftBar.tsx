@@ -11,7 +11,7 @@ import {
     RiRepeat2Line,
 } from "react-icons/ri";
 import logo from "@orafi/ui/assets/OraFi.png";
-import { useActiveTabStore } from "../store/activeTab";
+import { useActiveTabStore } from "@/store/activeTab";
 
 const navItems = [
     { name: "Dashboard", icon: <MdDashboard size={22} />, color: "text-blue-400", route: "/" },
@@ -34,24 +34,22 @@ const LeftBar = () => {
     } = useActiveTabStore();
 
     const [hoveredItem, setHoveredItem] = useState<string | null>(null);
-
     useEffect(() => {
-        const mediaQuery = window.matchMedia("(min-width: 768px)");
+    const mediaQuery = window.matchMedia("(min-width: 768px)");
 
-        const syncSidebarState = () => {
-            setCollapsed(!mediaQuery.matches);
-        };
+    const syncSidebarState = () => {
+        setCollapsed(!mediaQuery.matches);
+    };
+    syncSidebarState();
+    mediaQuery.addEventListener("change", syncSidebarState);
 
-        syncSidebarState();
-        mediaQuery.addEventListener("change", syncSidebarState);
-
-        return () => mediaQuery.removeEventListener("change", syncSidebarState);
-    }, [setCollapsed]);
+    return () => mediaQuery.removeEventListener("change", syncSidebarState);
+}, []); 
 
     return (
         <>
             {/* Desktop Sidebar - Left */}
-            <div className="hidden md:block md:fixed md:top-0 md:left-0 md:min-h-screen md:transition-colors md:duration-300 md:w-screen md:pointer-events-none z-40">
+            <div className="hidden md:block md:fixed md:top-0 md:left-0 md:min-h-screen md:transition-colors md:duration-300 md:w-fit md:pointer-events-none z-40">
                 <aside
                     className={`pointer-events-auto ${collapsed ? "md:w-20" : "md:w-55"
                         } h-screen bg-blue-950 border-r border-slate-800 transition-all duration-300 flex flex-col relative`}
