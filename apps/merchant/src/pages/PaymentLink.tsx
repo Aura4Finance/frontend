@@ -523,7 +523,7 @@ const PaymentLink = () => {
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {filteredPaylinks.map((link) => (
+            {filteredPaylinks.map((link) => (
               <div
                 key={link.id}
                 className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden transition-all hover:shadow-md hover:border-gray-200"
@@ -534,7 +534,7 @@ const PaymentLink = () => {
                     <img
                       src={`${link.mode == "live" ? WALRUS_GATEWAY_MAINNET : WALRUS_GATEWAY_TESTNET}/${link.images[0].blobId}`}
                       alt={link.title}
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-contain"
                     />
                   ) : (
                     <div className="flex items-center justify-center gap-2 text-gray-400">
