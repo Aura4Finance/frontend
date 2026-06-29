@@ -66,7 +66,7 @@ const DashboardWrapper = ({ children }: { children: React.ReactNode }) => {
     <div className="flex min-h-screen flex-col md:flex-row">
       <LeftBar />
       <main
-        className={`relative z-0 w-full bg-gray-50 transition-all duration-300 pb-20 md:pb-0 ${
+        className={`relative z-40 w-full bg-gray-50 transition-all duration-300 pb-20 md:pb-0 ${
           collapsed ? "md:ml-20" : "md:ml-55"
         }`}
       >

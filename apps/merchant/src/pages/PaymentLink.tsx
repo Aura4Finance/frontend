@@ -342,7 +342,7 @@ const PaymentLink = () => {
         onSuccess: () => {
           resetForm();
           setCreatingPaylink(false);
-          toast.success("Payment link created successfully");
+
           setTimeout(() => {
             setShowCreateModal(false);
           }, 2000);
@@ -400,7 +400,6 @@ const PaymentLink = () => {
         onSuccess: () => {
           resetForm();
           setSelectedPaylink(null);
-          toast.success("Payment link updated successfully");
           setEditingPaylink(false);
           setTimeout(() => {
             setShowEditModal(false);

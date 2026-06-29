@@ -49,7 +49,7 @@ const LeftBar = () => {
     return (
         <>
             {/* Desktop Sidebar - Left */}
-            <div className="hidden md:block md:fixed md:top-0 md:left-0 md:min-h-screen md:transition-colors md:duration-300 md:w-fit md:pointer-events-none z-40">
+            <div className="hidden md:block md:fixed md:top-0 md:left-0 md:min-h-screen md:transition-colors md:duration-300 md:w-fit md:pointer-events-none z-50">
                 <aside
                     className={`pointer-events-auto ${collapsed ? "md:w-20" : "md:w-55"
                         } h-screen bg-blue-950 border-r border-slate-800 transition-all duration-300 flex flex-col relative`}
@@ -151,7 +151,7 @@ const LeftBar = () => {
 
                                     {/* Tooltip - Mobile */}
                                     {hoveredItem === item.name && (
-                                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-gray-950 text-white text-xs font-medium px-2.5 py-1.5 rounded-md whitespace-nowrap pointer-events-none shadow-xl z-50 border border-slate-800">
+                                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-gray-950 text-white text-xs font-medium px-2.5 py-1.5 rounded-md whitespace-nowrap pointer-events-none shadow-xl z-100 border border-slate-800">
                                             {item.name}
                                             <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-950"></div>
                                         </div>
