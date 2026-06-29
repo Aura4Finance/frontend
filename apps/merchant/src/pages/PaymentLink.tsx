@@ -697,7 +697,7 @@ const PaymentLink = () => {
                     <img
                       src={preview}
                       alt={`Preview ${idx}`}
-                      className="h-20 w-full rounded-lg object-cover"
+                      className="h-20 w-full rounded-lg object-contain"
                     />
                     <button
                       type="button"
