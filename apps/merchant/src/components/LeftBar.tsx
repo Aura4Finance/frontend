@@ -49,7 +49,7 @@ const LeftBar = () => {
     return (
         <>
             {/* Desktop Sidebar - Left */}
-            <div className="hidden md:block md:fixed md:top-0 md:left-0 md:min-h-screen md:transition-colors md:duration-300 md:w-fit md:pointer-events-none z-50">
+            <div className="hidden md:block md:fixed md:top-0 md:left-0 md:min-h-screen md:transition-colors md:duration-300 md:w-fit md:pointer-events-none">
                 <aside
                     className={`pointer-events-auto ${collapsed ? "md:w-20" : "md:w-55"
                         } h-screen bg-blue-950 border-r border-slate-800 transition-all duration-300 flex flex-col relative`}
