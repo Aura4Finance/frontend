@@ -523,7 +523,7 @@ const PaymentLink = () => {
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredPaylinks.map((link) => (
+                        {filteredPaylinks.map((link) => (
               <div
                 key={link.id}
                 className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden transition-all hover:shadow-md hover:border-gray-200"
@@ -604,7 +604,7 @@ const PaymentLink = () => {
                 </div>
               </div>
             ))}
-          </div>
+      </div>
         )}
       </div>
 
