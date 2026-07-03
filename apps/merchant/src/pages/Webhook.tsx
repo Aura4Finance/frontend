@@ -13,24 +13,52 @@ import {
 import Modal from "@/components/utils/Modal";
 import CopyButton from "@/components/utils/CopyButton";
 import WebhookFilters from "@/components/webhooks/WebhookFilters";
-import { 
-  FiCopy, 
-  FiCheck, 
-  FiAlertTriangle, 
-  FiEye, 
-  FiEyeOff 
+import {
+  FiCopy,
+  FiCheck,
+  FiAlertTriangle,
+  FiEye,
+  FiEyeOff
 } from "react-icons/fi";
-import type { 
-  WebhookDelivery, 
-  WebhookDeliveryQueryParams, 
-  EventType, 
-  Event 
+import type {
+  WebhookDelivery,
+  WebhookDeliveryQueryParams,
+  EventType,
+  Event
 } from "@/hooks/mutations/useWehbooks";
 import { buildWebhookParams, useWebhookFilters } from "@/store/webhookFilters";
 import { isBrowser, updateQueryParams } from "@/lib/queryState";
 import { Helmet } from "react-helmet-async";
 
 const WEBHOOK_QUERY_KEYS = ["status", "transactionId", "event", "startDate", "endDate", "limit", "cursor", "page"];
+
+function SyntaxHighlightedJSON({ data }: { data: unknown }) {
+  const json = JSON.stringify(data, null, 2);
+
+  const highlighted = json.replace(
+    /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(\.\d+)?([eE][+-]?\d+)?)/g,
+    (match) => {
+      let cls = "text-blue-600"; // numbers
+      if (/^"/.test(match)) {
+        cls = /:$/.test(match)
+          ? "text-purple-700 font-medium" // keys
+          : "text-green-700"; // string values
+      } else if (/true|false/.test(match)) {
+        cls = "text-orange-600";
+      } else if (/null/.test(match)) {
+        cls = "text-gray-500";
+      }
+      return `<span class="${cls}">${match}</span>`;
+    }
+  );
+
+  return (
+    <pre
+      className="text-xs whitespace-pre-wrap break-words font-mono leading-relaxed"
+      dangerouslySetInnerHTML={{ __html: highlighted }}
+    />
+  );
+}
 
 const Webhook = () => {
   const { setActiveTab } = useActiveTabStore();
@@ -46,7 +74,7 @@ const Webhook = () => {
   const [showDeliveryModal, setShowDeliveryModal] = useState(false);
   const [appliedParams, setAppliedParams] = useState<WebhookDeliveryQueryParams | undefined>(undefined);
 
-   const { data: webhookEvents, isLoading: webhookEventLoading } = useGetWebhookEventTypes();
+  const { data: webhookEvents, isLoading: webhookEventLoading } = useGetWebhookEventTypes();
   const webhookOptions = useMemo<FilterOptions<Event>>(
     () => {
       if (!Array.isArray(webhookEvents)) return [] as FilterOptions<Event>;
@@ -156,11 +184,11 @@ const Webhook = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "success":
+      case "SUCCESS":
         return "bg-green-50 text-green-700 border-green-200";
-      case "failed":
+      case "FAILED":
         return "bg-red-50 text-red-700 border-red-200";
-      case "pending":
+      case "PENDING":
         return "bg-yellow-50 text-yellow-700 border-yellow-200";
       default:
         return "bg-gray-50 text-gray-700 border-gray-200";
@@ -250,8 +278,8 @@ const Webhook = () => {
                           onClick={() => handleSubscribeEvent(event.type)}
                           disabled={isSubscribing || isSubscribed}
                           className={`w-full px-4 py-3 rounded-lg border-2 transition-all text-left ${isSubscribed
-                              ? "bg-blue-50 border-blue-300 cursor-default"
-                              : "bg-white border-gray-200 hover:border-blue-400 hover:bg-blue-50 cursor-pointer"
+                            ? "bg-blue-50 border-blue-300 cursor-default"
+                            : "bg-white border-gray-200 hover:border-blue-400 hover:bg-blue-50 cursor-pointer"
                             } disabled:opacity-100`}
                         >
                           <div className="flex items-center justify-between">
@@ -332,7 +360,7 @@ const Webhook = () => {
           {showDeliveries && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="p-4 border-b border-gray-100">
-                <WebhookFilters eventOptions={ webhookOptions } isLoading={ webhookEventLoading } onApply={handleApplyFilters} />
+                <WebhookFilters eventOptions={webhookOptions} isLoading={webhookEventLoading} onApply={handleApplyFilters} />
               </div>
               {deliveriesLoading ? (
                 <div className="p-8">
@@ -487,8 +515,8 @@ const Webhook = () => {
                 <button
                   onClick={handleCopySecret}
                   className={`p-2 rounded transition-colors ${secretCopied
-                      ? "bg-gray-200 text-gray-700"
-                      : "text-gray-600 hover:text-gray-900"
+                    ? "bg-gray-200 text-gray-700"
+                    : "text-gray-600 hover:text-gray-900"
                     }`}
                   type="button"
                   title="Copy to clipboard"
@@ -538,9 +566,7 @@ const Webhook = () => {
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Status</label>
                 <span
-                  className={`inline-flex items-center gap-2 px-2 py-1 rounded text-xs font-medium ${getStatusColor(
-                    selectedDelivery.status
-                  )}`}
+                  className={`inline-flex items-center gap-2 px-2 py-1 rounded text-xs font-medium ${getStatusColor(selectedDelivery.status)}`}
                 >
                   {selectedDelivery.status}
                 </span>
@@ -584,9 +610,7 @@ const Webhook = () => {
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-2">Payload</label>
               <div className="bg-gray-50 border border-gray-300 rounded-lg p-3 max-h-64 overflow-y-auto">
-                <pre className="text-xs text-gray-700 whitespace-pre-wrap break-words font-mono leading-relaxed">
-                  {JSON.stringify(selectedDelivery.payload, null, 2)}
-                </pre>
+                <SyntaxHighlightedJSON data={selectedDelivery.payload} />
               </div>
             </div>
 
@@ -596,7 +620,7 @@ const Webhook = () => {
                 setShowDeliveryModal(false);
                 setSelectedDelivery(null);
               }}
-              className="w-full px-4 py-2 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 text-sm"
+              className="w-full px-4 py-2 bg-blue-950 text-white font-medium rounded-lg hover:bg-gray-800 text-sm"
             >
               Close
             </button>
