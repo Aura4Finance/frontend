@@ -10,7 +10,8 @@ export type FilterOptions<T extends string> = {
 export type WebhookDelivery = {
     id: string;
     event: Event;
-    transactionId: string;
+    transactionId?: string;
+    subscriptionId?: string;
     status: string;
     payload: {
         data:{

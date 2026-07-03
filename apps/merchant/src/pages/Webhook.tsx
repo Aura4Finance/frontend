@@ -579,10 +579,10 @@ const Webhook = () => {
 
             {/* IDs Section */}
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-2">Transaction ID</label>
+              <label className="block text-xs font-medium text-gray-600 mb-2">{selectedDelivery.subscriptionId ? "Subscription" : "Transaction"} ID</label>
               <div className="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-lg p-2">
-                <code className="flex-1 text-xs text-gray-900 font-mono break-all">{selectedDelivery.transactionId}</code>
-                <CopyButton text={selectedDelivery.transactionId} />
+                <code className="flex-1 text-xs text-gray-900 font-mono break-all">{selectedDelivery.subscriptionId || selectedDelivery.transactionId}</code>
+                <CopyButton text={String(selectedDelivery.subscriptionId || selectedDelivery.transactionId)} />
               </div>
             </div>
 
