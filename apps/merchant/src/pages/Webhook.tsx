@@ -226,10 +226,6 @@ const Webhook = () => {
           </div>
         ) : webhookDetails ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200 p-4">
-              <h2 className="text-lg font-semibold text-blue-900">Webhook Configuration</h2>
-              <p className="text-sm text-blue-700 mt-1">Manage your webhook endpoint and subscriptions</p>
-            </div>
             <div className="p-6 space-y-4">
               {/* URL */}
               <div>
