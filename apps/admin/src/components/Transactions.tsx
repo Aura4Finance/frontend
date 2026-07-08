@@ -31,6 +31,26 @@ import { useActiveMode } from "../store/mode";
 import { toast } from "sonner";
 import CopyButton from "./shared/CopyButton";
 
+type AssetBadge = {
+  symbol?: string;
+  logo?: string | null;
+};
+
+const renderAssetBadge = (asset: AssetBadge | undefined, toneClasses: string, fallback = "N/A") => {
+  if (!asset) {
+    return <span className="text-xs text-gray-400">{fallback}</span>;
+  }
+
+  return (
+    <span className={`inline-flex items-center gap-2 rounded-full px-2 py-0.5 text-[10px] font-medium ${toneClasses}`}>
+      {asset.logo && (
+        <img src={asset.logo} alt={asset.symbol || fallback} className="h-3 w-3 rounded-full object-cover" />
+      )}
+      {asset.symbol || fallback}
+    </span>
+  );
+};
+
 const Transactions = () => {
   const [countFilter, setCountFilter] = useState<"all" | "completed" | "pending" | "failed">("all");
   const [volumeMode, setVolumeMode] = useState<"ngn" | "usdc">("usdc");
@@ -82,7 +102,7 @@ const Transactions = () => {
   // API hooks
   const { data: statsData, isLoading: statsLoading, error: statsError } = useTransactionStats(mode, (countFilter === "all" ? undefined : countFilter.toUpperCase()) as any);
   const { data: countData } = useTransactionCountData(mode);
-  
+
   const {
     data: transactionsData,
     isLoading: transactionsLoading,
@@ -189,11 +209,10 @@ const Transactions = () => {
                   <button
                     key={filter}
                     onClick={() => setCountFilter(filter)}
-                    className={`px-2 py-0.5 text-[10px] font-medium rounded-full transition-colors ${
-                      countFilter === filter
+                    className={`px-2 py-0.5 text-[10px] font-medium rounded-full transition-colors ${countFilter === filter
                         ? "bg-blue-600 text-white"
                         : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                    }`}
+                      }`}
                   >
                     {filter.charAt(0).toUpperCase() + filter.slice(1)}
                   </button>
@@ -213,7 +232,7 @@ const Transactions = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fill: "#6b7280", fontSize: 10 }} />
-                    <Tooltip 
+                    <Tooltip
                       contentStyle={{ backgroundColor: "#fff", border: "1px solid #e5e7eb", borderRadius: "6px", fontSize: "11px" }}
                       formatter={(value: number) => [value.toLocaleString(), "Transactions"]}
                       labelFormatter={(label) => `Date: ${label}`}
@@ -232,17 +251,15 @@ const Transactions = () => {
               <div className="flex gap-1">
                 <button
                   onClick={() => setVolumeMode("usdc")}
-                  className={`px-2 py-0.5 text-[10px] font-medium rounded-full transition-colors ${
-                    volumeMode === "usdc" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
+                  className={`px-2 py-0.5 text-[10px] font-medium rounded-full transition-colors ${volumeMode === "usdc" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
                 >
                   USDC
                 </button>
                 <button
                   onClick={() => setVolumeMode("ngn")}
-                  className={`px-2 py-0.5 text-[10px] font-medium rounded-full transition-colors ${
-                    volumeMode === "ngn" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
+                  className={`px-2 py-0.5 text-[10px] font-medium rounded-full transition-colors ${volumeMode === "ngn" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
                 >
                   NGN
                 </button>
@@ -272,11 +289,11 @@ const Transactions = () => {
                       labelFormatter={(label) => `Date: ${label}`}
                     />
                     <Legend wrapperStyle={{ fontSize: "10px" }} />
-                    <Bar 
-                      dataKey={volumeMode === "usdc" ? "volumeInUSDC" : "volume"} 
-                      fill="#10b981" 
-                      radius={[4, 4, 0, 0]} 
-                      name={volumeMode === "usdc" ? "Volume (USDC)" : "Volume (NGN)"} 
+                    <Bar
+                      dataKey={volumeMode === "usdc" ? "volumeInUSDC" : "volume"}
+                      fill="#10b981"
+                      radius={[4, 4, 0, 0]}
+                      name={volumeMode === "usdc" ? "Volume (USDC)" : "Volume (NGN)"}
                     />
                   </BarChart>
                 </ResponsiveContainer>
@@ -356,45 +373,36 @@ const Transactions = () => {
                         }
                       };
                       return (
-                      <tr key={tx.id} className={`cursor-pointer transition-colors ${getRowBgColor(tx.type)}`} onClick={() => setSelectedTransaction(tx)}>
-                        <td className="px-4 py-2.5 text-xs font-medium text-blue-600">{tx.id.slice(0, 8)}...</td>
-                        <td className="px-4 py-2.5">
-                          <div className="font-medium text-xs text-gray-900">
-                            {tx.customer 
-                              ? `${tx.customer.firstname || ''} ${tx.customer.lastname || ''}`.trim() || 'N/A'
-                              : 'N/A'}
-                          </div>
-                          <div className="text-[11px] text-gray-500">
-                            {tx.customer?.email || 'N/A'}
-                          </div>
-                        </td>
-                        <td className="px-4 py-2.5 text-xs font-medium text-gray-900">{tx.amount?.toLocaleString() || 0} {tx.token}</td>
-                        <td className="px-4 py-2.5 text-xs text-gray-600">{tx.currency || 'N/A'}</td>
-                        <td className="px-4 py-2.5">
-                          {tx.network ? (
-                            <span className="inline-flex items-center gap-2 px-2 py-0.5 text-[10px] font-medium rounded-full bg-indigo-100 text-indigo-700">
-                              {tx.network.logo && (
-                                <img src={tx.network.logo} alt={tx.network.symbol} className="w-3 h-3 rounded-full" />
-                              )}
-                              {tx.network.symbol}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-gray-400">N/A</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-2.5">
-                          <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${
-                            tx.type === 'PAYMENT' ? 'bg-blue-100 text-blue-700' : 
-                            tx.type === 'PAYOUT' ? 'bg-purple-100 text-purple-700' : 
-                            'bg-orange-100 text-orange-700'
-                          }`}>{tx.type}</span>
-                        </td>
-                        <td className="px-4 py-2.5 text-xs text-gray-600">{tx.profile?.businessName || 'N/A'}</td>
-                        <td className="px-4 py-2.5">
-                          <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${getStatusColor(tx.status)}`}>{tx.status}</span>
-                        </td>
-                        <td className="px-4 py-2.5 text-xs text-gray-600">{tx.createdAt ? new Date(tx.createdAt).toLocaleString() : 'N/A'}</td>
-                      </tr>
+                        <tr key={tx.id} className={`cursor-pointer transition-colors ${getRowBgColor(tx.type)}`} onClick={() => setSelectedTransaction(tx)}>
+                          <td className="px-4 py-2.5 text-xs font-medium text-blue-600">{tx.id.slice(0, 8)}...</td>
+                          <td className="px-4 py-2.5">
+                            <div className="font-medium text-xs text-gray-900">
+                              {tx.customer
+                                ? `${tx.customer.firstname || ''} ${tx.customer.lastname || ''}`.trim() || 'N/A'
+                                : 'N/A'}
+                            </div>
+                            <div className="text-[11px] text-gray-500">
+                              {tx.customer?.email || 'N/A'}
+                            </div>
+                          </td>
+                          <td className="px-4 py-2.5 text-xs font-medium text-gray-900">{tx.amount?.toLocaleString() || 0} {tx.token.symbol}</td>
+                          <td className="px-4 py-2.5 text-xs text-gray-600">{tx.currency || 'N/A'}</td>
+                          <td className="px-4 py-2.5">{renderAssetBadge(tx.token, "bg-emerald-100 text-emerald-700")}</td>
+                          <td className="px-4 py-2.5">
+                            {renderAssetBadge(tx.network, "bg-indigo-100 text-indigo-700")}
+                          </td>
+                          <td className="px-4 py-2.5">
+                            <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${tx.type === 'PAYMENT' ? 'bg-blue-100 text-blue-700' :
+                                tx.type === 'PAYOUT' ? 'bg-purple-100 text-purple-700' :
+                                  'bg-orange-100 text-orange-700'
+                              }`}>{tx.type}</span>
+                          </td>
+                          <td className="px-4 py-2.5 text-xs text-gray-600">{tx.profile?.businessName || 'N/A'}</td>
+                          <td className="px-4 py-2.5">
+                            <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${getStatusColor(tx.status)}`}>{tx.status}</span>
+                          </td>
+                          <td className="px-4 py-2.5 text-xs text-gray-600">{tx.createdAt ? new Date(tx.createdAt).toLocaleString() : 'N/A'}</td>
+                        </tr>
                       );
                     })})
                   </tbody>
@@ -407,37 +415,35 @@ const Transactions = () => {
               <div className="text-xs text-gray-500">
                 Page {currentPage} • Showing {transactions.length} of {totalCount.toLocaleString()} transactions
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <button
                   onClick={handlePreviousPage}
                   disabled={!hasPreviousPage || isFetching}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                    hasPreviousPage && !isFetching
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${hasPreviousPage && !isFetching
                       ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
                       : "bg-gray-50 text-gray-300 cursor-not-allowed"
-                  }`}
+                    }`}
                 >
                   ← Previous
                 </button>
-                
+
                 <span className="px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 rounded-md">
                   {currentPage}
                 </span>
-                
+
                 <button
                   onClick={handleNextPage}
                   disabled={!hasNextPage || isFetching}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                    hasNextPage && !isFetching
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${hasNextPage && !isFetching
                       ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
                       : "bg-gray-50 text-gray-300 cursor-not-allowed"
-                  }`}
+                    }`}
                 >
                   Next →
                 </button>
               </div>
-              
+
               {isFetching && !transactionsLoading && (
                 <div className="text-xs text-blue-600 flex items-center gap-1">
                   <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
@@ -472,7 +478,7 @@ const Transactions = () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Amount</p>
-                <p className="font-semibold text-sm text-gray-900">{selectedTransaction.amount?.toLocaleString()} {selectedTransaction.token}</p>
+                <p className="font-semibold text-sm text-gray-900">{selectedTransaction.amount?.toLocaleString()} {selectedTransaction.token.symbol}</p>
               </div>
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Amount in USDC</p>
@@ -480,11 +486,10 @@ const Transactions = () => {
               </div>
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Type</p>
-                <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${
-                  selectedTransaction.type === 'PAYMENT' ? 'bg-blue-100 text-blue-700' : 
-                  selectedTransaction.type === 'PAYOUT' ? 'bg-purple-100 text-purple-700' : 
-                  'bg-orange-100 text-orange-700'
-                }`}>{selectedTransaction.type}</span>
+                <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${selectedTransaction.type === 'PAYMENT' ? 'bg-blue-100 text-blue-700' :
+                    selectedTransaction.type === 'PAYOUT' ? 'bg-purple-100 text-purple-700' :
+                      'bg-orange-100 text-orange-700'
+                  }`}>{selectedTransaction.type}</span>
               </div>
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Currency</p>
@@ -505,9 +510,8 @@ const Transactions = () => {
               </div>
               <div className="bg-gray-50 rounded-lg p-3">
                 <p className="text-[11px] text-gray-500">Mode</p>
-                <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${
-                  selectedTransaction.mode === 'live' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                }`}>{selectedTransaction.mode}</span>
+                <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full ${selectedTransaction.mode === 'live' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                  }`}>{selectedTransaction.mode}</span>
               </div>
             </div>
 
@@ -729,29 +733,29 @@ const Transactions = () => {
             )}
 
             {/* Refund Action for Payments */}
-            {selectedTransaction.status.toLowerCase() === 'completed' && 
-             selectedTransaction.type === 'payment' && 
-             !selectedTransaction.payment?.refunded && (
-              <div className="pt-2 border-t border-gray-200">
-                <button
-                  onClick={() => {
-                    refundTransaction({ transactionId: selectedTransaction.id }, {
-                      onSuccess: () => {
-                        toast.success('Transaction refunded successfully');
-                        setSelectedTransaction(null);
-                      },
-                      onError: (error: any) => {
-                        toast.error(error?.response?.data?.message || 'Failed to refund transaction');
-                      },
-                    });
-                  }}
-                  disabled={isRefunding}
-                  className="w-full py-2 px-4 rounded-lg text-sm font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isRefunding ? 'Processing...' : 'Refund Transaction'}
-                </button>
-              </div>
-            )}
+            {selectedTransaction.status.toLowerCase() === 'completed' &&
+              selectedTransaction.type === 'payment' &&
+              !selectedTransaction.payment?.refunded && (
+                <div className="pt-2 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      refundTransaction({ transactionId: selectedTransaction.id }, {
+                        onSuccess: () => {
+                          toast.success('Transaction refunded successfully');
+                          setSelectedTransaction(null);
+                        },
+                        onError: (error: any) => {
+                          toast.error(error?.response?.data?.message || 'Failed to refund transaction');
+                        },
+                      });
+                    }}
+                    disabled={isRefunding}
+                    className="w-full py-2 px-4 rounded-lg text-sm font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isRefunding ? 'Processing...' : 'Refund Transaction'}
+                  </button>
+                </div>
+              )}
           </div>
         )}
       </Modal>
